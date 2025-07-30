@@ -2,20 +2,19 @@
 #define PP_CIRCUIT_HPP
 
 class Circuit {
-public:
+    public:
 	Circuit(unsigned nb_qubits);
 
-Circuit(Circuit const&)=delete;
-Circuit& operator=(Circuit const&)=delete;
-Circuit(Circuit&&)noexcept =default;
-Circuit& operator=(Circuit&&) noexcept =default;
-	
-	unsigned nb_qubits() const { return nb_qubits; }
+	Circuit(Circuit const&) = delete;
+	Circuit& operator=(Circuit const&) = delete;
 
-private:
-	usigned nb_qubits;
+	Circuit(Circuit&&) noexcept = default;
+	Circuit& operator=(Circuit&&) noexcept = default;
+
+	unsigned nb_qubits() const { return nb_qubits_; }
+
+    private:
+	unsigned nb_qubits_;
 };
 
 #endif
-
-

@@ -3,6 +3,7 @@ set(CMAKE_VERBOSE_MAKEFILE OFF CACHE BOOL "Explicit Makefile")
 set(COVERAGE OFF CACHE BOOL "Build for coverage")
 set(SANITIZE OFF CACHE BOOL "Build with sanitizers")
 set(BENCHMARK OFF CACHE BOOL "Build benchmarks")
+set(TEST OFF CACHE BOOL "Build tests")
 
 project(ProPauli
 	VERSION 1.0
@@ -35,12 +36,12 @@ file(GLOB SOURCES "${SRC_DIR}/*.cpp")
 list(FILTER SOURCES EXCLUDE REGEX "[^/]+/main.cpp")
 
 #creating library
-add_library(propoli_lib PUBLIC ${SOURCES})
-target_include_directories(Headers PUBLIC ${INCLUDE_DIR})
+add_library(propaulib ${SOURCES})
+target_include_directories(propaulib PUBLIC ${INCLUDE_DIR})
 
 #Setting C++ flags
-target_compile_features(propoli_lib PUBLIC cxx_std_23)
-target_compile_options(propoli_lib PUBLIC
+target_compile_features(propaulib PUBLIC cxx_std_23)
+target_compile_options(propaulib PUBLIC
 	$<$<CXX_COMPILER_ID:MSVC>:/W4>
 	$<$<CXX_COMPILER_ID:Clang,GNU>:-Wall -Wextra -Wpedantic>
 	#$<$<CXX_COMPILER_ID:Clang>:-stdlib=libc++>
@@ -53,18 +54,20 @@ target_compile_options(propoli_lib PUBLIC
 	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:Clang>>:-fprofile-instr-generate -fcoverage-mapping>
 	)
 
-target_link_options(Headers INTERFACE
+target_link_options(propaulib INTERFACE
 	$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>,$<BOOL:${SANITIZE}>>:-fsanitize=address -fsanitize=undefined -fno-sanitize=vptr>
 	$<$<AND:$<BOOL:${COVERAGE}>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-fprofile-instr-generate>
 	#$<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>
 	)
 
+if (TEST)
 # Build de GTest
 include(FetchContent)
 FetchContent_Declare(
   googletest
   # Specify the commit you depend on and update it regularly.
-  URL https://github.com/google/googletest/archive/e2239ee6043f73722e7aa812a459f54a28552929.zip
+  URL https://github.com/google/googletest/archive/52eb8108c5bdec04579160ae17225d66034bd723.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP true
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -76,20 +79,23 @@ enable_testing()
 include(GoogleTest)
 file(GLOB TESTS_SRC "${PROJECT_SOURCE_DIR}/tests/*.cpp")
 add_executable(UnitTest ${TESTS_SRC})
-target_link_libraries(UnitTest Headers gtest gtest_main gmock)
+target_link_libraries(UnitTest propaulib gtest gtest_main gmock)
 target_include_directories(UnitTest PUBLIC ${INCLUDE_DIR})
 gtest_discover_tests(UnitTest)
+endif()
 
 # GoogleBenchmark
 if (BENCHMARK)
 	FetchContent_Declare(
 		googlebenchmark
-		URL https://github.com/google/benchmark/archive/refs/tags/v1.6.1.zip
+		URL https://github.com/google/benchmark/archive/refs/tags/v1.9.4.zip
+  		DOWNLOAD_EXTRACT_TIMESTAMP true
 	)
+	set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable testing for Google Benchmark")
 	FetchContent_MakeAvailable(googlebenchmark)
 	file(GLOB BENCH_SRC "${PROJECT_SOURCE_DIR}/benchmarks/*.cpp")
 	add_executable(Benchmarks ${BENCH_SRC})
-	target_link_libraries(Benchmarks propoli_lib benchmark::benchmark benchmark::benchmark_main)
+	target_link_libraries(Benchmarks propaulib benchmark::benchmark benchmark::benchmark_main)
 endif()
 
 # coverage

@@ -5,7 +5,7 @@
 static void init_circuit(benchmark::State& state) {
 	// benchmark
 	for (auto _: state) {
-		Circuit qc{state.range(0)}
+		Circuit qc{static_cast<unsigned>(state.range(0))};
 		benchmark::DoNotOptimize(qc);
 	}
 }
