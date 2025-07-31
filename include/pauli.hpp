@@ -153,6 +153,8 @@ class Pauli {
 	Pauli& operator=(Pauli const&) = default;
 	Pauli& operator=(Pauli&&) noexcept = default;
 
+	operator Pauli_enum() const {return p_;} 
+
 	bool operator==(Pauli p) const { return p_ == p.p_; }
 	bool operator!=(Pauli p) const { return !(*this == p); }
 
