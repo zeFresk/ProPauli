@@ -143,7 +143,7 @@ class Pauli {
 	}
 	constexpr Pauli(std::string_view str) : Pauli(str[0]) {
 		if (str.size() != 1) {
-			throw std::invalid_argument{"Pauli should be a size 1 string"};
+			throw std::invalid_argument{ "Pauli should be a size 1 string" };
 		}
 	}
 
@@ -153,12 +153,14 @@ class Pauli {
 	Pauli& operator=(Pauli const&) = default;
 	Pauli& operator=(Pauli&&) noexcept = default;
 
-	operator Pauli_enum() const {return p_;} 
+	operator Pauli_enum() const { return p_; }
 
 	bool operator==(Pauli p) const { return p_ == p.p_; }
 	bool operator!=(Pauli p) const { return !(*this == p); }
 
-	bool commutes_with(Pauli p) const { return pauli_gates_coeff[std::to_underlying(p_)][std::to_underlying(p.p_)] > 0; }
+	bool commutes_with(Pauli p) const {
+		return pauli_gates_coeff[std::to_underlying(p_)][std::to_underlying(p.p_)] > 0;
+	}
 
 	coeff_t apply_pauli(Pauli_gates g) const {
 		return pauli_gates_coeff[std::to_underlying(p_)][std::to_underlying(g)];
@@ -174,7 +176,7 @@ class Pauli {
 		p_ = res.first;
 		target.p_ = res.second;
 
-		// map ?
+		// map ? map here (based on condition, 2 elems map) implies 2.57ns => 3.73ns
 		return (p_ == Pauli_enum::X && target.p_ == Pauli_enum::Z) ||
 				       (p_ == Pauli_enum::Y && target.p_ == Pauli_enum::Y) ?
 			       coeff_t{ -1 } :
