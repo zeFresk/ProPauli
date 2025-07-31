@@ -16,6 +16,7 @@ static_assert(std::to_underlying(Pauli_enum::I) == std::to_underlying(Pauli_gate
 static_assert(std::to_underlying(Pauli_enum::X) == std::to_underlying(Pauli_gates::X));
 static_assert(std::to_underlying(Pauli_enum::Y) == std::to_underlying(Pauli_gates::Y));
 static_assert(std::to_underlying(Pauli_enum::Z) == std::to_underlying(Pauli_gates::Z));
+static_assert(std::to_underlying(Pauli_gates::Count) == std::to_underlying(Pauli_enum::Count));
 
 enum class Clifford_Gates_1Q : array_underlying_type { H, Count };
 
@@ -45,7 +46,7 @@ init_clifford_array_coeff() {
 	ret[std::to_underlying(Pauli_enum::I)][std::to_underlying(Clifford_Gates_1Q::H)] = T{ 1 };
 	ret[std::to_underlying(Pauli_enum::X)][std::to_underlying(Clifford_Gates_1Q::H)] = T{ 1 };
 	ret[std::to_underlying(Pauli_enum::Y)][std::to_underlying(Clifford_Gates_1Q::H)] = T{ -1 };
-	ret[std::to_underlying(Pauli_enum::Z)][std::to_underlying(Clifford_Gates_1Q::H)] = T{ -1 };
+	ret[std::to_underlying(Pauli_enum::Z)][std::to_underlying(Clifford_Gates_1Q::H)] = T{ 1 };
 
 	return ret;
 }
@@ -122,7 +123,7 @@ class Pauli {
 
     public:
 	constexpr Pauli(Pauli_enum pauli) : p_(pauli) {}
-	Pauli(char c) {
+	constexpr Pauli(char c) {
 		switch (c) {
 		case 'I':
 			p_ = Pauli_enum::I;
@@ -140,6 +141,11 @@ class Pauli {
 			throw std::invalid_argument{ "Bad argument to Pauli constructor. Accepted: [I, X, Y, Z]" };
 		}
 	}
+	constexpr Pauli(std::string_view str) : Pauli(str[0]) {
+		if (str.size() != 1) {
+			throw std::invalid_argument{"Pauli should be a size 1 string"};
+		}
+	}
 
 	Pauli() = delete;
 	Pauli(Pauli const&) = default;
@@ -148,8 +154,9 @@ class Pauli {
 	Pauli& operator=(Pauli&&) noexcept = default;
 
 	bool operator==(Pauli p) const { return p_ == p.p_; }
+	bool operator!=(Pauli p) const { return !(*this == p); }
 
-	bool commutes_with(Pauli p) { return pauli_gates_coeff[std::to_underlying(p_)][std::to_underlying(p.p_)] > 0; }
+	bool commutes_with(Pauli p) const { return pauli_gates_coeff[std::to_underlying(p_)][std::to_underlying(p.p_)] > 0; }
 
 	coeff_t apply_pauli(Pauli_gates g) const {
 		return pauli_gates_coeff[std::to_underlying(p_)][std::to_underlying(g)];
