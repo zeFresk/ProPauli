@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
+
 #include <stdexcept>
-#include <sys/stat.h>
 #include <type_traits>
 #include <utility>
 
@@ -53,11 +53,7 @@ TEST(Pauli, equality) {
 	EXPECT_EQ(Pauli{ "Z" }, Pauli{ "Z" });
 }
 
-TEST(Pauli, inequality) {
-	EXPECT_TRUE(p_i != p_x);
-}
-
-
+TEST(Pauli, inequality) { EXPECT_TRUE(p_i != p_x); }
 
 TEST(Pauli, commutes_id) {
 	for (auto const& p : { p_i, p_x, p_y, p_z }) {
@@ -156,5 +152,18 @@ TEST(Pauli, apply_cx) {
 		EXPECT_EQ(in_ctrl, out_ctrl);
 		EXPECT_EQ(in_target, out_target);
 		EXPECT_EQ(c, out_coeff);
+	}
+}
+
+TEST(Pauli, serialize) {
+	using enum Pauli_enum;
+	std::array<std::tuple<std::string_view, Pauli>, 4> truth_table{
+		{ { "I", I }, { "X", X }, { "Y", Y }, { "Z", Z } }
+	};
+
+	for (auto const [expected_str, p] : truth_table) {
+		std::stringstream ss;
+		ss << p;
+		EXPECT_EQ(ss.str(), expected_str);
 	}
 }

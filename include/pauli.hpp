@@ -20,6 +20,17 @@ static_assert(std::to_underlying(Pauli_gates::Count) == std::to_underlying(Pauli
 
 enum class Clifford_Gates_1Q : array_underlying_type { H, Count };
 
+consteval std::array<char, static_cast<std::size_t>(Pauli_enum::Count)> init_pauli_str_map() {
+	std::array<char, static_cast<std::size_t>(Pauli_enum::Count)> ret;
+
+	ret[std::to_underlying(Pauli_enum::I)] = 'I';
+	ret[std::to_underlying(Pauli_enum::X)] = 'X';
+	ret[std::to_underlying(Pauli_enum::Y)] = 'Y';
+	ret[std::to_underlying(Pauli_enum::Z)] = 'Z';
+
+	return ret;
+}
+
 consteval std::array<std::array<Pauli_enum, static_cast<std::size_t>(Clifford_Gates_1Q::Count)>,
 		     static_cast<std::size_t>(Pauli_enum::Count)>
 init_clifford_array_map() {
@@ -112,6 +123,7 @@ init_cx_array_map() {
 	return ret;
 }
 
+static constexpr auto pauli_char_map = init_pauli_str_map();
 static constexpr auto clifford_gates_map = init_clifford_array_map();
 static constexpr auto clifford_gates_coeff = init_clifford_array_coeff<coeff_t>();
 static constexpr auto pauli_gates_coeff = init_pauli_array_coeff<coeff_t>();
@@ -181,6 +193,11 @@ class Pauli {
 				       (p_ == Pauli_enum::Y && target.p_ == Pauli_enum::Y) ?
 			       coeff_t{ -1 } :
 			       coeff_t{ 1 };
+	}
+
+	friend std::ostream& operator<<(std::ostream& os, Pauli const& p) {
+		os << pauli_char_map[std::to_underlying(p.p_)];
+		return os;
 	}
 };
 
