@@ -13,12 +13,12 @@ DESCRIPTION "Fast and efficient C++ library for Pauli Propagation"
 # Build types
 set(default_build_type "Debug")
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
-  set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE
-      STRING "Choose the type of build." FORCE)
-  # Set the possible values of build type for cmake-gui
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
-    "Debug" "Release")
+	message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
+	set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE
+						STRING "Choose the type of build." FORCE)
+	# Set the possible values of build type for cmake-gui
+	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+				"Debug" "Release")
 endif()
 
 if (NOT(CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
@@ -44,7 +44,7 @@ target_compile_features(propaulib PUBLIC cxx_std_23)
 target_compile_options(propaulib PUBLIC
 	$<$<CXX_COMPILER_ID:MSVC>:/W4>
 	$<$<CXX_COMPILER_ID:Clang,GNU>:-Wall -Wextra -Wpedantic>
-	#$<$<CXX_COMPILER_ID:Clang>:-stdlib=libc++>
+			#$<$<CXX_COMPILER_ID:Clang>:-stdlib=libc++>
 	$<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/O2>
 	$<$<AND:$<CONFIG:Release>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-O3 -march=native -g>
 	$<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:Clang>>:-ffast-math>
@@ -57,31 +57,31 @@ target_compile_options(propaulib PUBLIC
 target_link_options(propaulib INTERFACE
 	$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>,$<BOOL:${SANITIZE}>>:-fsanitize=address -fsanitize=undefined -fno-sanitize=vptr>
 	$<$<AND:$<BOOL:${COVERAGE}>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-fprofile-instr-generate>
-	#$<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>
+			#$<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>
 	)
 
 if (TEST)
-# Build de GTest
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  # Specify the commit you depend on and update it regularly.
-  URL https://github.com/google/googletest/archive/52eb8108c5bdec04579160ae17225d66034bd723.zip
-  DOWNLOAD_EXTRACT_TIMESTAMP true
+	# Build de GTest
+	include(FetchContent)
+	FetchContent_Declare(
+		googletest
+			# Specify the commit you depend on and update it regularly.
+		URL https://github.com/google/googletest/archive/52eb8108c5bdec04579160ae17225d66034bd723.zip
+		DOWNLOAD_EXTRACT_TIMESTAMP true
 )
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+	# For Windows: Prevent overriding the parent project's compiler/linker settings
+	set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+	FetchContent_MakeAvailable(googletest)
 
-#set(CMAKE_CXX_FLAGS "-std=c++20 -stdlib=libc++")
+	#set(CMAKE_CXX_FLAGS "-std=c++20 -stdlib=libc++")
 
-enable_testing()
-include(GoogleTest)
-file(GLOB TESTS_SRC "${PROJECT_SOURCE_DIR}/tests/*.cpp")
-add_executable(UnitTest ${TESTS_SRC})
-target_link_libraries(UnitTest propaulib gtest gtest_main gmock)
-target_include_directories(UnitTest PUBLIC ${INCLUDE_DIR})
-gtest_discover_tests(UnitTest)
+	enable_testing()
+	include(GoogleTest)
+	file(GLOB TESTS_SRC "${PROJECT_SOURCE_DIR}/tests/*.cpp")
+	add_executable(UnitTest ${TESTS_SRC})
+	target_link_libraries(UnitTest propaulib gtest gtest_main gmock)
+	target_include_directories(UnitTest PUBLIC ${INCLUDE_DIR})
+	gtest_discover_tests(UnitTest)
 endif()
 
 # GoogleBenchmark
@@ -89,13 +89,14 @@ if (BENCHMARK)
 	FetchContent_Declare(
 		googlebenchmark
 		URL https://github.com/google/benchmark/archive/refs/tags/v1.9.4.zip
-  		DOWNLOAD_EXTRACT_TIMESTAMP true
+				DOWNLOAD_EXTRACT_TIMESTAMP true
 	)
 	set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable testing for Google Benchmark")
 	FetchContent_MakeAvailable(googlebenchmark)
 	file(GLOB BENCH_SRC "${PROJECT_SOURCE_DIR}/benchmarks/*.cpp")
 	add_executable(Benchmarks ${BENCH_SRC})
 	target_link_libraries(Benchmarks propaulib benchmark::benchmark benchmark::benchmark_main)
+	target_include_directories(Benchmarks PRIVATE "${PROJECT_SOURCE_DIR}/benchmarks/")
 endif()
 
 # coverage
@@ -107,11 +108,11 @@ if (COVERAGE)
 
 	if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 
-	add_custom_target(coverage
-	    COMMAND LLVM_PROFILE_FILE=${TARGET_NAME}.profraw $<TARGET_FILE:${TARGET_NAME}>
-	    COMMAND llvm-profdata merge -sparse ${TARGET_NAME}.profraw -o ${TARGET_NAME}.profdata
-	    COMMAND llvm-cov report $<TARGET_FILE:${TARGET_NAME}> -instr-profile=${TARGET_NAME}.profdata
-	    DEPENDS ${TARGET_NAME}
+		add_custom_target(coverage
+					COMMAND LLVM_PROFILE_FILE=${TARGET_NAME}.profraw $<TARGET_FILE:${TARGET_NAME}>
+					COMMAND llvm-profdata merge -sparse ${TARGET_NAME}.profraw -o ${TARGET_NAME}.profdata
+					COMMAND llvm-cov report $<TARGET_FILE:${TARGET_NAME}> -instr-profile=${TARGET_NAME}.profdata
+					DEPENDS ${TARGET_NAME}
 	)
 	elseif(CMAKE_COMPILER_IS_GNUCXX)
 		add_custom_target(coverage
@@ -121,7 +122,7 @@ if (COVERAGE)
 		)
 	else()
 		message(FATAL_ERROR "Code coverage requires Clang or GCC. Aborting.")
-    	endif()
+	endif()
 endif()
 
 

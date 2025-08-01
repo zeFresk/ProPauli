@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <array>
 #include <utility>
+#include <ostream>
 
 using array_underlying_type = std::uint8_t;
 using coeff_t = float;
