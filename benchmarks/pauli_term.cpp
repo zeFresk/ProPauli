@@ -90,7 +90,25 @@ static void PauliTerm_apply_rz(benchmark::State& state) {
 	}
 }
 
+static void PauliTerm_expectation_value_worst_case(benchmark::State& state) {
+	auto rd_pt = random_pauli_term(state.range(0));
+	for (long i = 0; i < state.range(0); ++i) {
+		if (rd_pt[i] == p_i) {
+			rd_pt[i] = p_x;
+		} else if (rd_pt[i] == p_z) {
+			rd_pt[i] = p_y;
+		}
+	}
+
+	for (auto _ : state) {
+		rd_pt[state.range(0) - 1] = (random_in(1) == 0) ? p_i : p_x;
+		auto ev = rd_pt.expectation_value();
+		benchmark::DoNotOptimize(ev);
+	}
+}
+
 BENCHMARK(PauliTerm_init_from_string)->Range(1, 1024);
 BENCHMARK(PauliTerm_apply_pauli)->Range(1, 1024);
 BENCHMARK(PauliTerm_apply_clifford)->Range(1, 1024);
 BENCHMARK(PauliTerm_apply_rz)->Range(1, 1024);
+BENCHMARK(PauliTerm_expectation_value_worst_case)->Range(1, 1024);
