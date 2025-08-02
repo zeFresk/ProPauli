@@ -86,7 +86,7 @@ class PauliTerm {
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, PauliTerm const& pt) {
-		os << pt.coefficient_ << " ";
+		os << std::showpos << pt.coefficient_ << " ";
 		for (auto const& p : pt.paulis_) {
 			os << p;
 		}

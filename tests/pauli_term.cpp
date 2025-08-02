@@ -306,7 +306,7 @@ TEST(PauliTerm, expectation_value) {
 
 TEST(PauliTerm, serialize) {
 	std::array<std::tuple<std::string_view, PauliTerm<coeff_t>>, 3> truth_table{
-		{ { "-1 X", { "X", -1 } }, { "0.25 IY", { "IY", 0.25 } }, { "-0.125 IXYZ", { "IXYZ", -0.125 } } }
+		{ { "-1 X", { "X", -1 } }, { "+0.25 IY", { "IY", 0.25 } }, { "-0.125 IXYZ", { "IXYZ", -0.125 } } }
 	};
 
 	for (auto const [expected_str, pt] : truth_table) {
