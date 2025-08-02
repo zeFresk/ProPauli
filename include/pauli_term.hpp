@@ -33,6 +33,11 @@ class PauliTerm {
 		assert(coefficient_ >= -1 && coefficient_ <= 1 && "Invalid coefficient");
 	}
 
+	PauliTerm(PauliTerm const&) = default;
+	PauliTerm(PauliTerm&&) noexcept = default;
+	PauliTerm& operator=(PauliTerm const&) = default;
+	PauliTerm& operator=(PauliTerm&&) noexcept = default;
+
 	void apply_pauli(Pauli_gates g, unsigned qubit) { coefficient_ *= paulis_[qubit].apply_pauli(g); }
 
 	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit) { coefficient_ *= paulis_[qubit].apply_clifford(g); }
@@ -73,6 +78,7 @@ class PauliTerm {
 
 	Pauli& operator[](std::size_t idx) { return paulis_[idx]; }
 	Pauli const& operator[](std::size_t idx) const { return paulis_[idx]; }
+	decltype(auto) size() const { return paulis_.size(); }
 
 	friend bool operator==(PauliTerm const& lhs, PauliTerm const& rhs) {
 		return (lhs.paulis_.size() == rhs.paulis_.size()) && (lhs.coefficient_ == rhs.coefficient_) &&

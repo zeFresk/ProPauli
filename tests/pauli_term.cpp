@@ -31,7 +31,12 @@ unsigned rand_in(unsigned max) {
 	return dis(gen);
 }
 
-TEST(PauliTerm, construct_from_string) { PauliTerm pt{ "IXYZ", 0.5 }; }
+TEST(PauliTerm, construct_from_string) {
+	using enum Pauli_enum;
+	PauliTerm pt{ "IXYZ", 0.5 };
+	PauliTerm check_against{ { I, X, Y, Z }, 0.5 };
+	EXPECT_EQ(pt, check_against);
+}
 
 TEST(PauliTerm, construct_from_paulis) {
 	using enum Pauli_enum;
