@@ -5,6 +5,7 @@
 #include "pauli_term.hpp"
 
 #include <initializer_list>
+#include <numeric>
 #include <string_view>
 #include <vector>
 
@@ -47,6 +48,14 @@ class Observable {
 				paulis_.push_back(std::move(new_path));
 			}
 		}
+	}
+
+	T expectation_value() const {
+		T ret = 0;
+		for (auto const& pt : paulis_) {
+			ret += pt.expectation_value();
+		}
+		return ret;
 	}
 
     private:

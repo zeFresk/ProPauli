@@ -64,6 +64,13 @@ class PauliTerm {
 		return ret;
 	}
 
+	T expectation_value() const {
+		return (std::all_of(paulis_.cbegin(), paulis_.cend(),
+				    [](auto const& p) { return p.commutes_with(p_z); })) ?
+			       coefficient_ :
+			       T{ 0 };
+	}
+
 	Pauli& operator[](std::size_t idx) { return paulis_[idx]; }
 	Pauli const& operator[](std::size_t idx) const { return paulis_[idx]; }
 

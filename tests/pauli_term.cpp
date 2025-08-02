@@ -289,6 +289,21 @@ TEST(PauliTerm, apply_rz_multiple) {
 	}
 }
 
+TEST(PauliTerm, expectation_value) {
+	using PT = PauliTerm<coeff_t>;
+	std::array<std::tuple<PT, coeff_t>, 6> truth_table = { {
+		{ { "ZI", 1 }, 1 },
+		{ { "IZ", -0.25 }, -0.25 },
+		{ { "ZZZZZZZZZZZZZZZZZZX", 0.5 }, 0 },
+		{ { "IIIIIIIIIIIIY", 1 }, 0 },
+		{ { "X", 1 }, 0 },
+		{ { "Y", 1 }, 0 },
+	} };
+	for (auto const [pt, expected] : truth_table) {
+		EXPECT_EQ(pt.expectation_value(), expected);
+	}
+}
+
 TEST(PauliTerm, serialize) {
 	std::array<std::tuple<std::string_view, PauliTerm<coeff_t>>, 3> truth_table{
 		{ { "-1 X", { "X", -1 } }, { "0.25 IY", { "IY", 0.25 } }, { "-0.125 IXYZ", { "IXYZ", -0.125 } } }
