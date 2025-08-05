@@ -3,6 +3,9 @@
 
 #include "observable.hpp"
 
+#include "pauli.hpp"
+#include "pauli_term.hpp"
+#include <iterator>
 #include <numeric>
 #include <algorithm>
 #include <string_view>
@@ -167,4 +170,26 @@ TEST(Observable, serialize) {
 		ss << pt;
 		EXPECT_EQ(ss.str(), expected_str);
 	}
+}
+
+TEST(Observable, merge_simple) {
+	Observable obs{ PauliTerm{ "IXYZ", coeff_t{ -0.25 } }, PauliTerm{ "IXYZ", coeff_t{ 0.5 } } };
+	obs.merge();
+	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
+	EXPECT_EQ(nb_elems_internal, 1);
+	EXPECT_EQ(obs[0], PauliTerm<coeff_t>("IXYZ", 0.25));
+}
+
+TEST(Observable, merge_long) {
+	Observable obs{ PauliTerm{ "XXXX", coeff_t{ -0.25 } } };
+	for (int i = 0; i < 8; ++i) {
+		obs.apply_rz(0, 3.14/2);
+	}
+	
+	EXPECT_GT(std::distance(obs.cbegin(), obs.cend()), 2);
+
+	obs.merge();
+
+	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
+	EXPECT_EQ(nb_elems_internal, 2);
 }

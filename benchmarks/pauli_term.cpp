@@ -107,8 +107,17 @@ static void PauliTerm_expectation_value_worst_case(benchmark::State& state) {
 	}
 }
 
+static void PauliTerm_phash(benchmark::State& state) {
+	auto rd_pt = random_pauli_term(state.range(0));
+
+	for (auto _ : state) {
+		benchmark::DoNotOptimize(rd_pt.phash());
+	}
+}
+
 BENCHMARK(PauliTerm_init_from_string)->Range(1, 1024);
 BENCHMARK(PauliTerm_apply_pauli)->Range(1, 1024);
 BENCHMARK(PauliTerm_apply_clifford)->Range(1, 1024);
 BENCHMARK(PauliTerm_apply_rz)->Range(1, 1024);
 BENCHMARK(PauliTerm_expectation_value_worst_case)->Range(1, 1024);
+BENCHMARK(PauliTerm_phash)->Range(1, 1024);

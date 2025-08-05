@@ -15,8 +15,9 @@ static constexpr auto seed = 42;
 
 std::string random_pauli_string(unsigned length) {
 	static constexpr std::string_view chars = "IXYZ";
+	static std::mt19937 gen{ seed };
 	std::uniform_int_distribution<> dis(0, chars.size() - 1);
-	std::mt19937 gen{ seed };
+
 	std::string ret;
 	ret.reserve(length);
 	for (unsigned i = 0; i < length; ++i) {
@@ -318,5 +319,28 @@ TEST(PauliTerm, serialize) {
 		std::stringstream ss;
 		ss << pt;
 		EXPECT_EQ(ss.str(), expected_str);
+	}
+}
+
+TEST(PauliTerm, phash_simple) {
+	using PT = PauliTerm<coeff_t>;
+	PT pt1("IIIIXYZ"), pt2("IIIIYXZ");
+	EXPECT_EQ(pt1.phash(), pt1.phash());
+	EXPECT_NE(pt1.phash(), pt2.phash());
+
+	auto pt3 = pt1;
+	EXPECT_EQ(pt1.phash(), pt3.phash());
+	EXPECT_NE(pt2.phash(), pt3.phash());
+}
+
+TEST(PauliTerm, phash_nocollision_q1024n1024) {
+	static constexpr std::size_t nb_tests = 1024;
+	auto lhs = PauliTerm<coeff_t>(random_pauli_string(1024));
+
+	for (std::size_t i = 0; i < nb_tests; ++i) {
+		auto rhs = PauliTerm<coeff_t>(random_pauli_string(1024));
+		if (lhs != rhs) {
+			EXPECT_NE(lhs.phash(), rhs.phash());
+		}
 	}
 }

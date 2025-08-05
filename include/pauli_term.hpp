@@ -5,8 +5,11 @@
 #include "maths.hpp"
 
 #include <algorithm>
+#include <cstdint>
+#include <functional>
 #include <string_view>
 #include <initializer_list>
+#include <utility>
 #include <vector>
 #include <cassert>
 #include <ostream>
@@ -80,9 +83,23 @@ class PauliTerm {
 	Pauli const& operator[](std::size_t idx) const { return paulis_[idx]; }
 	decltype(auto) size() const { return paulis_.size(); }
 
+	std::size_t phash() const noexcept {
+		std::size_t ret = 0;
+		for (std::size_t i = 0; i < paulis_.size(); ++i) {
+			const std::size_t uv = std::to_underlying(static_cast<Pauli_enum>(paulis_[i]));
+			ret ^= uv << (i * 2 % (sizeof(std::size_t) * 8));
+		}
+		return ret;
+	}
+
 	friend bool operator==(PauliTerm const& lhs, PauliTerm const& rhs) {
 		return (lhs.paulis_.size() == rhs.paulis_.size()) && (lhs.coefficient_ == rhs.coefficient_) &&
 		       std::equal(lhs.paulis_.begin(), lhs.paulis_.end(), rhs.paulis_.begin());
+	}
+
+	bool equal_bitstring(PauliTerm const& oth) const {
+		return (paulis_.size() == oth.paulis_.size()) &&
+		       std::equal(paulis_.cbegin(), paulis_.cend(), oth.paulis_.cbegin());
 	}
 
 	PauliTerm& operator*=(T x) {
@@ -90,6 +107,13 @@ class PauliTerm {
 		assert(coefficient_ >= -1 && coefficient_ <= 1 && "Invalid coefficient");
 		return *this;
 	}
+
+	void add_coeff(T c) {
+		coefficient_ += c;
+		assert(c >= -1 && c <= 1 && "Invalid coefficient after merge");
+	}
+
+	T const& coefficient() const noexcept { return coefficient_; }
 
 	friend std::ostream& operator<<(std::ostream& os, PauliTerm const& pt) {
 		os << std::showpos << pt.coefficient_ << " ";
@@ -137,5 +161,15 @@ template <typename Numeric, typename T = coeff_t>
 requires std::is_convertible_v<Numeric, T> PauliTerm<T> operator*(Pauli_enum p, Numeric&& x) {
 	return x * p;
 }
+
+template <typename T>
+struct std::hash<PauliTerm<T>> {
+	std::size_t operator()(PauliTerm<T> const& pt) const noexcept { return pt.phash(); }
+};
+
+template <typename T>
+struct PauliStringEqual {
+	bool operator()(const PauliTerm<T>& lhs, const PauliTerm<T>& rhs) const { return lhs.equal_bitstring(rhs); }
+};
 
 #endif

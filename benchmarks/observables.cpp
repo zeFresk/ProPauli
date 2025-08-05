@@ -145,9 +145,35 @@ static void Observable_ev_after_nrz(benchmark::State& state) {
 	}
 }
 
+static void Observable_merge_after_nrz(benchmark::State& state) {
+	using std::numbers::pi;
+	auto rd_pt = random_pauli_term(state.range(0));
+	for (long i = 0; i < state.range(0); ++i) {
+		if (rd_pt[i] == p_i) {
+			rd_pt[i] = p_x;
+		} else if (rd_pt[i] == p_z) {
+			rd_pt[i] = p_y;
+		}
+	}
+	auto rd_obs_copy = Observable({ rd_pt });
+	// apply rzs
+	std::size_t nb_rz = state.range(1);
+	for (std::size_t j = 0; j < nb_rz; ++j) {
+		rd_obs_copy.apply_rz(random_in(state.range(0) - 1), pi * random_coeff());
+	}
+
+	for (auto _ : state) {
+		auto obs = rd_obs_copy;
+		obs.merge();
+		benchmark::DoNotOptimize(obs);
+	}
+}
+
 BENCHMARK(Observable_init_from_string)->Range(1, 1024);
 BENCHMARK(Observable_apply_pauli)->Range(1, 1024);
 BENCHMARK(Observable_apply_clifford)->Range(1, 1024);
 BENCHMARK(Observable_apply_rz_once)->Range(1, 1024);
 BENCHMARK(Observable_apply_rz_ntimes)->Ranges({ { 1, 1024 }, { 1, 16 } });
-BENCHMARK(Observable_ev_after_nrz)->Ranges({{1, 1024}, {16, 16}});
+BENCHMARK(Observable_ev_after_nrz)->Ranges({ { 1, 1024 }, { 16, 16 } });
+BENCHMARK(Observable_merge_after_nrz)
+	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 16, 2) });
