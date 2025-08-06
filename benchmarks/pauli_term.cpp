@@ -123,6 +123,31 @@ static void PauliTerm_pauli_weight(benchmark::State& state) {
 	}
 }
 
+static void PauliTerm_apply_unital_noise(benchmark::State& state) {
+	std::vector<Pauli> random_paulis;
+	std::vector<UnitalNoise> random_noise;
+	std::vector<unsigned> random_idx;
+	random_paulis.reserve(buffer_size);
+	random_noise.reserve(buffer_size);
+	random_idx.reserve(buffer_size);
+	std::generate_n(std::back_inserter(random_paulis), buffer_size, random_pauli);
+	std::generate_n(std::back_inserter(random_noise), buffer_size, []() {
+		return static_cast<UnitalNoise>(random_in(std::to_underlying(UnitalNoise::Count) - 1));
+	});
+	std::generate_n(std::back_inserter(random_idx), buffer_size, [=]() { return random_in(state.range(0)-1); });
+	std::size_t i = 0;
+
+	auto rd_pt = random_pauli_term(state.range(0));
+
+	for (auto _ : state) {
+		auto n = random_noise[i];
+		auto qubit = random_idx[i];
+
+		rd_pt.apply_unital_noise(n, qubit, 0.999999);
+
+		i = (i + 1) % buffer_size;
+	}
+}
 
 BENCHMARK(PauliTerm_init_from_string)->Range(1, 1024);
 BENCHMARK(PauliTerm_apply_pauli)->Range(1, 1024);
@@ -131,3 +156,4 @@ BENCHMARK(PauliTerm_apply_rz)->Range(1, 1024);
 BENCHMARK(PauliTerm_expectation_value_worst_case)->Range(1, 1024);
 BENCHMARK(PauliTerm_phash)->Range(1, 1024);
 BENCHMARK(PauliTerm_pauli_weight)->Range(1, 1024);
+BENCHMARK(PauliTerm_apply_unital_noise)->Range(1, 1024);

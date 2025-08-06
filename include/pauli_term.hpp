@@ -45,6 +45,8 @@ class PauliTerm {
 	void apply_pauli(Pauli_gates g, unsigned qubit) { coefficient_ *= paulis_[qubit].apply_pauli(g); }
 
 	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit) { coefficient_ *= paulis_[qubit].apply_clifford(g); }
+	
+	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p) { coefficient_ *= paulis_[qubit].apply_unital_noise(n, p); }
 
 	void apply_cx(unsigned control, unsigned target) {
 		assert(control != target && "cx can't use same control and target");

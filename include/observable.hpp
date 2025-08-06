@@ -36,6 +36,12 @@ class Observable {
 		}
 	}
 
+	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p) {
+		for (auto& pi : paulis_) {
+			pi.apply_unital_noise(n, qubit, p);
+		}
+	}
+
 	void apply_cx(unsigned qubit_control, unsigned qubit_target) {
 		for (auto& p : paulis_) {
 			p.apply_cx(qubit_control, qubit_target);

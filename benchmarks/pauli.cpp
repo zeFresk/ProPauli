@@ -144,6 +144,28 @@ static void pauli_weight(benchmark::State& state) {
 	}
 }
 
+static void pauli_apply_unital_noise(benchmark::State& state) {
+	std::vector<Pauli> random_paulis;
+	std::vector<UnitalNoise> random_noise;
+	random_paulis.reserve(buffer_size);
+	random_noise.reserve(buffer_size);
+	std::generate_n(std::back_inserter(random_paulis), buffer_size, random_pauli);
+	std::generate_n(std::back_inserter(random_noise), buffer_size, []() {
+		return static_cast<UnitalNoise>(random_in(std::to_underlying(UnitalNoise::Count) - 1));
+	});
+	std::size_t i = 0;
+
+	for (auto _ : state) {
+		auto p = random_paulis[i];
+		auto n = random_noise[i];
+
+		auto ret = p.apply_unital_noise(n, 0.99);
+		benchmark::DoNotOptimize(ret);
+
+		i = (i + 1) % buffer_size;
+	}
+}
+
 BENCHMARK(pauli_empty_benchmark);
 BENCHMARK(pauli_commutes);
 BENCHMARK(pauli_apply_pauli);
@@ -151,3 +173,4 @@ BENCHMARK(pauli_apply_clifford);
 BENCHMARK(pauli_apply_cx);
 BENCHMARK(pauli_equality);
 BENCHMARK(pauli_weight);
+BENCHMARK(pauli_apply_unital_noise);

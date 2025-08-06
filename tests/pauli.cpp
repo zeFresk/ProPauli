@@ -175,3 +175,19 @@ TEST(Pauli, weight) {
 		EXPECT_EQ(p.weight(), w);
 	}
 }
+
+TEST(Pauli, depolarizing_noise) {
+	using enum UnitalNoise;
+	EXPECT_EQ(p_i.apply_unital_noise(Depolarizing, 0.01), 1.);
+	EXPECT_FLOAT_EQ(p_x.apply_unital_noise(Depolarizing, 0.01), 0.99);
+	EXPECT_FLOAT_EQ(p_y.apply_unital_noise(Depolarizing, 0.01), 0.99);
+	EXPECT_FLOAT_EQ(p_z.apply_unital_noise(Depolarizing, 0.01), 0.99);
+}
+
+TEST(Pauli, dephasing_noise) {
+	using enum UnitalNoise;
+	EXPECT_EQ(p_i.apply_unital_noise(Dephasing, 0.01), 1.);
+	EXPECT_FLOAT_EQ(p_x.apply_unital_noise(Dephasing, 0.01), 0.99);
+	EXPECT_FLOAT_EQ(p_y.apply_unital_noise(Dephasing, 0.01), 0.99);
+	EXPECT_EQ(p_z.apply_unital_noise(Dephasing, 0.01), 1.);
+}

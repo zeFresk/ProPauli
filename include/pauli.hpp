@@ -20,6 +20,7 @@ static_assert(std::to_underlying(Pauli_enum::Z) == std::to_underlying(Pauli_gate
 static_assert(std::to_underlying(Pauli_gates::Count) == std::to_underlying(Pauli_enum::Count));
 
 enum class Clifford_Gates_1Q : array_underlying_type { H, Count };
+enum class UnitalNoise : array_underlying_type { Depolarizing, Dephasing, Count };
 
 consteval std::array<char, static_cast<std::size_t>(Pauli_enum::Count)> init_pauli_str_map() {
 	std::array<char, static_cast<std::size_t>(Pauli_enum::Count)> ret;
@@ -124,11 +125,33 @@ init_cx_array_map() {
 	return ret;
 }
 
+template <typename T>
+consteval std::array<std::array<T, static_cast<std::size_t>(UnitalNoise::Count)>,
+		     static_cast<std::size_t>(Pauli_enum::Count)>
+init_unital_noise_array_coeff() {
+	std::array<std::array<T, static_cast<std::size_t>(UnitalNoise::Count)>,
+		   static_cast<std::size_t>(Pauli_enum::Count)>
+		ret;
+	// Depolarizing
+	ret[std::to_underlying(Pauli_enum::I)][std::to_underlying(UnitalNoise::Depolarizing)] = T{ 0 };
+	ret[std::to_underlying(Pauli_enum::X)][std::to_underlying(UnitalNoise::Depolarizing)] = T{ 1 };
+	ret[std::to_underlying(Pauli_enum::Y)][std::to_underlying(UnitalNoise::Depolarizing)] = T{ 1 };
+	ret[std::to_underlying(Pauli_enum::Z)][std::to_underlying(UnitalNoise::Depolarizing)] = T{ 1 };
+	// Dephasing
+	ret[std::to_underlying(Pauli_enum::I)][std::to_underlying(UnitalNoise::Dephasing)] = T{ 0 };
+	ret[std::to_underlying(Pauli_enum::X)][std::to_underlying(UnitalNoise::Dephasing)] = T{ 1 };
+	ret[std::to_underlying(Pauli_enum::Y)][std::to_underlying(UnitalNoise::Dephasing)] = T{ 1 };
+	ret[std::to_underlying(Pauli_enum::Z)][std::to_underlying(UnitalNoise::Dephasing)] = T{ 0 };
+
+	return ret;
+}
+
 static constexpr auto pauli_char_map = init_pauli_str_map();
 static constexpr auto clifford_gates_map = init_clifford_array_map();
 static constexpr auto clifford_gates_coeff = init_clifford_array_coeff<coeff_t>();
 static constexpr auto pauli_gates_coeff = init_pauli_array_coeff<coeff_t>();
 static constexpr auto cx_map = init_cx_array_map();
+static constexpr auto unital_noise_map_coeff = init_unital_noise_array_coeff<coeff_t>();
 
 class Pauli {
     private:
@@ -179,6 +202,10 @@ class Pauli {
 
 	coeff_t apply_pauli(Pauli_gates g) const {
 		return pauli_gates_coeff[std::to_underlying(p_)][std::to_underlying(g)];
+	}
+
+	coeff_t apply_unital_noise(UnitalNoise n, coeff_t p) const {
+		return coeff_t{ 1 } - (p * unital_noise_map_coeff[std::to_underlying(p_)][std::to_underlying(n)]);
 	}
 
 	coeff_t apply_clifford(Clifford_Gates_1Q g) {

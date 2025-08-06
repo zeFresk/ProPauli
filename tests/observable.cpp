@@ -184,9 +184,9 @@ TEST(Observable, merge_simple) {
 TEST(Observable, merge_long) {
 	Observable obs{ PauliTerm{ "XXXX", coeff_t{ -0.25 } } };
 	for (int i = 0; i < 8; ++i) {
-		obs.apply_rz(0, 3.14/2);
+		obs.apply_rz(0, 3.14 / 2);
 	}
-	
+
 	EXPECT_GT(std::distance(obs.cbegin(), obs.cend()), 2);
 
 	obs.merge();
@@ -197,7 +197,7 @@ TEST(Observable, merge_long) {
 
 TEST(Observable, truncate_coeff) {
 	Observable obs{ PauliTerm{ "IXYZ", coeff_t{ -0.25 } }, PauliTerm{ "IIII", coeff_t{ 0.001 } } };
-	auto nb_removed = obs.truncate(CoefficientTruncator<coeff_t>{0.01});
+	auto nb_removed = obs.truncate(CoefficientTruncator<coeff_t>{ 0.01 });
 	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
 	EXPECT_EQ(nb_removed, 1);
 	EXPECT_EQ(nb_elems_internal, 1);
@@ -206,9 +206,43 @@ TEST(Observable, truncate_coeff) {
 
 TEST(Observable, truncate_weight) {
 	Observable obs{ PauliTerm{ "IXYZ", coeff_t{ -0.25 } }, PauliTerm{ "IIII", coeff_t{ 0.001 } } };
-	auto nb_removed = obs.truncate(WeightTruncator{3});
+	auto nb_removed = obs.truncate(WeightTruncator{ 3 });
 	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
 	EXPECT_EQ(nb_removed, 1);
 	EXPECT_EQ(nb_elems_internal, 1);
 	EXPECT_EQ(obs[0], PauliTerm<coeff_t>("IIII", 0.001));
+}
+
+TEST(Observable, depolarizing_noise) {
+	// no effect on I
+	Observable iobs{ "IIII" };
+	for (unsigned i = 0; i < iobs[0].size(); ++i) {
+		iobs.apply_unital_noise(UnitalNoise::Depolarizing, i, 0.5);
+	}
+	EXPECT_FLOAT_EQ(iobs[0].coefficient(), 1);
+
+	// affects everything else
+	Observable obs{ "XYZ" };
+	for (unsigned i = 0; i < obs[0].size(); ++i) {
+		obs.apply_unital_noise(UnitalNoise::Depolarizing, i, 0.5);
+	}
+	EXPECT_FLOAT_EQ(obs[0].coefficient(), 1.f / (1 << obs[0].size()));
+
+}
+
+TEST(Observable, dephasing_noise) {
+	// no effect on I or Z
+	Observable iobs{ "IZZI" };
+	for (unsigned i = 0; i < iobs[0].size(); ++i) {
+		iobs.apply_unital_noise(UnitalNoise::Dephasing, i, 0.5);
+	}
+	EXPECT_FLOAT_EQ(iobs[0].coefficient(), 1);
+
+	// affects everything else
+	Observable obs{ "XYYX" };
+	for (unsigned i = 0; i < obs[0].size(); ++i) {
+		obs.apply_unital_noise(UnitalNoise::Dephasing, i, 0.5);
+	}
+	EXPECT_FLOAT_EQ(obs[0].coefficient(), 1.f / (1 << obs[0].size()));
+
 }

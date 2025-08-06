@@ -347,11 +347,56 @@ TEST(PauliTerm, phash_nocollision_q1024n1024) {
 }
 
 TEST(PauliTerm, pauli_weight) {
-	std::array<std::string_view, 8> truth_table{ "I", "IIIIIIIIIII", "XXXYZZZZXXX", "IXYZIXYZ", "X", "Y", "Z",
-						       "ZZ" };
+	std::array<std::string_view, 8> truth_table{
+		"I", "IIIIIIIIIII", "XXXYZZZZXXX", "IXYZIXYZ", "X", "Y", "Z", "ZZ"
+	};
 	for (auto ps : truth_table) {
 		PauliTerm<coeff_t> pt(ps);
 		auto nb_i = std::count_if(ps.cbegin(), ps.cend(), [](auto c) { return c != 'I'; });
 		EXPECT_EQ(pt.pauli_weight(), nb_i);
+	}
+}
+
+TEST(PauliTerm, depolarizing_noise) {
+	using enum UnitalNoise;
+	PauliTerm pt("IXYZXYZ");
+	auto ph = pt.phash();
+	constexpr coeff_t p = 0.01;
+
+	// no effect on I
+	pt.apply_unital_noise(Depolarizing, 0, p);
+	EXPECT_EQ(pt.phash(), ph);
+	EXPECT_FLOAT_EQ(pt.coefficient(), 1.);
+
+	// effect compounds on all other
+	for (unsigned i = 1; i < pt.size(); ++i) {
+		pt.apply_unital_noise(Depolarizing, i, p);
+		EXPECT_EQ(pt.phash(), ph);
+		EXPECT_FLOAT_EQ(pt.coefficient(), std::pow(1 - p, i));
+	}
+}
+
+TEST(PauliTerm, dephasing_noise) {
+	using enum UnitalNoise;
+	PauliTerm pt("IZXYXYXY");
+	auto ph = pt.phash();
+	constexpr coeff_t p = 0.01;
+
+	// no effect on I
+	pt.apply_unital_noise(Dephasing, 0, p);
+	EXPECT_EQ(pt.phash(), ph);
+	EXPECT_FLOAT_EQ(pt.coefficient(), 1.);
+
+	// no effect on Z
+	pt.apply_unital_noise(Dephasing, 1, p);
+	EXPECT_EQ(pt.phash(), ph);
+	EXPECT_FLOAT_EQ(pt.coefficient(), 1.);
+
+
+	// effect compounds on all other
+	for (unsigned i = 2; i < pt.size(); ++i) {
+		pt.apply_unital_noise(Dephasing, i, p);
+		EXPECT_EQ(pt.phash(), ph);
+		EXPECT_FLOAT_EQ(pt.coefficient(), std::pow(1 - p, i-1));
 	}
 }

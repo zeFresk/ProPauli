@@ -223,9 +223,36 @@ static void Observable_truncate_weight10_after_nrz(benchmark::State& state) {
 	}
 }
 
+static void Observable_apply_unital_noise(benchmark::State& state) {
+	std::vector<Pauli> random_paulis;
+	std::vector<UnitalNoise> random_noise;
+	std::vector<unsigned> random_idx;
+	random_paulis.reserve(buffer_size);
+	random_noise.reserve(buffer_size);
+	random_idx.reserve(buffer_size);
+	std::generate_n(std::back_inserter(random_paulis), buffer_size, random_pauli);
+	std::generate_n(std::back_inserter(random_noise), buffer_size, []() {
+		return static_cast<UnitalNoise>(random_in(std::to_underlying(UnitalNoise::Count) - 1));
+	});
+	std::generate_n(std::back_inserter(random_idx), buffer_size, [=]() { return random_in(state.range(0)-1); });
+	std::size_t i = 0;
+
+	auto rd_obs = Observable({random_pauli_term(state.range(0))});
+
+	for (auto _ : state) {
+		auto n = random_noise[i];
+		auto qubit = random_idx[i];
+
+		rd_obs.apply_unital_noise(n, qubit, 0.999999);
+
+		i = (i + 1) % buffer_size;
+	}
+}
+
 BENCHMARK(Observable_init_from_string)->Range(1, 1024);
 BENCHMARK(Observable_apply_pauli)->Range(1, 1024);
 BENCHMARK(Observable_apply_clifford)->Range(1, 1024);
+BENCHMARK(Observable_apply_unital_noise)->Range(1, 1024);
 BENCHMARK(Observable_apply_rz_once)->Range(1, 1024);
 BENCHMARK(Observable_apply_rz_ntimes)->Ranges({ { 1, 1024 }, { 1, 16 } });
 BENCHMARK(Observable_ev_after_nrz)->Ranges({ { 1, 1024 }, { 16, 16 } });
