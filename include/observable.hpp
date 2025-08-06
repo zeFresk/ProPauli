@@ -4,6 +4,7 @@
 #include "pauli.hpp"
 #include "pauli_term.hpp"
 
+#include <algorithm>
 #include <initializer_list>
 #include <ostream>
 #include <string_view>
@@ -91,6 +92,11 @@ class Observable {
 		}
 		paulis_ = std::move(new_pts);
 		return new_pts.size();
+	}
+
+	template <typename Predicate>
+	std::size_t truncate(Predicate&& pred) {
+		return std::erase_if(paulis_, pred);
 	}
 
     private:

@@ -15,8 +15,8 @@ static void pauli_empty_benchmark(benchmark::State& state) {
 	std::vector<Pauli> random_paulis;
 	random_paulis.reserve(buffer_size);
 	std::generate_n(std::back_inserter(random_paulis), buffer_size, random_pauli);
-	std::size_t i = random_in(buffer_size-1);
-	std::size_t j = random_in(buffer_size-1);
+	std::size_t i = random_in(buffer_size - 1);
+	std::size_t j = random_in(buffer_size - 1);
 
 	for (auto _ : state) {
 		// state.PauseTiming();
@@ -35,8 +35,8 @@ static void pauli_commutes(benchmark::State& state) {
 	std::vector<Pauli> random_paulis;
 	random_paulis.reserve(buffer_size);
 	std::generate_n(std::back_inserter(random_paulis), buffer_size, random_pauli);
-	std::size_t i = random_in(buffer_size-1);
-	std::size_t j = random_in(buffer_size-1);
+	std::size_t i = random_in(buffer_size - 1);
+	std::size_t j = random_in(buffer_size - 1);
 
 	for (auto _ : state) {
 		// state.PauseTiming();
@@ -53,8 +53,8 @@ static void pauli_apply_pauli(benchmark::State& state) {
 	std::vector<Pauli> random_paulis;
 	random_paulis.reserve(buffer_size);
 	std::generate_n(std::back_inserter(random_paulis), buffer_size, random_pauli);
-	std::size_t i = random_in(buffer_size-1);
-	std::size_t j = random_in(buffer_size-1);
+	std::size_t i = random_in(buffer_size - 1);
+	std::size_t j = random_in(buffer_size - 1);
 
 	for (auto _ : state) {
 		// state.PauseTiming();
@@ -76,8 +76,8 @@ static void pauli_apply_clifford(benchmark::State& state) {
 	std::vector<Clifford_Gates_1Q> random_cliffords;
 	random_cliffords.reserve(buffer_size);
 	std::generate_n(std::back_inserter(random_cliffords), buffer_size, random_clifford);
-	std::size_t i = random_in(buffer_size-1);
-	std::size_t j = random_in(buffer_size-1);
+	std::size_t i = random_in(buffer_size - 1);
+	std::size_t j = random_in(buffer_size - 1);
 
 	for (auto _ : state) {
 		// state.PauseTiming();
@@ -96,8 +96,8 @@ static void pauli_apply_cx(benchmark::State& state) {
 	std::vector<Pauli> random_paulis;
 	random_paulis.reserve(buffer_size);
 	std::generate_n(std::back_inserter(random_paulis), buffer_size, random_pauli);
-	std::size_t i = random_in(buffer_size-1);
-	std::size_t j = random_in(buffer_size-1);
+	std::size_t i = random_in(buffer_size - 1);
+	std::size_t j = random_in(buffer_size - 1);
 
 	for (auto _ : state) {
 		// state.PauseTiming();
@@ -116,8 +116,8 @@ static void pauli_equality(benchmark::State& state) {
 	std::vector<Pauli> random_paulis;
 	random_paulis.reserve(buffer_size);
 	std::generate_n(std::back_inserter(random_paulis), buffer_size, random_pauli);
-	std::size_t i = random_in(buffer_size-1);
-	std::size_t j = random_in(buffer_size-1);
+	std::size_t i = random_in(buffer_size - 1);
+	std::size_t j = random_in(buffer_size - 1);
 
 	for (auto _ : state) {
 		// state.PauseTiming();
@@ -131,9 +131,23 @@ static void pauli_equality(benchmark::State& state) {
 	}
 }
 
+static void pauli_weight(benchmark::State& state) {
+	std::vector<Pauli> random_paulis;
+	random_paulis.reserve(buffer_size);
+	std::generate_n(std::back_inserter(random_paulis), buffer_size, random_pauli);
+	std::size_t i = random_in(buffer_size - 1);
+
+	for (auto _ : state) {
+		benchmark::DoNotOptimize(random_paulis[i].weight());
+
+		i = (i + 1) % buffer_size;
+	}
+}
+
 BENCHMARK(pauli_empty_benchmark);
 BENCHMARK(pauli_commutes);
 BENCHMARK(pauli_apply_pauli);
 BENCHMARK(pauli_apply_clifford);
 BENCHMARK(pauli_apply_cx);
 BENCHMARK(pauli_equality);
+BENCHMARK(pauli_weight);

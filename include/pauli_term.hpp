@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <numeric>
 #include <string_view>
 #include <initializer_list>
 #include <utility>
@@ -114,6 +115,11 @@ class PauliTerm {
 	}
 
 	T const& coefficient() const noexcept { return coefficient_; }
+
+	std::size_t pauli_weight() const {
+		return std::accumulate(paulis_.cbegin(), paulis_.cend(), 0,
+				       [](auto&& acc, auto&& p) { return acc + p.weight(); });
+	}
 
 	friend std::ostream& operator<<(std::ostream& os, PauliTerm const& pt) {
 		os << std::showpos << pt.coefficient_ << " ";

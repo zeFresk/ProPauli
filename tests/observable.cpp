@@ -5,6 +5,7 @@
 
 #include "pauli.hpp"
 #include "pauli_term.hpp"
+#include "truncate.hpp"
 #include <iterator>
 #include <numeric>
 #include <algorithm>
@@ -192,4 +193,22 @@ TEST(Observable, merge_long) {
 
 	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
 	EXPECT_EQ(nb_elems_internal, 2);
+}
+
+TEST(Observable, truncate_coeff) {
+	Observable obs{ PauliTerm{ "IXYZ", coeff_t{ -0.25 } }, PauliTerm{ "IIII", coeff_t{ 0.001 } } };
+	auto nb_removed = obs.truncate(CoefficientTruncator<coeff_t>{0.01});
+	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
+	EXPECT_EQ(nb_removed, 1);
+	EXPECT_EQ(nb_elems_internal, 1);
+	EXPECT_EQ(obs[0], PauliTerm<coeff_t>("IXYZ", -0.25));
+}
+
+TEST(Observable, truncate_weight) {
+	Observable obs{ PauliTerm{ "IXYZ", coeff_t{ -0.25 } }, PauliTerm{ "IIII", coeff_t{ 0.001 } } };
+	auto nb_removed = obs.truncate(WeightTruncator{3});
+	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
+	EXPECT_EQ(nb_removed, 1);
+	EXPECT_EQ(nb_elems_internal, 1);
+	EXPECT_EQ(obs[0], PauliTerm<coeff_t>("IIII", 0.001));
 }

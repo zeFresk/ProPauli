@@ -1,6 +1,7 @@
 
 #include "gtest/gtest.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <sstream>
@@ -342,5 +343,15 @@ TEST(PauliTerm, phash_nocollision_q1024n1024) {
 		if (lhs != rhs) {
 			EXPECT_NE(lhs.phash(), rhs.phash());
 		}
+	}
+}
+
+TEST(PauliTerm, pauli_weight) {
+	std::array<std::string_view, 8> truth_table{ "I", "IIIIIIIIIII", "XXXYZZZZXXX", "IXYZIXYZ", "X", "Y", "Z",
+						       "ZZ" };
+	for (auto ps : truth_table) {
+		PauliTerm<coeff_t> pt(ps);
+		auto nb_i = std::count_if(ps.cbegin(), ps.cend(), [](auto c) { return c != 'I'; });
+		EXPECT_EQ(pt.pauli_weight(), nb_i);
 	}
 }

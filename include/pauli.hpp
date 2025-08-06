@@ -175,6 +175,8 @@ class Pauli {
 		return pauli_gates_coeff[std::to_underlying(p_)][std::to_underlying(p.p_)] > 0;
 	}
 
+	std::size_t weight() const noexcept { return p_ != Pauli_enum::I; }
+
 	coeff_t apply_pauli(Pauli_gates g) const {
 		return pauli_gates_coeff[std::to_underlying(p_)][std::to_underlying(g)];
 	}
