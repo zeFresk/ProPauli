@@ -234,16 +234,91 @@ static void Observable_apply_unital_noise(benchmark::State& state) {
 	std::generate_n(std::back_inserter(random_noise), buffer_size, []() {
 		return static_cast<UnitalNoise>(random_in(std::to_underlying(UnitalNoise::Count) - 1));
 	});
-	std::generate_n(std::back_inserter(random_idx), buffer_size, [=]() { return random_in(state.range(0)-1); });
+	std::generate_n(std::back_inserter(random_idx), buffer_size, [=]() { return random_in(state.range(0) - 1); });
 	std::size_t i = 0;
 
-	auto rd_obs = Observable({random_pauli_term(state.range(0))});
+	auto rd_obs = Observable({ random_pauli_term(state.range(0)) });
 
 	for (auto _ : state) {
 		auto n = random_noise[i];
 		auto qubit = random_idx[i];
 
 		rd_obs.apply_unital_noise(n, qubit, 0.999999);
+
+		i = (i + 1) % buffer_size;
+	}
+}
+
+static void Observable_appy_amplitude_damping_i(benchmark::State& state) {
+	static constexpr coeff_t p = 0.00001;
+	std::vector<unsigned> random_idx;
+	random_idx.reserve(buffer_size);
+	std::generate_n(std::back_inserter(random_idx), buffer_size, [=]() { return random_in(state.range(0) - 1); });
+	auto rd_pt = random_pauli_term(state.range(0));
+	for (long i = 0; i < state.range(0); ++i) {
+		if (rd_pt[i] != p_i) {
+			rd_pt[i] = p_i;
+		}
+	}
+	Observable obs({ rd_pt });
+
+	std::size_t i = 0;
+
+	for (auto _ : state) {
+		auto qubit = random_idx[i];
+
+		obs.apply_amplitude_damping(qubit, p);
+
+		i = (i + 1) % buffer_size;
+	}
+}
+
+static void Observable_appy_amplitude_damping_xy(benchmark::State& state) {
+	static constexpr coeff_t p = 0.00001;
+	std::vector<unsigned> random_idx;
+	random_idx.reserve(buffer_size);
+	std::generate_n(std::back_inserter(random_idx), buffer_size, [=]() { return random_in(state.range(0) - 1); });
+	auto rd_pt = random_pauli_term(state.range(0));
+	for (long i = 0; i < state.range(0); ++i) {
+		if (rd_pt[i] == p_i) {
+			rd_pt[i] = p_x;
+		} else if (rd_pt[i] == p_z) {
+			rd_pt[i] = p_y;
+		}
+	}
+	Observable obs({ rd_pt });
+
+	std::size_t i = 0;
+
+	for (auto _ : state) {
+		auto qubit = random_idx[i];
+
+		obs.apply_amplitude_damping(qubit, p);
+
+		i = (i + 1) % buffer_size;
+	}
+}
+
+static void Observable_appy_amplitude_damping_z(benchmark::State& state) {
+	static constexpr coeff_t p = 0.00001;
+	std::vector<unsigned> random_idx;
+	random_idx.reserve(buffer_size);
+	std::generate_n(std::back_inserter(random_idx), buffer_size, [=]() { return random_in(state.range(0) - 1); });
+	auto rd_pt = random_pauli_term(state.range(0));
+	for (long i = 0; i < state.range(0); ++i) {
+		if (rd_pt[i] != p_z) {
+			rd_pt[i] = p_z;
+		}
+	}
+	Observable obs_cpy({ rd_pt });
+
+	std::size_t i = 0;
+
+	for (auto _ : state) {
+		auto obs = obs_cpy;
+		auto qubit = random_idx[i];
+
+		obs.apply_amplitude_damping(qubit, p);
 
 		i = (i + 1) % buffer_size;
 	}
@@ -262,3 +337,6 @@ BENCHMARK(Observable_truncate_coeff_after_nrz)
 	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 16, 2) });
 BENCHMARK(Observable_truncate_weight10_after_nrz)
 	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 16, 2) });
+BENCHMARK(Observable_appy_amplitude_damping_i)->Range(1, 1024);
+BENCHMARK(Observable_appy_amplitude_damping_xy)->Range(1, 1024);
+BENCHMARK(Observable_appy_amplitude_damping_z)->Range(1, 1024);

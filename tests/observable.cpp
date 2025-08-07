@@ -227,7 +227,6 @@ TEST(Observable, depolarizing_noise) {
 		obs.apply_unital_noise(UnitalNoise::Depolarizing, i, 0.5);
 	}
 	EXPECT_FLOAT_EQ(obs[0].coefficient(), 1.f / (1 << obs[0].size()));
-
 }
 
 TEST(Observable, dephasing_noise) {
@@ -244,5 +243,36 @@ TEST(Observable, dephasing_noise) {
 		obs.apply_unital_noise(UnitalNoise::Dephasing, i, 0.5);
 	}
 	EXPECT_FLOAT_EQ(obs[0].coefficient(), 1.f / (1 << obs[0].size()));
+}
 
+TEST(Observable, amplitude_damping) {
+	static constexpr coeff_t p = 0.01;
+	// no effect on I
+	Observable iobs{ "IIII" };
+	for (unsigned i = 0; i < iobs[0].size(); ++i) {
+		iobs.apply_amplitude_damping(i, p);
+	}
+	EXPECT_EQ(std::distance(iobs.cbegin(), iobs.cend()), 1);
+	EXPECT_FLOAT_EQ(iobs[0].coefficient(), 1);
+
+	// XY no split + sqrt(1-p) coeff
+	Observable xyobs{ "XYXY" };
+	auto xy_ph = xyobs[0].phash();
+	for (unsigned i = 0; i < xyobs[0].size(); ++i) {
+		xyobs.apply_amplitude_damping(i, p);
+	}
+	EXPECT_EQ(std::distance(xyobs.cbegin(), xyobs.cend()), 1);
+	EXPECT_FLOAT_EQ(xyobs[0].coefficient(), std::pow(std::sqrt(1 - p), xyobs[0].size()));
+	EXPECT_EQ(xyobs[0].phash(), xy_ph);
+
+	// Z => split + (1-p) coefficient
+	Observable zobs{ "ZZZZ" };
+	auto z_ph = zobs[0].phash();
+	for (unsigned i = 0; i < zobs[0].size(); ++i) {
+		zobs.apply_amplitude_damping(i, p);
+	}
+	auto zpt = std::find_if(zobs.cbegin(), zobs.cend(), [=](auto const& pt) { return pt.phash() == z_ph; });
+	ASSERT_TRUE(zpt != zobs.cend());
+	EXPECT_EQ(std::distance(zobs.cbegin(), zobs.cend()), std::pow(2, zobs[0].size()));
+	EXPECT_FLOAT_EQ(zpt->coefficient(), std::pow(1 - p, zobs[0].size()));
 }

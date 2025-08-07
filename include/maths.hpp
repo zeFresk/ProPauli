@@ -13,4 +13,9 @@ constexpr auto sin(T&& v) {
 	return std::sin(v);
 }
 
+template <typename T>
+constexpr auto sqrt(T&& v) {
+	return std::sqrt(v);
+}
+
 #endif

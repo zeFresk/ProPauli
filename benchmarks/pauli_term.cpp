@@ -134,7 +134,7 @@ static void PauliTerm_apply_unital_noise(benchmark::State& state) {
 	std::generate_n(std::back_inserter(random_noise), buffer_size, []() {
 		return static_cast<UnitalNoise>(random_in(std::to_underlying(UnitalNoise::Count) - 1));
 	});
-	std::generate_n(std::back_inserter(random_idx), buffer_size, [=]() { return random_in(state.range(0)-1); });
+	std::generate_n(std::back_inserter(random_idx), buffer_size, [=]() { return random_in(state.range(0) - 1); });
 	std::size_t i = 0;
 
 	auto rd_pt = random_pauli_term(state.range(0));
@@ -149,6 +149,54 @@ static void PauliTerm_apply_unital_noise(benchmark::State& state) {
 	}
 }
 
+static void PauliTerm_apply_amplitude_damping_xy(benchmark::State& state) {
+	static constexpr coeff_t p = 0.0001;
+	std::vector<unsigned> random_idx;
+	random_idx.reserve(buffer_size);
+	std::generate_n(std::back_inserter(random_idx), buffer_size, [=]() { return random_in(state.range(0) - 1); });
+	auto rd_pt = random_pauli_term(state.range(0));
+	for (long i = 0; i < state.range(0); ++i) {
+		if (rd_pt[i] == p_i) {
+			rd_pt[i] = p_x;
+		} else if (rd_pt[i] == p_z) {
+			rd_pt[i] = p_y;
+		}
+	}
+	std::size_t i = 0;
+
+	for (auto _ : state) {
+		auto qubit = random_idx[i];
+
+		rd_pt.apply_amplitude_damping_xy(qubit, p);
+		benchmark::DoNotOptimize(rd_pt);
+
+		i = (i + 1) % buffer_size;
+	}
+}
+
+static void PauliTerm_apply_amplitude_damping_z(benchmark::State& state) {
+	static constexpr coeff_t p = 0.0001;
+	std::vector<unsigned> random_idx;
+	random_idx.reserve(buffer_size);
+	std::generate_n(std::back_inserter(random_idx), buffer_size, [=]() { return random_in(state.range(0) - 1); });
+	auto rd_pt = random_pauli_term(state.range(0));
+	for (long i = 0; i < state.range(0); ++i) {
+		if (rd_pt[i] != p_z) {
+			rd_pt[i] = p_z;
+		}
+	}
+	std::size_t i = 0;
+
+	for (auto _ : state) {
+		auto qubit = random_idx[i];
+
+		auto path = rd_pt.apply_amplitude_damping_z(qubit, p);
+		benchmark::DoNotOptimize(path);
+
+		i = (i + 1) % buffer_size;
+	}
+}
+
 BENCHMARK(PauliTerm_init_from_string)->Range(1, 1024);
 BENCHMARK(PauliTerm_apply_pauli)->Range(1, 1024);
 BENCHMARK(PauliTerm_apply_clifford)->Range(1, 1024);
@@ -157,3 +205,5 @@ BENCHMARK(PauliTerm_expectation_value_worst_case)->Range(1, 1024);
 BENCHMARK(PauliTerm_phash)->Range(1, 1024);
 BENCHMARK(PauliTerm_pauli_weight)->Range(1, 1024);
 BENCHMARK(PauliTerm_apply_unital_noise)->Range(1, 1024);
+BENCHMARK(PauliTerm_apply_amplitude_damping_xy)->Range(1, 1024);
+BENCHMARK(PauliTerm_apply_amplitude_damping_z)->Range(1, 1024);

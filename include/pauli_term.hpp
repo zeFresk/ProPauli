@@ -45,8 +45,10 @@ class PauliTerm {
 	void apply_pauli(Pauli_gates g, unsigned qubit) { coefficient_ *= paulis_[qubit].apply_pauli(g); }
 
 	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit) { coefficient_ *= paulis_[qubit].apply_clifford(g); }
-	
-	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p) { coefficient_ *= paulis_[qubit].apply_unital_noise(n, p); }
+
+	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p) {
+		coefficient_ *= paulis_[qubit].apply_unital_noise(n, p);
+	}
 
 	void apply_cx(unsigned control, unsigned target) {
 		assert(control != target && "cx can't use same control and target");
@@ -71,6 +73,23 @@ class PauliTerm {
 			ret[qubit] = p_x;
 			ret.coefficient_ *= sin_theta;
 		}
+
+		return ret;
+	}
+
+	void apply_amplitude_damping_xy([[maybe_unused]] unsigned qubit, T p) {
+		assert(paulis_[qubit] != p_z && paulis_[qubit] != p_i && "Should not happen");
+
+		coefficient_ *= sqrt(1 - p);
+	}
+
+	[[nodiscard]] PauliTerm<T> apply_amplitude_damping_z(unsigned qubit, T p) {
+		assert(paulis_[qubit] == p_z && "Should not happen");
+		auto ret = *this;
+		ret.coefficient_ *= p;
+		ret.paulis_[qubit] = p_i;
+
+		coefficient_ *= (1-p);
 
 		return ret;
 	}

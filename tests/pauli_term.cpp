@@ -392,11 +392,38 @@ TEST(PauliTerm, dephasing_noise) {
 	EXPECT_EQ(pt.phash(), ph);
 	EXPECT_FLOAT_EQ(pt.coefficient(), 1.);
 
-
 	// effect compounds on all other
 	for (unsigned i = 2; i < pt.size(); ++i) {
 		pt.apply_unital_noise(Dephasing, i, p);
 		EXPECT_EQ(pt.phash(), ph);
-		EXPECT_FLOAT_EQ(pt.coefficient(), std::pow(1 - p, i-1));
+		EXPECT_FLOAT_EQ(pt.coefficient(), std::pow(1 - p, i - 1));
+	}
+}
+
+TEST(PauliTerm, aplitude_damping_xy) {
+	PauliTerm pt("XYXY");
+	auto og_ph = pt.phash();
+	static constexpr float p = 0.01;
+
+	for (unsigned i = 0; i < pt.size(); ++i) {
+		pt.apply_amplitude_damping_xy(i, p);
+		EXPECT_FLOAT_EQ(pt.coefficient(), std::pow(std::sqrt(1-p), i+1));
+		EXPECT_EQ(pt.phash(), og_ph);
+	}
+}
+
+TEST(PauliTerm, aplitude_damping_z) {
+	PauliTerm og_pt("ZZZZ");
+	auto og_ph = og_pt.phash();
+	static constexpr float p = 0.01;
+
+	for (unsigned i = 0; i < og_pt.size(); ++i) {
+		auto pt = og_pt;
+		auto np = pt.apply_amplitude_damping_z(i, p);
+		auto nc = np.coefficient();
+		EXPECT_FLOAT_EQ(nc, p);
+		EXPECT_FLOAT_EQ(pt.coefficient(), 1-p);
+		EXPECT_EQ(pt.phash(), og_ph);
+		EXPECT_EQ(np.pauli_weight(), og_pt.pauli_weight()-1);
 	}
 }

@@ -61,6 +61,20 @@ class Observable {
 		}
 	}
 
+	void apply_amplitude_damping(unsigned qubit, T pn) {
+		//paulis_.reserve(paulis_.size() * 2);
+		const auto nb_terms = paulis_.size();
+		for (std::size_t i = 0; i < nb_terms; ++i) {
+			auto& p = paulis_[i];
+			if (p[qubit] == p_z) {
+				auto new_path = p.apply_amplitude_damping_z(qubit, pn);
+				paulis_.push_back(std::move(new_path));
+			} else if (p[qubit] == p_x || p[qubit] == p_y) {
+				p.apply_amplitude_damping_xy(qubit, pn);
+			}
+		}
+	}
+
 	T expectation_value() const {
 		T ret = 0;
 		for (auto const& pt : paulis_) {
