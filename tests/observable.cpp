@@ -213,6 +213,16 @@ TEST(Observable, truncate_weight) {
 	EXPECT_EQ(obs[0], PauliTerm<coeff_t>("IIII", 0.001));
 }
 
+TEST(Observable, truncate_multi) {
+	Observable obs{ PauliTerm{ "IXYZ", coeff_t{ -0.25 } }, PauliTerm{ "IIII", coeff_t{ 0.10 } },
+			PauliTerm{ "IIXI", coeff_t{ 0.0001 } } };
+	auto nb_removed = obs.truncate(combine_truncators(CoefficientTruncator<>(0.01), WeightTruncator(3)));
+	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
+	EXPECT_EQ(nb_removed, 2);
+	EXPECT_EQ(nb_elems_internal, 1);
+	EXPECT_EQ(obs[0], PauliTerm<coeff_t>("IIII", 0.10));
+}
+
 TEST(Observable, depolarizing_noise) {
 	// no effect on I
 	Observable iobs{ "IIII" };

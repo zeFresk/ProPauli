@@ -114,9 +114,9 @@ class Observable {
 		return new_pts.size();
 	}
 
-	template <typename Predicate>
-	std::size_t truncate(Predicate&& pred) {
-		return std::erase_if(paulis_, pred);
+	template <typename Truncator>
+	std::size_t truncate(Truncator&& truncator) {
+		return truncator.truncate(paulis_);
 	}
 
     private:
