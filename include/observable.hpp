@@ -91,6 +91,7 @@ class Observable {
 	decltype(auto) end() { return paulis_.end(); }
 	decltype(auto) end() const { return paulis_.end(); }
 	decltype(auto) cend() const { return paulis_.cend(); }
+	std::size_t size() const { return paulis_.size(); }
 
 	std::size_t merge() {
 		// associate pauli string hash with new Pauli Term

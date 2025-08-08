@@ -223,6 +223,14 @@ TEST(Observable, truncate_multi) {
 	EXPECT_EQ(obs[0], PauliTerm<coeff_t>("IIII", 0.10));
 }
 
+TEST(Observable, truncate_never) {
+	Observable obs{ PauliTerm{ "IXYZ", coeff_t{ -0.25 } }, PauliTerm{ "IIII", coeff_t{ 0.001 } } };
+	auto nb_removed = obs.truncate(NeverTruncator{});
+	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
+	EXPECT_EQ(nb_removed, 0);
+	EXPECT_EQ(nb_elems_internal, 2);
+}
+
 TEST(Observable, depolarizing_noise) {
 	// no effect on I
 	Observable iobs{ "IIII" };

@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 template <typename T = coeff_t>
@@ -30,6 +31,15 @@ class WeightPredicate {
 	}
 };
 
+class NeverPredicate {
+    public:
+	NeverPredicate() = default;
+	template <typename T>
+	bool operator()(PauliTerm<T> const&) const {
+		return false;
+	}
+};
+
 template <typename P>
 class PredicateTruncator {
 	P pred;
@@ -37,8 +47,10 @@ class PredicateTruncator {
     public:
 	PredicateTruncator(P&& p) : pred(std::forward(p)) {}
 
-	template <typename... Args>
-	PredicateTruncator(Args&&... args) : pred{P(std::forward<Args>(args)...)} {}
+	PredicateTruncator(PredicateTruncator const&) = default;
+	PredicateTruncator(PredicateTruncator&&) noexcept = default;
+	template <typename... Args, std::enable_if_t<std::is_constructible_v<P, Args...>, bool> = true>
+	PredicateTruncator(Args&&... args) : pred{ P(std::forward<Args>(args)...) } {}
 
 	template <typename T>
 	std::size_t truncate(T&& paulis) const {
@@ -50,6 +62,7 @@ template <typename T = coeff_t>
 using CoefficientTruncator = decltype(PredicateTruncator(std::declval<CoefficientPredicate<T>>()));
 
 using WeightTruncator = decltype(PredicateTruncator(std::declval<WeightPredicate>()));
+using NeverTruncator = decltype(PredicateTruncator(NeverPredicate{}));
 
 template <typename... Ts>
 class Truncators {

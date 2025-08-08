@@ -153,6 +153,11 @@ static constexpr auto pauli_gates_coeff = init_pauli_array_coeff<coeff_t>();
 static constexpr auto cx_map = init_cx_array_map();
 static constexpr auto unital_noise_map_coeff = init_unital_noise_array_coeff<coeff_t>();
 
+enum class QGate : array_underlying_type { I, X, Y, Z, H, Rz, Cx, AmplitudeDamping, Depolarizing, Dephasing, Count };
+static_assert(std::to_underlying(QGate::Count) ==
+	      (std::to_underlying(Pauli_gates::Count) + std::to_underlying(Clifford_Gates_1Q::Count) +
+	       std::to_underlying(UnitalNoise::Count) + 1 + 1 + 1));
+
 class Pauli {
     private:
 	Pauli_enum p_;
