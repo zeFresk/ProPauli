@@ -71,6 +71,8 @@ class Circuit {
 	Circuit(Circuit&&) noexcept = default;
 	Circuit& operator=(Circuit&&) noexcept = default;
 
+	using O_t = Observable<Coefficient_t>;
+
 	unsigned nb_qubits() const { return nb_qubits_; }
 
 	template <typename... T>
@@ -82,51 +84,20 @@ class Circuit {
 									 { "Z", Z },
 									 { "H", H },
 									 { "CX", Cx },
-									 { "Rz", Rz },
+									 { "RZ", Rz },
 									 { "AMPLITUDEDAMPING", AmplitudeDamping },
 									 { "DEPOLARIZING", Depolarizing },
 									 { "DEPHASING", Dephasing } };
 
-		std::transform(op.begin(), op.end(), [](auto c) { return std::toupper(c); });
+		std::transform(op.begin(), op.end(), op.begin(), [](auto c) { return std::toupper(c); });
 		auto qg = qg_map.at(op);
 		add_operation(qg, std::forward<T>(args)...);
 	}
 
 	template <typename... T>
 	void add_operation(QGate g, T&&... args) {
-		using O_t = Observable<Coefficient_t>;
-		using enum QGate;
-		auto opt = opt_map.at(g);
+		add_operation_internal(g, std::forward<T>(args)...);
 
-		switch (g) {
-		case Cx:
-			register_op(opt, [=](O_t& obs) { obs.apply_cx(args...); });
-			break;
-		case Rz:
-			register_op(opt, [=](O_t& obs) { obs.apply_rz(args...); });
-			break;
-		case AmplitudeDamping:
-			register_op(opt, [=](O_t& obs) { obs.apply_amplitude_damping(args...); });
-			break;
-		default: // more cases?
-			auto it = in_array(g, pg_map);
-			if (it != std::cend(pg_map)) {
-				register_op(opt, [=](O_t& obs) { obs.apply_pauli(it->second, args...); });
-				return;
-			}
-
-			auto itc = in_array(g, clifford_map);
-			if (itc != std::cend(clifford_map)) {
-				register_op(opt, [=](O_t& obs) { obs.apply_clifford(itc->second, args...); });
-				return;
-			}
-
-			auto itn = in_array(g, unoise_map);
-			if (itn != std::cend(unoise_map)) {
-				register_op(opt, [=](O_t& obs) { obs.apply_unital_noise(itc->second, args...); });
-				return;
-			}
-		}
 		noise_model_.apply_noise_after(*this, g, std::forward<T>(args)...);
 	}
 
@@ -156,7 +127,7 @@ class Circuit {
 	}
 
     private:
-	using Fn = decltype([]() {}); //std::function<void>;
+	using Fn = std::function<void(O_t&)>;
 	std::vector<QuantumOp<Fn>> operations_;
 	unsigned nb_qubits_;
 	std::unique_ptr<SchedulingPolicy> merge_policy_;
@@ -180,6 +151,48 @@ class Circuit {
 			auto before_nb = obs.size();
 			auto removed = obs.truncate(truncator_);
 			state.register_truncate(CompressionResult{ before_nb, removed });
+		}
+	}
+
+	void add_operation_internal(QGate g, unsigned qubit) {
+		if (in_array(g, pg_map) != std::cend(pg_map)) {
+			auto it = in_array(g, pg_map);
+			register_op(g, [=](O_t& obs) { obs.apply_pauli(it->second, qubit); });
+			return;
+		} else if (in_array(g, clifford_map) != std::cend(clifford_map)) {
+			auto it = in_array(g, clifford_map);
+			register_op(g, [=](O_t& obs) { obs.apply_clifford(it->second, qubit); });
+			return;
+		} else {
+			throw std::invalid_argument("Unsupported gate type with those arguments");
+		}
+	}
+
+	void add_operation_internal(QGate g, unsigned qubit, Coefficient_t c) {
+		switch (g) {
+		case QGate::Rz:
+			register_op(g, [=](O_t& obs) { obs.apply_rz(qubit, c); });
+			break;
+		case QGate::AmplitudeDamping:
+			register_op(g, [=](O_t& obs) { obs.apply_amplitude_damping(qubit, c); });
+			break;
+		case QGate::Dephasing:
+		case QGate::Depolarizing: {
+			auto it = in_array(g, unoise_map);
+			register_op(g, [=](O_t& obs) { obs.apply_unital_noise(it->second, qubit, c); });
+		} break;
+		default:
+			throw std::invalid_argument("Unsupported gate type with those arguments");
+		}
+	}
+
+	void add_operation_internal(QGate g, unsigned control, unsigned target) {
+		switch (g) {
+		case QGate::Cx:
+			register_op(g, [=](O_t& obs) { obs.apply_cx(control, target); });
+			break;
+		default:
+			throw std::invalid_argument("Unsupported gate type with those arguments");
 		}
 	}
 };

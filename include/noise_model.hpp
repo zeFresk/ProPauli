@@ -4,6 +4,7 @@
 #include "pauli.hpp"
 #include <cassert>
 #include <stdexcept>
+#include <type_traits>
 #include <unordered_map>
 
 template <typename T>
@@ -22,20 +23,23 @@ class NoiseModel {
 	NoiseModel() {}
 	template <typename C>
 	void apply_noise_after(C& qc, QGate g, unsigned qubit) const {
-		auto const& nm = noise_map[g];
-		if (nm.depolarizing_strength > 0) {
-			qc.add_operation(QGate::Depolarizing, nm.depolarizing_strength, qubit);
-		}
-		if (nm.dephasing_strength > 0) {
-			qc.add_operation(QGate::Dephasing, nm.dephasing_strength, qubit);
-		}
-		if (nm.amplitude_damping_strength > 0) {
-			qc.add_operation(QGate::AmplitudeDamping, nm.amplitude_damping_strength, qubit);
+		auto it = noise_map.find(g);
+		if (it != noise_map.end()) {
+			auto const& nm = it->second;
+			if (nm.depolarizing_strength > 0) {
+				qc.add_operation(QGate::Depolarizing, qubit, nm.depolarizing_strength);
+			}
+			if (nm.dephasing_strength > 0) {
+				qc.add_operation(QGate::Dephasing, qubit, nm.dephasing_strength);
+			}
+			if (nm.amplitude_damping_strength > 0) {
+				qc.add_operation(QGate::AmplitudeDamping, qubit, nm.amplitude_damping_strength);
+			}
 		}
 	}
 
-	template <typename C>
-	void apply_noise_after(C& qc, QGate cg, unsigned qubit1, unsigned qubit2) const {
+	template <typename C, typename Integer, std::enable_if_t<std::is_integral_v<Integer>, bool> = true>
+	void apply_noise_after(C& qc, QGate cg, unsigned qubit1, Integer qubit2) const {
 		assert(cg == QGate::Cx);
 		if (cg == QGate::AmplitudeDamping || cg == QGate::Dephasing || cg == QGate::Depolarizing) {
 			throw std::invalid_argument("Can't add more noise to noise!");
@@ -44,9 +48,9 @@ class NoiseModel {
 		apply_noise_after(qc, cg, qubit2);
 	}
 
-	template <typename C>
-	void apply_noise_after(C& qc, QGate cg, unsigned qubit, [[maybe_unused]] T theta) {
-		assert(cg == QGate::Rz);
+	template <typename C, typename Real, std::enable_if_t<std::is_floating_point_v<Real>, bool> = true>
+	void apply_noise_after(C& qc, QGate cg, unsigned qubit, [[maybe_unused]] Real theta) {
+		assert(cg == QGate::Rz || cg == QGate::Depolarizing || cg == QGate::Dephasing || cg == QGate::AmplitudeDamping);
 		apply_noise_after(qc, cg, qubit);
 	}
 
