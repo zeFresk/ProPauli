@@ -120,6 +120,10 @@ class Observable {
 		return truncator.truncate(paulis_);
 	}
 
+	friend bool operator==(Observable const& lhs, Observable const& rhs) {
+		return lhs.size() == rhs.size() && std::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin());
+	}
+
     private:
 	std::vector<PauliTerm<T>> paulis_;
 };

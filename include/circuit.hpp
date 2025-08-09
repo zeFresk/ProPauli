@@ -8,10 +8,12 @@
 
 #include "truncate.hpp"
 #include <algorithm>
+#include <iostream>
 #include <iterator>
 #include <memory>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 template <typename F>
@@ -105,11 +107,11 @@ class Circuit {
 		auto obs = target_observable;
 		SimulationState state(nb_splitting_gates());
 		for (auto const& qop : operations_) {
-			schedule(state, Timing::Before, qop.op_t);
+			schedule(state, obs, Timing::Before, qop.op_t);
 
 			qop.func(obs);
 
-			schedule(state, Timing::Before, qop.op_t);
+			schedule(state, obs, Timing::After, qop.op_t);
 
 			if (qop.op_t == OperationType::BasicGate) {
 				state.register_basic_gate(obs.size());

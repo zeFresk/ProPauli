@@ -2,6 +2,7 @@
 #define PP_SCHEDULER_HPP
 
 #include <cstddef>
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -31,10 +32,26 @@ struct SimulationState {
 	SimulationState& operator=(SimulationState const&) = delete;
 	SimulationState& operator=(SimulationState&&) = default;
 
-	void register_basic_gate(std::size_t nb_terms);
-	void register_splitting_gate(std::size_t nb_terms);
-	void register_merge(CompressionResult const& result);
-	void register_truncate(CompressionResult const& result);
+	void register_basic_gate(std::size_t nb_terms) {
+		nb_gates_applied++;
+		nb_terms_history.emplace_back(OperationType::BasicGate, nb_terms);
+	}
+
+	void register_splitting_gate(std::size_t nb_terms) {
+		nb_gates_applied++;
+		nb_splitting_gates_applied++;
+		nb_terms_history.emplace_back(OperationType::SplittingGate, nb_terms);
+	}
+
+	void register_merge(CompressionResult const& result) {
+		nb_terms_history.emplace_back(OperationType::Merge, result.nb_terms_after());
+		merge_history.emplace_back(nb_terms_history.size() - 1, result);
+	}
+
+	void register_truncate(CompressionResult const& result) {
+		nb_terms_history.emplace_back(OperationType::Truncate, result.nb_terms_after());
+		merge_history.emplace_back(nb_terms_history.size() - 1, result);
+	}
 
 	std::size_t get_nb_gates_applied() const { return nb_gates_applied; }
 	std::size_t get_nb_splitting_gates_applied() const { return nb_splitting_gates_applied; }

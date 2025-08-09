@@ -1,7 +1,9 @@
 #include "circuit.hpp"
 
 #include "gtest/gtest.h"
+#include "pauli.hpp"
 #include "scheduler.hpp"
+#include <cmath>
 
 TEST(Circuit, init) {
 	Circuit<NeverTruncator> qc{ 4 };
@@ -53,4 +55,105 @@ TEST(Circuit, add_string_noises) {
 TEST(Circuit, add_string_badgatethrow) {
 	Circuit qc{ 2 };
 	EXPECT_THROW({ qc.add_operation("globi", 0); }, std::out_of_range);
+	EXPECT_THROW({ qc.add_operation("II", 0); }, std::out_of_range);
+}
+
+TEST(Circuit, add_string_nocase) {
+	Circuit qc{ 2 };
+	qc.add_operation("i", 0);
+	qc.add_operation("Rz", 0, 3.14f);
+	qc.add_operation("rZ", 0, 3.14f);
+	qc.add_operation("cx", 0u, 1u);
+	qc.add_operation("AmPlItUdEdAmPiNg", 0, 0.01f);
+}
+
+TEST(Circuit, splitting_gates_count) {
+	Circuit qc{ 2 };
+	EXPECT_EQ(qc.nb_splitting_gates(), 0);
+	qc.add_operation("Rz", 0, 3.14f);
+	EXPECT_EQ(qc.nb_splitting_gates(), 1);
+	qc.add_operation("AMPLITUDEDAMPING", 0, 0.001f);
+	EXPECT_EQ(qc.nb_splitting_gates(), 2);
+	qc.add_operation("I", 0);
+	qc.add_operation("X", 0);
+	qc.add_operation("Y", 0);
+	qc.add_operation("Z", 0);
+	qc.add_operation("H", 0);
+	qc.add_operation("CX", 0u, 1u);
+	qc.add_operation("DEPOLARIZING", 0, 0.01f);
+	qc.add_operation("DEPHASING", 0, 0.01f);
+	EXPECT_EQ(qc.nb_splitting_gates(), 2);
+}
+
+TEST(Circuit, simple_run) {
+	Circuit qc{ 1 };
+	qc.add_operation("I", 0);
+	auto res = qc.run({ "I" });
+	EXPECT_FLOAT_EQ(res.expectation_value(), 1.f);
+}
+
+TEST(Circuit, qc_match_observable_result_1) {
+	Circuit qc{ 4, NeverTruncator{}, {}, std::make_unique<NeverPolicy>(), std::make_unique<NeverPolicy>() };
+	Observable obs{ "IIII" };
+	auto evolved_obs = obs;
+
+	EXPECT_EQ(qc.run(obs), evolved_obs);
+	for (unsigned i = 0; i < qc.nb_qubits(); ++i) {
+		qc.add_operation("H", i);
+		evolved_obs.apply_clifford(Clifford_Gates_1Q::H, i);
+	}
+	EXPECT_EQ(qc.run(obs), evolved_obs);
+	for (auto [control, target] :
+	     std::array<std::tuple<unsigned, unsigned>, 3>{ { { 0, 1 }, { 2, 3 }, { 1, 2 } } }) {
+		qc.add_operation("cx", control, target);
+		evolved_obs.apply_cx(control, target);
+	}
+	EXPECT_EQ(qc.run(obs), evolved_obs);
+	for (unsigned i = 0; i < qc.nb_qubits(); ++i) {
+		coeff_t theta = (3.14f / 2.f) - i;
+		qc.add_operation("rz", 0, theta);
+		evolved_obs.apply_rz(0, theta);
+	}
+	EXPECT_EQ(qc.run(obs), evolved_obs);
+	for (unsigned i = 0; i < qc.nb_qubits(); ++i) {
+		qc.add_operation("Z", i);
+		evolved_obs.apply_pauli(Pauli_gates::Z, i);
+	}
+	EXPECT_EQ(qc.run(obs), evolved_obs);
+	for (unsigned i = 0; i < qc.nb_qubits(); ++i) {
+		coeff_t n = 0.0001;
+		qc.add_operation("DEPOLARIZING", i, n);
+		evolved_obs.apply_unital_noise(UnitalNoise::Depolarizing, i, n);
+	}
+	EXPECT_EQ(qc.run(obs), evolved_obs);
+	for (unsigned i = 0; i < qc.nb_qubits(); ++i) {
+		coeff_t n = 0.0001;
+		qc.add_operation("AMPLITUDEDAMPING", i, n);
+		evolved_obs.apply_amplitude_damping(i, n);
+	}
+	EXPECT_EQ(qc.run(obs), evolved_obs);
+}
+
+TEST(Circuit, qc_merge_works_with_scheduler) {
+	Circuit qc{
+		1, NeverTruncator{}, {}, std::make_unique<AlwaysAfterSplittingPolicy>(), std::make_unique<NeverPolicy>()
+	};
+	for (unsigned i = 0; i < 4; ++i) {
+		qc.add_operation("rz", 0, 1.f);
+		qc.add_operation("rz", 0, -1.f);
+		EXPECT_EQ(qc.run({ "Z" }).size(), 1);
+	}
+}
+
+TEST(Circuit, qc_truncate_works_with_scheduler) {
+	Circuit qc{ 1,
+		    CoefficientTruncator<>{ 0.001f },
+		    {},
+		    std::make_unique<AlwaysAfterSplittingPolicy>(),
+		    std::make_unique<AlwaysAfterSplittingPolicy>() };
+	for (unsigned i = 0; i < 4; ++i) {
+		auto noise = 0.00001f;
+		qc.add_operation("AMPLITUDEDAMPING", 0, noise);
+		EXPECT_EQ(qc.run({ "Z" }), Observable<coeff_t>("Z", std::pow(1.f-noise, i+1)));
+	}
 }
