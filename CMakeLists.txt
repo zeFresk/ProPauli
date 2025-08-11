@@ -51,12 +51,12 @@ target_compile_options(propaulib PUBLIC
 	$<$<CONFIG:Debug>:-g>
 	$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>,$<BOOL:${SANITIZE}>>:-fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize=vptr>
 	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:GNU>>:-ftest-coverage -fprofile-arcs>
-	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:Clang>>:-fprofile-instr-generate -fcoverage-mapping>
+	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:Clang>>:-fprofile-instr-generate -fcoverage-mapping --coverage>
 	)
 
 target_link_options(propaulib INTERFACE
 	$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>,$<BOOL:${SANITIZE}>>:-fsanitize=address -fsanitize=undefined -fno-sanitize=vptr>
-	$<$<AND:$<BOOL:${COVERAGE}>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-fprofile-instr-generate>
+	$<$<AND:$<BOOL:${COVERAGE}>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-fprofile-instr-generate --coverage>
 			#$<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>
 	)
 
@@ -101,8 +101,8 @@ endif()
 
 # coverage
 if (COVERAGE)
-	if (NOT BUILD_TESTS)
-		message(FATAL_ERROR "Can't build coverage report with tests")
+	if (NOT TEST)
+		message(FATAL_ERROR "Can't build coverage report without tests")
 	endif()
 	set(TARGET_NAME UnitTest)
 
