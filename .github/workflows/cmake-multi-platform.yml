@@ -121,7 +121,7 @@ jobs:
 
       - name: Run tests to generate coverage data
         working-directory: ./build
-        run: ctest -C Debug --output-on-failure
+        run: make coverage
 
       - name: Generate Coverage Report
         working-directory: ./build
@@ -136,8 +136,7 @@ jobs:
             exit 1
           fi
           
-          # Use llvm-profdata to merge the raw coverage data.
-          llvm-profdata merge -sparse default.profraw -o default.profdata
+          llvm-profdata merge -sparse *.profraw -o default.profdata
           
           # Use llvm-cov to export the data in lcov format for Coveralls.
           # This command creates the coverage.info file.
