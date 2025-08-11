@@ -15,6 +15,12 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  checks: write
+  # The pull-requests: write permission is required for this action to be able
+  # to comment on pull requests, which it does by default.
+  pull-requests: write
+
 jobs:
   build_and_test:
     # The type of runner that the job will run on
