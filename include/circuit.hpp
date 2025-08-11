@@ -21,6 +21,8 @@ struct QuantumOp {
 	OperationType op_t;
 	QGate gate;
 	F func;
+
+	QuantumOp(OperationType op, QGate qg, F&& f) : op_t(op), gate(qg), func(std::move(f)) {}
 };
 
 static std::unordered_map<QGate, OperationType> opt_map = {
