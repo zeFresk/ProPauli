@@ -102,12 +102,16 @@ jobs:
       checks: write
       pull-requests: write
 
+    env:
+      CC: clang
+      CXX: clang++
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install lcov
-        run: sudo apt-get update && sudo apt-get install -y lcov
+        run: sudo apt-get update && sudo apt-get install -y lcov clang cmake
 
       # Configure with coverage flags enabled
       - name: Configure CMake for Coverage
@@ -115,6 +119,7 @@ jobs:
           cmake -S . -B build
           -D CMAKE_BUILD_TYPE=Debug
           -D COVERAGE=ON
+          -D TEST=ON
 
       - name: Build project
         run: cmake --build build --config Debug
