@@ -1,12 +1,5 @@
-# This is a basic GitHub Actions workflow to build and test a C++ CMake project.
-#
-# It defines a single job, "build_and_test", that runs on a matrix of operating systems.
-# For each OS, it checks out the code, configures the CMake project in Debug mode
-# with sanitizers and tests enabled, builds the project, and then runs the tests.
-
 name: C++ CI
 
-# Controls when the workflow will run
 on:
   # Triggers the workflow on push events but only for the "main" branch
   push:
@@ -17,34 +10,24 @@ on:
 
 permissions:
   checks: write
-  # The pull-requests: write permission is required for this action to be able
-  # to comment on pull requests, which it does by default.
   pull-requests: write
 
 jobs:
   build_and_test:
     name: "Build and test"
-    # The type of runner that the job will run on
-    # We use a strategy matrix to run the job on multiple operating systems.
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
 
-    # Sets the C and C++ compilers to clang for this job
     env:
       CC: clang
       CXX: clang++
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Step 1: Check out the repository under $GITHUB_WORKSPACE, so the job can access it
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Install dependencies.
-      # On Ubuntu, we install clang and cmake via apt-get.
-      # On macOS, we install the latest version of clang (llvm) via Homebrew.
       - name: Install dependencies (Ubuntu)
         if: runner.os == 'Linux'
         uses: awalsh128/cache-apt-pkgs-action@latest
@@ -64,11 +47,6 @@ jobs:
           cmake --version
           clang++ --version
 
-      # Step 3: Configure CMake
-      # This step creates a 'build' directory and runs cmake to generate the build files.
-      # - CMAKE_BUILD_TYPE=Debug: Specifies a debug build.
-      # - SANITIZE=ON: A custom option to enable sanitizers (AddressSanitizer, UndefinedBehaviorSanitizer).
-      # - TEST=ON: A custom option to enable building tests.
       - name: Configure CMake
         run: >
           cmake -S . -B build
@@ -76,10 +54,6 @@ jobs:
           -D SANITIZE=ON
           -D TEST=ON
 
-      # Step 4: Build the project
-      # This step compiles the source code using the generated build files.
-      # The --config flag is technically redundant here since we set the build type
-      # in the configure step, but it's good practice for multi-configuration generators.
       - name: Build project
         run: cmake --build build --config Debug
 
@@ -87,8 +61,6 @@ jobs:
         working-directory: ./build
         run: ctest -C Debug --verbose --output-on-failure --output-junit Test.xml || true
 
-      # This step parses the Test.xml file and creates a detailed summary
-      # in the "Checks" tab of the workflow run.
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: runner.os == 'Linux' 
