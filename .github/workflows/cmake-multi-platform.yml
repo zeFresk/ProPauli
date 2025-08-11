@@ -57,7 +57,7 @@ jobs:
       # - TEST=ON: A custom option to enable building tests.
       - name: Configure CMake
         run: >
-          cmake -S . -B build
+          cmake -S . -B build -GNinja
           -D CMAKE_BUILD_TYPE=Debug
           -D SANITIZE=ON
           -D TEST=ON
