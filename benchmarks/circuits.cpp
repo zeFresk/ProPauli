@@ -11,7 +11,7 @@ static constexpr std::array<std::string_view, 4> paulis_strings = { "I", "X", "Y
 
 static void Circuit_init(benchmark::State& state) {
 	for (auto _ : state) {
-		Circuit<NeverTruncator> qc{ static_cast<unsigned>(state.range(0)) };
+		Circuit qc{ static_cast<unsigned>(state.range(0)) };
 		benchmark::DoNotOptimize(qc);
 	}
 }

@@ -7,17 +7,17 @@
 #include <numbers>
 
 TEST(Circuit, init) {
-	Circuit<NeverTruncator> qc{ 4 };
+	Circuit qc{ 4 };
 	EXPECT_EQ(qc.nb_qubits(), 4);
 }
 
-TEST(Circuit, init_with_truncator) { Circuit qc{ 4, CoefficientTruncator<>{ 0.001 } }; }
+TEST(Circuit, init_with_truncator) { Circuit qc(4, std::make_unique<CoefficientTruncator<>>(0.001)); }
 
-TEST(Circuit, init_with_truncator_noise_model) { Circuit qc{ 4, CoefficientTruncator<>{ 0.001 }, {} }; }
+TEST(Circuit, init_with_truncator_noise_model) { Circuit qc{ 4, std::make_unique<CoefficientTruncator<>>(0.001), {} }; }
 
 TEST(Circuit, init_with_truncator_noise_model_policies) {
 	Circuit qc{ 4,
-		    CoefficientTruncator<>{ 0.001 },
+		    std::make_unique<CoefficientTruncator<>>(0.001),
 		    {},
 		    std::make_unique<NeverPolicy>(),
 		    std::make_unique<AlwaysBeforeSplittingPolicy>() };
@@ -94,7 +94,11 @@ TEST(Circuit, simple_run) {
 }
 
 TEST(Circuit, qc_match_observable_result_1) {
-	Circuit qc{ 4, NeverTruncator{}, {}, std::make_unique<NeverPolicy>(), std::make_unique<NeverPolicy>() };
+	Circuit qc{ 4,
+		    std::make_unique<NeverTruncator>(),
+		    {},
+		    std::make_unique<NeverPolicy>(),
+		    std::make_unique<NeverPolicy>() };
 	Observable obs{ "IIII" };
 	auto evolved_obs = obs;
 
@@ -136,9 +140,11 @@ TEST(Circuit, qc_match_observable_result_1) {
 }
 
 TEST(Circuit, qc_merge_works_with_scheduler) {
-	Circuit qc{
-		1, NeverTruncator{}, {}, std::make_unique<AlwaysAfterSplittingPolicy>(), std::make_unique<NeverPolicy>()
-	};
+	Circuit qc{ 1,
+		    std::make_unique<NeverTruncator>(),
+		    {},
+		    std::make_unique<AlwaysAfterSplittingPolicy>(),
+		    std::make_unique<NeverPolicy>() };
 	for (unsigned i = 0; i < 4; ++i) {
 		qc.add_operation("rz", 0, 1.f);
 		qc.add_operation("rz", 0, -1.f);
@@ -148,7 +154,7 @@ TEST(Circuit, qc_merge_works_with_scheduler) {
 
 TEST(Circuit, qc_truncate_works_with_scheduler) {
 	Circuit qc{ 1,
-		    CoefficientTruncator<>{ 0.001f },
+		    std::make_unique<CoefficientTruncator<>>(0.001f),
 		    {},
 		    std::make_unique<AlwaysAfterSplittingPolicy>(),
 		    std::make_unique<AlwaysAfterSplittingPolicy>() };
@@ -159,9 +165,26 @@ TEST(Circuit, qc_truncate_works_with_scheduler) {
 	}
 }
 
-coeff_t p1_to_ev(coeff_t p1) {
-	return 1.f-(2.f*p1);
+TEST(Circuit, qc_update_truncator) {
+	Circuit qc{ 4,
+		    std::make_unique<NeverTruncator>(),
+		    {},
+		    std::make_unique<AlwaysAfterSplittingPolicy>(),
+		    std::make_unique<AlwaysAfterSplittingPolicy>() };
+
+	// no truncation
+	for (unsigned i = 0; i < 4; ++i) {
+		auto noise = 0.00001f;
+		qc.add_operation("AMPLITUDEDAMPING", i, noise);
+	}
+	auto res = qc.run({ "ZZZZ" });
+	EXPECT_EQ(res.size(), std::pow(2, 4));
+
+	// with truncation
+	qc.set_truncator(std::make_unique<CoefficientTruncator<>>(0.01f));
 }
+
+coeff_t p1_to_ev(coeff_t p1) { return 1.f - (2.f * p1); }
 
 TEST(Circuit, test_circuit1) {
 	/* qreg q[4]; creg c[4];
@@ -196,7 +219,6 @@ TEST(Circuit, test_circuit1) {
 
 	for (unsigned i = 0; i < 4; ++i)
 		qc.add_operation("H", i);
-	
 
 	std::array<std::tuple<std::string_view, coeff_t>, 4> truth_table = { {
 		{ "ZIII", p1_to_ev(0.500000f) },
@@ -206,8 +228,7 @@ TEST(Circuit, test_circuit1) {
 		//{ "ZZZZ", 0.5f },
 	} };
 	for (auto const [ob, ev] : truth_table) {
-		auto res = qc.run(Observable{ob});
+		auto res = qc.run(Observable{ ob });
 		EXPECT_NEAR(res.expectation_value(), ev, 1e-4f);
 	}
-
 }

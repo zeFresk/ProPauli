@@ -40,22 +40,27 @@ class NeverPredicate {
 	}
 };
 
-template <typename P>
-class PredicateTruncator {
+template <typename T>
+class Truncator {
+    public:
+	virtual ~Truncator() {}
+	virtual std::size_t truncate(std::vector<PauliTerm<T>>& paulis) const = 0;
+};
+
+template <typename P, typename T = coeff_t>
+class PredicateTruncator : public Truncator<T> {
 	P pred;
 
     public:
 	PredicateTruncator(P&& p) : pred(std::forward(p)) {}
+	~PredicateTruncator() override {}
 
 	PredicateTruncator(PredicateTruncator const&) = default;
 	PredicateTruncator(PredicateTruncator&&) noexcept = default;
 	template <typename... Args, std::enable_if_t<std::is_constructible_v<P, Args...>, bool> = true>
 	PredicateTruncator(Args&&... args) : pred{ P(std::forward<Args>(args)...) } {}
 
-	template <typename T>
-	std::size_t truncate(T&& paulis) const {
-		return std::erase_if(paulis, pred);
-	}
+	std::size_t truncate(std::vector<PauliTerm<T>>& paulis) const override { return std::erase_if(paulis, pred); }
 };
 
 template <typename T = coeff_t>
@@ -64,8 +69,8 @@ using CoefficientTruncator = decltype(PredicateTruncator(std::declval<Coefficien
 using WeightTruncator = decltype(PredicateTruncator(std::declval<WeightPredicate>()));
 using NeverTruncator = decltype(PredicateTruncator(NeverPredicate{}));
 
-template <typename... Ts>
-class Truncators {
+template <typename T = coeff_t, typename... Ts>
+class Truncators : public Truncator<T> {
 	std::tuple<Ts...> truncators;
 
 	template <typename P, std::size_t... Is>
@@ -75,15 +80,15 @@ class Truncators {
 
     public:
 	Truncators(Ts&&... truncs) : truncators(std::forward<Ts>(truncs)...) {}
+	~Truncators() override {}
 
-	template <typename T>
-	std::size_t truncate(T&& paulis) const {
-		return truncate_impl(std::forward<T>(paulis), std::index_sequence_for<Ts...>{});
+	std::size_t truncate(std::vector<PauliTerm<T>>& paulis) const override {
+		return truncate_impl(paulis, std::index_sequence_for<Ts...>{});
 	}
 };
 
 template <typename... Truncs>
-Truncators<Truncs...> combine_truncators(Truncs&&... truncs) {
+auto combine_truncators(Truncs&&... truncs) {
 	return Truncators(std::forward<Truncs>(truncs)...);
 }
 

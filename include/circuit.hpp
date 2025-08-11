@@ -5,10 +5,9 @@
 #include "observable.hpp"
 #include "pauli.hpp"
 #include "scheduler.hpp"
-
 #include "truncate.hpp"
+
 #include <algorithm>
-#include <iostream>
 #include <iterator>
 #include <memory>
 #include <ranges>
@@ -58,15 +57,17 @@ inline auto in_array(T&& v, Arr const& arr) {
 	return std::find_if(std::cbegin(arr), std::cend(arr), [&](auto&& e) { return e.first == v; });
 }
 
-template <typename Truncator = NeverTruncator, typename Coefficient_t = coeff_t>
+template <typename Coefficient_t = coeff_t>
 class Circuit {
     public:
-	Circuit(unsigned nb_qubits, Truncator&& truncator = NeverTruncator{},
+	template <typename TruncatorPtr = std::unique_ptr<Truncator<Coefficient_t>>>
+	Circuit(unsigned nb_qubits, TruncatorPtr truncator = std::make_unique<NeverTruncator>(),
 		NoiseModel<Coefficient_t> const& noise_model = {},
 		std::unique_ptr<SchedulingPolicy> merge_policy = std::make_unique<AlwaysAfterSplittingPolicy>(),
 		std::unique_ptr<SchedulingPolicy> truncate_policy = std::make_unique<AlwaysAfterSplittingPolicy>())
 		: nb_qubits_{ nb_qubits }, merge_policy_{ std::move(merge_policy) },
-		  truncate_policy_{ std::move(truncate_policy) }, truncator_{ truncator }, noise_model_(noise_model) {}
+		  truncate_policy_{ std::move(truncate_policy) }, truncator_{ std::move(truncator) },
+		  noise_model_(noise_model) {}
 
 	Circuit(Circuit const&) = delete;
 	Circuit& operator=(Circuit const&) = delete;
@@ -131,13 +132,25 @@ class Circuit {
 
 	void reset() { operations_.clear(); }
 
+	void set_truncator(std::unique_ptr<Truncator<Coefficient_t>> truncator) {
+		truncator_ = std::move(truncator);
+	}
+
+	void set_merge_policy(std::unique_ptr<SchedulingPolicy> policy) {
+		merge_policy_ = std::move(policy);
+	}
+
+	void set_truncate_policy(std::unique_ptr<SchedulingPolicy> policy) {
+		truncate_policy_ = std::move(policy);
+	}
+
     private:
 	using Fn = std::function<void(O_t&)>;
 	std::vector<QuantumOp<Fn>> operations_;
 	unsigned nb_qubits_;
 	std::unique_ptr<SchedulingPolicy> merge_policy_;
 	std::unique_ptr<SchedulingPolicy> truncate_policy_;
-	Truncator truncator_;
+	std::unique_ptr<Truncator<Coefficient_t>> truncator_;
 	NoiseModel<Coefficient_t> noise_model_;
 
 	void register_op(QGate qg, Fn&& f) {
@@ -154,7 +167,7 @@ class Circuit {
 
 		if (truncate_policy_->should_apply(state, op_t, timing)) {
 			auto before_nb = obs.size();
-			auto removed = obs.truncate(truncator_);
+			auto removed = obs.truncate(*truncator_);
 			state.register_truncate(CompressionResult{ before_nb, removed });
 		}
 	}
