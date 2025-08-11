@@ -125,22 +125,9 @@ jobs:
 
       - name: Generate Coverage Report
         working-directory: ./build
-        run: |
-          # This assumes your test executable is named 'UnitTest'. 
-          # If it has a different name, please change it here.
-          TEST_EXECUTABLE=UnitTest
-          
-          if [ ! -f "$TEST_EXECUTABLE" ]; then
-            echo "Error: Test executable '$TEST_EXECUTABLE' not found in build directory."
-            echo "Please update the TEST_EXECUTABLE variable in the workflow."
-            exit 1
-          fi
-          
+        run: |          
           llvm-profdata merge -sparse *.profraw -o default.profdata
-          
-          # Use llvm-cov to export the data in lcov format for Coveralls.
-          # This command creates the coverage.info file.
-          llvm-cov export -format=lcov "$TEST_EXECUTABLE" -instr-profile=default.profdata > coverage.info
+          llvm-cov export -format=lcov "$TEST_EXECUTABLE" -instr-profile=default.profdata -sources include -sources src > coverage.info
 
       - name: Upload to Coveralls
         uses: coverallsapp/github-action@v2
