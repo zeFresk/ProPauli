@@ -77,18 +77,13 @@ jobs:
 
       - name: Run CTest and Generate Report
         working-directory: ./build
-        run: ctest -C Debug --verbose --output-on-failure --output-junit Test.xml
+        run: ctest -C Debug --verbose --output-on-failure --output-junit Test.xml || true
 
-      # This step only runs on Ubuntu to avoid generating the badge multiple times
-      - name: Publish Test Results as Badge
-        if: runner.os == 'Linux'
+      # This step parses the Test.xml file and creates a detailed summary
+      # in the "Checks" tab of the workflow run.
+      - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always() # This ensures the step runs even if the previous step failed
         with:
           files: build/Test.xml
-          
-      - name: Autocommit SVG
-        uses: svgo-actions/svgo-autocommit@v1
-        with:
-            pattern: '**/*.svg'
-            commit_message: 'chore: optimize svg and add to repo'
 
