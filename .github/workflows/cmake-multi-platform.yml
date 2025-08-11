@@ -47,7 +47,7 @@ jobs:
       - name: Install latest Clang (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install llvm
+          brew install llvm cmake
           echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
 
       # Step 3: Configure CMake
