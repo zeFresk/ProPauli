@@ -4,6 +4,7 @@
 #include "pauli.hpp"
 #include "scheduler.hpp"
 #include <cmath>
+#include <numbers>
 
 TEST(Circuit, init) {
 	Circuit<NeverTruncator> qc{ 4 };
@@ -154,6 +155,59 @@ TEST(Circuit, qc_truncate_works_with_scheduler) {
 	for (unsigned i = 0; i < 4; ++i) {
 		auto noise = 0.00001f;
 		qc.add_operation("AMPLITUDEDAMPING", 0, noise);
-		EXPECT_EQ(qc.run({ "Z" }), Observable<coeff_t>("Z", std::pow(1.f-noise, i+1)));
+		EXPECT_EQ(qc.run({ "Z" }), Observable<coeff_t>("Z", std::pow(1.f - noise, i + 1)));
 	}
+}
+
+coeff_t p1_to_ev(coeff_t p1) {
+	return 1.f-(2.f*p1);
+}
+
+TEST(Circuit, test_circuit1) {
+	/* qreg q[4]; creg c[4];
+	h q[0];
+	h q[1];
+	h q[2];
+	h q[3];
+	rz(pi / 2) q[0];
+	rz(pi / 3) q[1];
+	rz(pi / 4) q[2];
+	rz(pi / 5) q[3];
+	cx q[0], q[1];
+	cx q[2], q[3];
+	cx q[1], q[2];
+	h q[0];
+	h q[1];
+	h q[2];
+	h q[3];*/
+	Circuit qc{ 4 };
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+
+	qc.add_operation("Rz", 0, std::numbers::pi / 2.f);
+	qc.add_operation("Rz", 1, std::numbers::pi / 3.f);
+	qc.add_operation("Rz", 2, std::numbers::pi / 4.f);
+	qc.add_operation("Rz", 3, std::numbers::pi / 5.f);
+
+	qc.add_operation("cx", 0, 1);
+	qc.add_operation("cx", 2, 3);
+	qc.add_operation("cx", 1, 2);
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+	
+
+	std::array<std::tuple<std::string_view, coeff_t>, 4> truth_table = { {
+		{ "ZIII", p1_to_ev(0.500000f) },
+		{ "IZII", p1_to_ev(0.356999f) },
+		{ "IIZI", p1_to_ev(0.213950f) },
+		{ "IIIZ", p1_to_ev(0.095499f) },
+		//{ "ZZZZ", 0.5f },
+	} };
+	for (auto const [ob, ev] : truth_table) {
+		auto res = qc.run(Observable{ob});
+		EXPECT_NEAR(res.expectation_value(), ev, 1e-4f);
+	}
+
 }

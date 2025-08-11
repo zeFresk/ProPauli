@@ -11,6 +11,7 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <ranges>
 #include <string_view>
 #include <unordered_map>
 #include <utility>
@@ -71,7 +72,7 @@ class Circuit {
 	Circuit& operator=(Circuit const&) = delete;
 
 	Circuit(Circuit&&) noexcept = default;
-	Circuit& operator=(Circuit&&) noexcept = default;
+	Circuit& operator=(Circuit&&) = default;
 
 	using O_t = Observable<Coefficient_t>;
 
@@ -106,7 +107,7 @@ class Circuit {
 	Observable<Coefficient_t> run(Observable<Coefficient_t> const& target_observable) {
 		auto obs = target_observable;
 		SimulationState state(nb_splitting_gates());
-		for (auto const& qop : operations_) {
+		for (auto const& qop : std::ranges::reverse_view{ operations_ }) {
 			schedule(state, obs, Timing::Before, qop.op_t);
 
 			qop.func(obs);
@@ -127,6 +128,8 @@ class Circuit {
 			return acc + (op.op_t == OperationType::SplittingGate ? 1 : 0);
 		});
 	}
+
+	void reset() { operations_.clear(); }
 
     private:
 	using Fn = std::function<void(O_t&)>;
@@ -170,7 +173,8 @@ class Circuit {
 		}
 	}
 
-	void add_operation_internal(QGate g, unsigned qubit, Coefficient_t c) {
+	template <typename Real, std::enable_if_t<std::is_floating_point_v<Real>, bool> = true>
+	void add_operation_internal(QGate g, unsigned qubit, Real c) {
 		switch (g) {
 		case QGate::Rz:
 			register_op(g, [=](O_t& obs) { obs.apply_rz(qubit, c); });
@@ -188,7 +192,8 @@ class Circuit {
 		}
 	}
 
-	void add_operation_internal(QGate g, unsigned control, unsigned target) {
+	template <typename Integer, std::enable_if_t<std::is_integral_v<Integer>, bool> = true>
+	void add_operation_internal(QGate g, unsigned control, Integer target) {
 		switch (g) {
 		case QGate::Cx:
 			register_op(g, [=](O_t& obs) { obs.apply_cx(control, target); });
