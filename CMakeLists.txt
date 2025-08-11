@@ -5,6 +5,8 @@ set(SANITIZE OFF CACHE BOOL "Build with sanitizers")
 set(BENCHMARK OFF CACHE BOOL "Build benchmarks")
 set(TEST OFF CACHE BOOL "Build tests")
 
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 project(ProPauli
 	VERSION 1.0
 DESCRIPTION "Fast and efficient C++ library for Pauli Propagation"
