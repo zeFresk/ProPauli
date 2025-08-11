@@ -35,14 +35,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Install dependencies if needed.
-      # On Ubuntu, we need to install clang and cmake.
-      # On macOS, these are typically pre-installed with Xcode Command Line Tools.
+      # Step 2: Install dependencies.
+      # On Ubuntu, we install clang and cmake via apt-get.
+      # On macOS, we install the latest version of clang (llvm) via Homebrew.
       - name: Install dependencies (Ubuntu)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake
+
+      - name: Install latest Clang (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install llvm
+          echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
 
       # Step 3: Configure CMake
       # This step creates a 'build' directory and runs cmake to generate the build files.
@@ -70,3 +76,4 @@ jobs:
       - name: Run CTest
         working-directory: ./build
         run: ctest -C Debug --verbose
+
