@@ -178,7 +178,7 @@ jobs:
         run: cmake --build build --config Release
       
       - name: Run benchmark 
-        run: ./build/Benchmark --benchmark_format=json | tee benchmark_result.json
+        run: ./build/Benchmarks --benchmark_format=json | tee benchmark_result.json
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
