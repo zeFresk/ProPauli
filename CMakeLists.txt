@@ -86,6 +86,7 @@ endif()
 
 # GoogleBenchmark
 if (BENCHMARK)
+	include(FetchContent)
 	FetchContent_Declare(
 		googlebenchmark
 		URL https://github.com/google/benchmark/archive/refs/tags/v1.9.4.zip
