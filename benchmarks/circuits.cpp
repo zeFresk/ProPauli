@@ -156,7 +156,94 @@ BENCHMARK_DEFINE_F(Circuit_ZZ_feature_map, GlobalObservable)(benchmark::State& s
 }
 
 BENCHMARK_DEFINE_F(Circuit_ZZ_feature_map, ZLocal)(benchmark::State& state) {
-	auto obs = Observable{ std::string(state.range(0)-1, 'Z') + "I" };
+	auto obs = Observable{ std::string(state.range(0) - 1, 'Z') + "I" };
+
+	for (auto _ : state) {
+		auto res = this->qc.run(obs);
+		benchmark::DoNotOptimize(res);
+	}
+}
+
+void r_y(auto& qc, unsigned qubit, coeff_t theta) {
+	qc.add_operation("Rz", qubit, std::numbers::pi / 2.f);
+	qc.add_operation("H", qubit);
+	qc.add_operation("Rz", qubit, theta);
+	qc.add_operation("H", qubit);
+	qc.add_operation("Rz", qubit, -std::numbers::pi / 2.f);
+}
+
+class Circuit_Efficient_SU2 : public benchmark::Fixture {
+    public:
+	Circuit<> qc;
+	unsigned nb_qubits;
+	Circuit_Efficient_SU2() : qc{ 0 } {}
+	void SetUp(benchmark::State const& state) override {
+		nb_qubits = state.range(0);
+
+		// Ry
+		for (unsigned i = 0; i < nb_qubits; ++i)
+			r_y(qc, i, random_coeff() * std::numbers::pi);
+
+		// Rz
+		for (unsigned i = 0; i < nb_qubits; ++i)
+			qc.add_operation("Rz", i, static_cast<coeff_t>(random_coeff() * std::numbers::pi));
+
+		// cx full
+		for (unsigned i = 0; i < nb_qubits - 1; ++i) {
+			for (unsigned j = 0; j < nb_qubits - 1; ++j) {
+				if (i < j) {
+					qc.add_operation("Cx", i, j);
+				}
+			}
+		}
+
+		// Ry
+		for (unsigned i = 0; i < nb_qubits; ++i)
+			r_y(qc, i, random_coeff() * std::numbers::pi);
+
+		// Rz
+		for (unsigned i = 0; i < nb_qubits; ++i)
+			qc.add_operation("Rz", i, static_cast<coeff_t>(random_coeff() * std::numbers::pi));
+	}
+	void TearDown([[maybe_unused]] benchmark::State const& state) override {}
+	~Circuit_Efficient_SU2() override {}
+};
+
+BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, GlobalObservable)(benchmark::State& state) {
+	auto obs = Observable{ std::string(state.range(0), 'Z') };
+
+	for (auto _ : state) {
+		auto res = this->qc.run(obs);
+		benchmark::DoNotOptimize(res);
+	}
+}
+
+BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, withCoefficientTruncation01)(benchmark::State& state) {
+	auto obs = Observable{ std::string(state.range(0), 'Z') };
+
+	qc.set_truncator(std::make_unique<CoefficientTruncator<>>(0.01f));
+
+	for (auto _ : state) {
+		auto res = this->qc.run(obs);
+		benchmark::DoNotOptimize(res);
+	}
+}
+
+BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, withWeightTruncation4)(benchmark::State& state) {
+	auto obs = Observable{ std::string(state.range(0), 'Z') };
+
+	qc.set_truncator(std::make_unique<WeightTruncator>(4));
+
+	for (auto _ : state) {
+		auto res = this->qc.run(obs);
+		benchmark::DoNotOptimize(res);
+	}
+}
+
+BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, withMultiTruncation6001)(benchmark::State& state) {
+	auto obs = Observable{ std::string(state.range(0), 'Z') };
+
+	qc.set_truncator(combine_truncators_polymorph(CoefficientTruncator<>{ 0.001f }, WeightTruncator{ 6 }));
 
 	for (auto _ : state) {
 		auto res = this->qc.run(obs);
@@ -170,3 +257,7 @@ BENCHMARK(Circuit_add_random_string);
 BENCHMARK(Circuit_run_paulis)->Ranges({ { 512, 512 }, { 1, 1024 } });
 BENCHMARK_REGISTER_F(Circuit_ZZ_feature_map, GlobalObservable)->RangeMultiplier(2)->Range(2, 8);
 BENCHMARK_REGISTER_F(Circuit_ZZ_feature_map, ZLocal)->RangeMultiplier(2)->Range(2, 8);
+BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, GlobalObservable)->RangeMultiplier(2)->Range(2, 8);
+BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withCoefficientTruncation01)->RangeMultiplier(2)->Range(2, 8);
+BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withWeightTruncation4)->RangeMultiplier(2)->Range(2, 8);
+BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withMultiTruncation6001)->RangeMultiplier(2)->Range(2, 64);

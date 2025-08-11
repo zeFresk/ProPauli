@@ -40,8 +40,7 @@ TEST(Truncator, polymorphism) {
 	std::unique_ptr<Truncator<coeff_t>> ptr = std::make_unique<WeightTruncator>(3);
 	std::unique_ptr<Truncator<coeff_t>> ptr2 = std::make_unique<CoefficientTruncator<>>(0.01f);
 	std::unique_ptr<Truncator<coeff_t>> ptr3 =
-		std::make_unique<decltype(combine_truncators(WeightTruncator{ 3 }, CoefficientTruncator<>{ 0.01f }))>(
-			combine_truncators(WeightTruncator{ 3 }, CoefficientTruncator<>{ 0.01f }));
+		combine_truncators_polymorph(WeightTruncator{ 3 }, CoefficientTruncator<>{ 0.01f });
 	std::unique_ptr<Truncator<coeff_t>> ptr4 = std::make_unique<NeverTruncator>();
 
 	std::vector<PauliTerm<coeff_t>> pts = { { "IIII", 0.49 }, { "YYYY", 0.49 }, { "IIIX", 0.02 } };

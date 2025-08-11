@@ -5,6 +5,7 @@
 #include "pauli_term.hpp"
 
 #include <cstddef>
+#include <memory>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -90,6 +91,11 @@ class Truncators : public Truncator<T> {
 template <typename... Truncs>
 auto combine_truncators(Truncs&&... truncs) {
 	return Truncators(std::forward<Truncs>(truncs)...);
+}
+
+template <typename... Truncs>
+auto combine_truncators_polymorph(Truncs&&... truncs) {
+	return std::make_unique<decltype(combine_truncators(std::forward<Truncs>(truncs)...))>(std::forward<Truncs>(truncs)...);
 }
 
 #endif
