@@ -83,7 +83,7 @@ jobs:
       # in the "Checks" tab of the workflow run.
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always() # This ensures the step runs even if the previous step failed
+        if: runner.os == 'Linux' 
         with:
           files: build/Test.xml
 
