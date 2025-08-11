@@ -1,0 +1,72 @@
+# This is a basic GitHub Actions workflow to build and test a C++ CMake project.
+#
+# It defines a single job, "build_and_test", that runs on a matrix of operating systems.
+# For each OS, it checks out the code, configures the CMake project in Debug mode
+# with sanitizers and tests enabled, builds the project, and then runs the tests.
+
+name: C++ CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+  # Triggers the workflow on pull request events for the "main" branch
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build_and_test:
+    # The type of runner that the job will run on
+    # We use a strategy matrix to run the job on multiple operating systems.
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    # Sets the C and C++ compilers to clang for this job
+    env:
+      CC: clang
+      CXX: clang++
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Step 1: Check out the repository under $GITHUB_WORKSPACE, so the job can access it
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install dependencies if needed.
+      # On Ubuntu, we need to install clang and cmake.
+      # On macOS, these are typically pre-installed with Xcode Command Line Tools.
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake
+
+      # Step 3: Configure CMake
+      # This step creates a 'build' directory and runs cmake to generate the build files.
+      # - CMAKE_BUILD_TYPE=Debug: Specifies a debug build.
+      # - SANITIZE=ON: A custom option to enable sanitizers (AddressSanitizer, UndefinedBehaviorSanitizer).
+      # - TEST=ON: A custom option to enable building tests.
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build
+          -D CMAKE_BUILD_TYPE=Debug
+          -D SANITIZE=ON
+          -D TEST=ON
+
+      # Step 4: Build the project
+      # This step compiles the source code using the generated build files.
+      # The --config flag is technically redundant here since we set the build type
+      # in the configure step, but it's good practice for multi-configuration generators.
+      - name: Build project
+        run: cmake --build build --config Debug
+
+      # Step 5: Run tests
+      # This step executes the tests using ctest. It changes into the build directory first.
+      # The -C Debug flag ensures it runs the Debug configuration tests.
+      # The --verbose flag provides more detailed output from the tests.
+      - name: Run CTest
+        working-directory: ./build
+        run: ctest -C Debug --verbose
