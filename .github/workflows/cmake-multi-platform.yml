@@ -23,6 +23,7 @@ permissions:
 
 jobs:
   build_and_test:
+    name: "Build and test"
     # The type of runner that the job will run on
     # We use a strategy matrix to run the job on multiple operating systems.
     strategy:
