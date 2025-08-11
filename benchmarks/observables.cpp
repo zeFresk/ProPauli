@@ -60,7 +60,6 @@ static void Observable_apply_clifford(benchmark::State& state) {
 }
 
 static void Observable_apply_rz_once(benchmark::State& state) {
-	using std::numbers::pi;
 	std::vector<unsigned> random_idx;
 	std::vector<coeff_t> random_theta;
 	random_idx.reserve(buffer_size);
@@ -91,7 +90,6 @@ static void Observable_apply_rz_once(benchmark::State& state) {
 }
 
 static void Observable_apply_rz_ntimes(benchmark::State& state) {
-	using std::numbers::pi;
 	std::vector<unsigned> random_idx;
 	std::vector<coeff_t> random_theta;
 	random_idx.reserve(buffer_size);
@@ -125,7 +123,6 @@ static void Observable_apply_rz_ntimes(benchmark::State& state) {
 }
 
 static void Observable_ev_after_nrz(benchmark::State& state) {
-	using std::numbers::pi;
 	auto rd_pt = random_pauli_term(state.range(0));
 	for (long i = 0; i < state.range(0); ++i) {
 		if (rd_pt[i] == p_i) {
@@ -148,7 +145,6 @@ static void Observable_ev_after_nrz(benchmark::State& state) {
 }
 
 static void Observable_merge_after_nrz(benchmark::State& state) {
-	using std::numbers::pi;
 	auto rd_pt = random_pauli_term(state.range(0));
 	for (long i = 0; i < state.range(0); ++i) {
 		if (rd_pt[i] == p_i) {
@@ -172,7 +168,6 @@ static void Observable_merge_after_nrz(benchmark::State& state) {
 }
 
 static void Observable_truncate_coeff_after_nrz(benchmark::State& state) {
-	using std::numbers::pi;
 	auto rd_pt = random_pauli_term(state.range(0));
 	for (long i = 0; i < state.range(0); ++i) {
 		if (rd_pt[i] == p_i) {
@@ -198,7 +193,6 @@ static void Observable_truncate_coeff_after_nrz(benchmark::State& state) {
 }
 
 static void Observable_truncate_weight10_after_nrz(benchmark::State& state) {
-	using std::numbers::pi;
 	auto rd_pt = random_pauli_term(state.range(0));
 	for (long i = 0; i < state.range(0); ++i) {
 		if (rd_pt[i] == p_i) {

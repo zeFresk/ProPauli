@@ -4,7 +4,8 @@
 #include "pauli.hpp"
 #include "scheduler.hpp"
 #include <cmath>
-#include <numbers>
+
+static constexpr coeff_t pi = M_PI;
 
 TEST(Circuit, init) {
 	Circuit qc{ 4 };
@@ -208,10 +209,10 @@ TEST(Circuit, test_circuit1) {
 	for (unsigned i = 0; i < 4; ++i)
 		qc.add_operation("H", i);
 
-	qc.add_operation("Rz", 0, std::numbers::pi / 2.f);
-	qc.add_operation("Rz", 1, std::numbers::pi / 3.f);
-	qc.add_operation("Rz", 2, std::numbers::pi / 4.f);
-	qc.add_operation("Rz", 3, std::numbers::pi / 5.f);
+	qc.add_operation("Rz", 0, pi / 2.f);
+	qc.add_operation("Rz", 1, pi / 3.f);
+	qc.add_operation("Rz", 2, pi / 4.f);
+	qc.add_operation("Rz", 3, pi / 5.f);
 
 	qc.add_operation("cx", 0, 1);
 	qc.add_operation("cx", 2, 3);
