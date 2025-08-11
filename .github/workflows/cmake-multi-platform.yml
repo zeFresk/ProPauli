@@ -157,12 +157,8 @@ jobs:
       CC: clang
       CXX: clang++
     steps:
-      - uses: actions/checkout@v4
-      - name: Cache Benchmark library
-        uses: actions/cache@v4
-        with:
-          path: examples/cpp/benchmark
-          key: ${{ runner.os }}-googlebenchmark-v1.5.0
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Install dependencies (Ubuntu)
         if: runner.os == 'Linux'
