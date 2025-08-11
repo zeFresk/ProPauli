@@ -69,7 +69,7 @@ jobs:
       # - TEST=ON: A custom option to enable building tests.
       - name: Configure CMake
         run: >
-          cmake -S . -B build -GNinja
+          cmake -S . -B build
           -D CMAKE_BUILD_TYPE=Debug
           -D SANITIZE=ON
           -D TEST=ON
@@ -93,3 +93,45 @@ jobs:
         with:
           files: build/Test.xml
 
+# This job runs on Ubuntu only, to calculate and upload code coverage
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    needs: build_and_test
+    permissions:
+      checks: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install lcov
+        run: sudo apt-get update && sudo apt-get install -y lcov
+
+      # Configure with coverage flags enabled
+      - name: Configure CMake for Coverage
+        run: >
+          cmake -S . -B build
+          -D CMAKE_BUILD_TYPE=Debug
+          -D COVERAGE=ON
+
+      - name: Build project
+        run: cmake --build build --config Debug
+
+      - name: Run tests
+        working-directory: ./build
+        run: ctest -C Debug --output-on-failure
+
+      # Generate and upload the coverage report to Coveralls
+      - name: Generate Coverage Report
+        working-directory: ./build
+        run: |
+          lcov --capture --directory . --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' --output-file coverage.info # filter out system libraries
+
+      - name: Upload to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./build/coverage.info
