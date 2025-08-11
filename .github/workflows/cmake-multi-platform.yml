@@ -127,7 +127,7 @@ jobs:
         working-directory: ./build
         run: |          
           llvm-profdata merge -sparse *.profraw -o default.profdata
-          llvm-cov export -format=lcov "$TEST_EXECUTABLE" -instr-profile=default.profdata -sources include -sources src > coverage.info
+          llvm-cov export -format=lcov UnitTest -instr-profile=default.profdata -sources include -sources src > coverage.info
 
       - name: Upload to Coveralls
         uses: coverallsapp/github-action@v2
