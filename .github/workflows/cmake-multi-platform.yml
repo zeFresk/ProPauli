@@ -75,11 +75,20 @@ jobs:
       - name: Build project
         run: cmake --build build --config Debug
 
-      # Step 5: Run tests
-      # This step executes the tests using ctest. It changes into the build directory first.
-      # The -C Debug flag ensures it runs the Debug configuration tests.
-      # The --verbose flag provides more detailed output from the tests.
-      - name: Run CTest
+      - name: Run CTest and Generate Report
         working-directory: ./build
-        run: ctest -C Debug --verbose
+        run: ctest -C Debug --verbose --output-on-failure --output-junit Test.xml
+
+      # This step only runs on Ubuntu to avoid generating the badge multiple times
+      - name: Publish Test Results as Badge
+        if: runner.os == 'Linux'
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: build/Test.xml
+          
+      - name: Autocommit SVG
+        uses: svgo-actions/svgo-autocommit@v1
+        with:
+            pattern: '**/*.svg'
+            commit_message: 'chore: optimize svg and add to repo'
 
