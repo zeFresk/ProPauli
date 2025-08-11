@@ -50,6 +50,12 @@ jobs:
           brew install llvm cmake
           echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
 
+
+      - name: Debug
+        run: |
+          cmake --version
+          clang++ --version
+
       # Step 3: Configure CMake
       # This step creates a 'build' directory and runs cmake to generate the build files.
       # - CMAKE_BUILD_TYPE=Debug: Specifies a debug build.
