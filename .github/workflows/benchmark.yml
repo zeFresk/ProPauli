@@ -1,4 +1,4 @@
-name: Benchmarks
+name: Benchmarks page generation
 
 # Do not run this workflow on pull request since this workflow has permission to modify contents.
 on:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   benchmark:
-    name: Run Google C++ Benchmark Framework example
+    name: Run Google C++ Benchmark
     runs-on: ubuntu-latest
     env:
       CC: clang
