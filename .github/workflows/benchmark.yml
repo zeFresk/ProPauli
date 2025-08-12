@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   benchmark:
-    name: Run Google C++ Benchmark Framework example
+    name: Run Google C++ Benchmark
     runs-on: ubuntu-latest
     env:
       CC: clang
