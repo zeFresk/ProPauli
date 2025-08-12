@@ -57,8 +57,8 @@ This example demonstrates a 64-qubit circuit using both `CoefficientTruncator` a
 ```cpp
 Circuit qc{ 64,
             combine_truncators_polymorph(
-                CoefficientTruncator<>{ 0.001f },
-                WeightTruncator{ 6 }
+                CoefficientTruncator<>{ 0.001f }, // remove terms with coefficient below 0.001
+                WeightTruncator{ 6 } // remove terms with pauli weight > 6
             )
 };
 
@@ -101,8 +101,9 @@ private:
 
 Circuit qc{ 4, std::make_unique<MyCustomWeightTruncator>(2) };
 
-// The same effect can be achieved using a lambda with PredicateTruncator
-// Circuit qc{ 4, std::make_unique<PredicateTruncator<decltype([](const auto& pt){ return pt.pauli_weight() == 2; })>>([](const auto& pt){ return pt.pauli_weight() == 2; }) };
+// NOTE: The same effect can be achieved using a lambda with PredicateTruncator
+// auto predicate = [](const auto& pt) { return pt.pauli_weight() == 2; };
+// Circuit qc{ 4, std::make_unique<PredicateTruncator<decltype(predicate)>>(predicate) };
 
 qc.add_operation("H", 0);
 qc.add_operation("H", 1);
