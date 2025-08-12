@@ -78,7 +78,7 @@ TEST(Readme, custom_truncator_predicate) {
 
 TEST(Readme, noise_model) {
 	NoiseModel<coeff_t> nm;
-	nm.add_amplitude_on_gate(QGate::Cx, 0.01);
+	nm.add_amplitude_damping_on_gate(QGate::Cx, 0.01);
 
 	Circuit qc{ 4, std::make_unique<NeverTruncator>(), nm };
 

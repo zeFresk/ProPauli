@@ -59,9 +59,33 @@ inline auto in_array(T&& v, Arr const& arr) {
 	return std::find_if(std::cbegin(arr), std::cend(arr), [&](auto&& e) { return e.first == v; });
 }
 
+/**
+ * @brief Represents a quantum circuit and provides a high-level simulation interface.
+ * @tparam Coefficient_t The numeric type for coefficients (e.g., float, double).
+ *
+ * The Circuit class is the main user-facing interface for building and simulating
+ * quantum circuits. It allows users to add a sequence of quantum operations and then
+ * run a simulation to compute the resulting observable and its expectation value.
+ *
+ * This class manages the complexities of the simulation, including the application
+ * of gates, noise, truncation, and merging, based on the provided policies.
+ */
 template <typename Coefficient_t = coeff_t>
 class Circuit {
     public:
+	/**
+	 * @brief Constructs a new Circuit.
+	 * @tparam TruncatorPtr Type convertible to a unique_ptr of Truncators, should be deduced
+	 * @param nb_qubits The number of qubits in the circuit.
+	 * @param truncator A unique_ptr to a truncator object that defines how to simplify the observable.
+	 * @param noise_model A noise model to apply to the gates.
+	 * @param merge_policy A policy defining when to merge identical Pauli terms.
+	 * @param truncate_policy A policy defining when to apply the truncator.
+	 *
+	 * @snippet tests/snippets/circuit.cpp basic_circuit
+	 * @snippet tests/snippets/circuit.cpp large_circuit_truncation
+	 * @snippet tests/snippets/scheduler.cpp scheduling_policy
+	 */
 	template <typename TruncatorPtr = std::unique_ptr<Truncator<Coefficient_t>>>
 	Circuit(unsigned nb_qubits, TruncatorPtr truncator = std::make_unique<NeverTruncator>(),
 		NoiseModel<Coefficient_t> const& noise_model = {},
@@ -79,8 +103,20 @@ class Circuit {
 
 	using O_t = Observable<Coefficient_t>;
 
+	/**
+	 * @brief Gets the number of qubits in the circuit.
+	 * @return The number of qubits.
+	 */
 	unsigned nb_qubits() const { return nb_qubits_; }
 
+	/**
+	 * @brief Adds a quantum operation to the circuit by name.
+	 * @tparam T Parameter pack for the arguments of the operation.
+	 * @param op The name of the operation (e.g., "H", "CX", "Rz"). Case-insensitive.
+	 * @param args The arguments for the operation, such as qubit indices or rotation angles.
+	 *
+	 * @note This is a convenience function that looks up the `QGate` enum from a string.
+	 */
 	template <typename... T>
 	void add_operation(std::string op, T&&... args) {
 		using enum QGate;
@@ -100,6 +136,15 @@ class Circuit {
 		add_operation(qg, std::forward<T>(args)...);
 	}
 
+	/**
+	 * @brief Adds a quantum operation to the circuit using its enum type.
+	 * @tparam T Parameter pack for the arguments of the operation.
+	 * @param g The `QGate` enum representing the operation.
+	 * @param args The arguments for the operation, such as qubit indices or rotation angles.
+	 *
+	 * This is the primary method for adding operations inside the library. It dispatches
+	 * to the correct internal implementation based on the gate type and arguments.
+	 */
 	template <typename... T>
 	void add_operation(QGate g, T&&... args) {
 		add_operation_internal(g, std::forward<T>(args)...);
@@ -107,6 +152,16 @@ class Circuit {
 		noise_model_.apply_noise_after(*this, g, std::forward<T>(args)...);
 	}
 
+	/**
+	 * @brief Runs the simulation on the circuit.
+	 * @param target_observable The initial observable to be propagated backward through the circuit.
+	 * @return The final, evolved observable after applying all circuit operations in reverse.
+	 *
+	 * The `run` method executes the simulation by applying each gate in the circuit
+	 * to the observable in reverse order (Heisenberg picture). It returns the final
+	 * observable, from which the expectation value can be calculated.
+	 * @see Observable::expectation_value()
+	 */
 	Observable<Coefficient_t> run(Observable<Coefficient_t> const& target_observable) {
 		auto obs = target_observable;
 		SimulationState state(nb_splitting_gates());
@@ -126,25 +181,44 @@ class Circuit {
 		return obs;
 	}
 
+	/**
+	 * @brief Counts the number of gates in the circuit that can split an observable.
+	 * @return The total number of splitting gates (e.g., Rz, AmplitudeDamping).
+	 *
+	 * Splitting gates are operations that can increase the number of Pauli terms in the
+	 * observable, making the simulation more complex.
+	 */
 	std::size_t nb_splitting_gates() const {
 		return std::accumulate(operations_.cbegin(), operations_.cend(), 0, [](auto&& acc, auto&& op) {
 			return acc + (op.op_t == OperationType::SplittingGate ? 1 : 0);
 		});
 	}
 
+	/**
+	 * @brief Clears all operations from the circuit.
+	 */
 	void reset() { operations_.clear(); }
 
-	void set_truncator(std::unique_ptr<Truncator<Coefficient_t>> truncator) {
-		truncator_ = std::move(truncator);
-	}
+	/**
+	 * @brief Sets a new truncator for the circuit.
+	 * @param truncator A unique pointer to the new truncator.
+	 * @see Truncator
+	 */
+	void set_truncator(std::unique_ptr<Truncator<Coefficient_t>> truncator) { truncator_ = std::move(truncator); }
 
-	void set_merge_policy(std::unique_ptr<SchedulingPolicy> policy) {
-		merge_policy_ = std::move(policy);
-	}
+	/**
+	 * @brief Sets a new policy for when to merge Pauli terms.
+	 * @param policy A unique pointer to the new merge policy.
+	 * @see SchedulingPolicy
+	 */
+	void set_merge_policy(std::unique_ptr<SchedulingPolicy> policy) { merge_policy_ = std::move(policy); }
 
-	void set_truncate_policy(std::unique_ptr<SchedulingPolicy> policy) {
-		truncate_policy_ = std::move(policy);
-	}
+	/**
+	 * @brief Sets a new policy for when to truncate the observable.
+	 * @param policy A unique pointer to the new truncate policy.
+	 * @see SchedulingPolicy
+	 */
+	void set_truncate_policy(std::unique_ptr<SchedulingPolicy> policy) { truncate_policy_ = std::move(policy); }
 
     private:
 	using Fn = std::function<void(O_t&)>;
@@ -174,6 +248,14 @@ class Circuit {
 		}
 	}
 
+	/**
+	 * @brief Adds a single-qubit gate to the circuit.
+	 * @param g The gate to add (e.g., QGate::H, QGate::X).
+	 * @param qubit The index of the qubit to apply the gate to.
+	 * @throw std::invalid_argument if the gate is not a single-qubit gate.
+	 *
+	 * @snippet tests/readme.cpp basic
+	 */
 	void add_operation_internal(QGate g, unsigned qubit) {
 		if (in_array(g, pg_map) != std::cend(pg_map)) {
 			auto it = in_array(g, pg_map);
@@ -188,6 +270,16 @@ class Circuit {
 		}
 	}
 
+	/**
+	 * @brief Adds a single-qubit gate with a real parameter to the circuit.
+	 * @tparam Real A floating-point type.
+	 * @param g The gate to add (e.g., QGate::Rz).
+	 * @param qubit The index of the qubit to apply the gate to.
+	 * @param c The real-valued parameter (e.g., rotation angle).
+	 * @throw std::invalid_argument if the gate does not support a real parameter.
+	 *
+	 * @snippet tests/readme.cpp basic
+	 */
 	template <typename Real, std::enable_if_t<std::is_floating_point_v<Real>, bool> = true>
 	void add_operation_internal(QGate g, unsigned qubit, Real c) {
 		switch (g) {
@@ -207,6 +299,16 @@ class Circuit {
 		}
 	}
 
+	/**
+	 * @brief Adds a two-qubit gate to the circuit.
+	 * @tparam Integer An integral type.
+	 * @param g The gate to add (e.g., QGate::Cx).
+	 * @param control The index of the control qubit.
+	 * @param target The index of the target qubit.
+	 * @throw std::invalid_argument if the gate is not a two-qubit gate.
+	 *
+	 * @snippet tests/readme.cpp basic
+	 */
 	template <typename Integer, std::enable_if_t<std::is_integral_v<Integer>, bool> = true>
 	void add_operation_internal(QGate g, unsigned control, Integer target) {
 		switch (g) {

@@ -10,6 +10,9 @@
 #include <type_traits>
 #include <utility>
 
+/**
+ * @brief A predicate that returns true if a PauliTerm's coefficient is below a threshold.
+ */
 template <typename T = coeff_t>
 class CoefficientPredicate {
 	T threshold_;
@@ -20,6 +23,9 @@ class CoefficientPredicate {
 	bool operator()(PauliTerm<T> const& pt) const { return std::abs(pt.coefficient()) < threshold_; }
 };
 
+/**
+ * @brief A predicate that returns true if a PauliTerm's weight is above a threshold.
+ */
 class WeightPredicate {
 	std::size_t weight_threshold_;
 
@@ -32,6 +38,9 @@ class WeightPredicate {
 	}
 };
 
+/**
+ * @brief A predicate that always returns false.
+ */
 class NeverPredicate {
     public:
 	NeverPredicate() = default;
@@ -41,13 +50,37 @@ class NeverPredicate {
 	}
 };
 
+/**
+ * @brief An abstract base class for defining truncation strategies.
+ * @tparam T The numeric type of the PauliTerm coefficients.
+ *
+ * A truncator is responsible for removing Pauli terms from an observable to
+ * manage the simulation's complexity.
+ */
 template <typename T>
 class Truncator {
     public:
 	virtual ~Truncator() {}
+
+	/**
+	 * @brief Truncates a vector of Pauli terms in place.
+	 * @param paulis The vector of PauliTerm objects to truncate.
+	 * @return The number of terms removed.
+	 */
 	virtual std::size_t truncate(std::vector<PauliTerm<T>>& paulis) const = 0;
 };
 
+/**
+ * @brief A generic truncator that removes elements from a vector of PauliTerm based on a predicate.
+ * @tparam P The type of the predicate.
+ * @tparam T The numeric type of the PauliTerm coefficients.
+ *
+ * This class wraps a predicate (a callable that returns `bool`) and uses it with
+ * `std::erase_if` to filter the list of Pauli terms. This is the primary mechanism
+ * for implementing different truncation strategies.
+ *
+ * @snippet tests/readme.cpp custom_truncator_predicate
+ */
 template <typename P, typename T = coeff_t>
 class PredicateTruncator : public Truncator<T> {
 	P pred;
@@ -64,12 +97,30 @@ class PredicateTruncator : public Truncator<T> {
 	std::size_t truncate(std::vector<PauliTerm<T>>& paulis) const override { return std::erase_if(paulis, pred); }
 };
 
+/**
+ * @brief A truncator that removes Pauli terms with small coefficients.
+ * @snippet tests/snippets/truncate.cpp coefficient_truncator
+ */
 template <typename T = coeff_t>
 using CoefficientTruncator = decltype(PredicateTruncator(std::declval<CoefficientPredicate<T>>()));
 
+/**
+ * @brief A truncator that removes Pauli terms with high Pauli weight.
+ * @snippet tests/snippets/truncate.cpp weight_truncator
+ */
 using WeightTruncator = decltype(PredicateTruncator(std::declval<WeightPredicate>()));
+
+/**
+ * @brief A truncator that never removes any terms.
+ * @snippet tests/snippets/truncate.cpp never_truncator
+ */
 using NeverTruncator = decltype(PredicateTruncator(NeverPredicate{}));
 
+/**
+ * @brief A class that combines multiple truncators into one at compile time.
+ * @tparam T The coefficient type.
+ * @tparam Ts A parameter pack of truncator types.
+ */
 template <typename T = coeff_t, typename... Ts>
 class Truncators : public Truncator<T> {
 	std::tuple<Ts...> truncators;
@@ -88,14 +139,22 @@ class Truncators : public Truncator<T> {
 	}
 };
 
+/**
+ * @brief A helper function to combine multiple truncators.
+ * @snippet tests/snippets/truncate.cpp combine_truncators
+ */
 template <typename... Truncs>
 auto combine_truncators(Truncs&&... truncs) {
 	return Truncators(std::forward<Truncs>(truncs)...);
 }
 
+/**
+ * @brief A helper function to combine multiple truncators and return a unique_ptr to the base class.
+ */
 template <typename... Truncs>
 auto combine_truncators_polymorph(Truncs&&... truncs) {
-	return std::make_unique<decltype(combine_truncators(std::forward<Truncs>(truncs)...))>(std::forward<Truncs>(truncs)...);
+	return std::make_unique<decltype(combine_truncators(std::forward<Truncs>(truncs)...))>(
+		std::forward<Truncs>(truncs)...);
 }
 
 #endif

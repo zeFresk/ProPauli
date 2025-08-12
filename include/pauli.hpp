@@ -158,12 +158,29 @@ static_assert(std::to_underlying(QGate::Count) ==
 	      (std::to_underlying(Pauli_gates::Count) + std::to_underlying(Clifford_Gates_1Q::Count) +
 	       std::to_underlying(UnitalNoise::Count) + 1 + 1 + 1));
 
+/**
+ * @brief Represents a single Pauli operator (I, X, Y, or Z).
+ *
+ * This class is the fundamental building block for representing Pauli strings.
+ * It provides methods for applying quantum gates and checking for commutation,
+ * forming the core of the Heisenberg picture evolution.
+ */
 class Pauli {
     private:
 	Pauli_enum p_;
 
     public:
+	/**
+	 * @brief Constructs a Pauli operator from its enum representation.
+	 * @param pauli The enum value (e.g., Pauli_enum::I).
+	 */
 	constexpr Pauli(Pauli_enum pauli) : p_(pauli) {}
+
+	/**
+	 * @brief Constructs a Pauli operator from a character.
+	 * @param c The character ('I', 'X', 'Y', or 'Z').
+	 * @throw std::invalid_argument if the character is not a valid Pauli operator.
+	 */
 	constexpr Pauli(char c) {
 		switch (c) {
 		case 'I':
@@ -182,6 +199,12 @@ class Pauli {
 			throw std::invalid_argument{ "Bad argument to Pauli constructor. Accepted: [I, X, Y, Z]" };
 		}
 	}
+
+	/**
+	 * @brief Constructs a Pauli operator from a string.
+	 * @param str A string containing a single character: "I", "X", "Y", or "Z".
+	 * @throw std::invalid_argument if the string is not a single valid Pauli character.
+	 */
 	constexpr Pauli(std::string_view str) : Pauli(str[0]) {
 		if (str.size() != 1) {
 			throw std::invalid_argument{ "Pauli should be a size 1 string" };
@@ -194,30 +217,70 @@ class Pauli {
 	Pauli& operator=(Pauli const&) = default;
 	Pauli& operator=(Pauli&&) noexcept = default;
 
+	/**
+	 * @brief Implicit conversion to the underlying Pauli_enum.
+	 */
 	operator Pauli_enum() const { return p_; }
 
+	/**
+	 * @brief Checks for equality between two Pauli objects.
+	 */
 	bool operator==(Pauli p) const { return p_ == p.p_; }
+
+	/**
+	 * @brief Checks for inequality between two Pauli objects.
+	 */
 	bool operator!=(Pauli p) const { return !(*this == p); }
 
+	/**
+	 * @brief Checks if this Pauli operator commutes with another.
+	 * @param p The other Pauli operator.
+	 * @return True if they commute, false otherwise.
+	 */
 	bool commutes_with(Pauli p) const {
 		return pauli_gates_coeff[std::to_underlying(p_)][std::to_underlying(p.p_)] > 0;
 	}
 
+	/**
+	 * @brief Calculates the Pauli weight of the operator.
+	 * @return 1 if the operator is X, Y, or Z; 0 if it is I.
+	 */
 	std::size_t weight() const noexcept { return p_ != Pauli_enum::I; }
 
+	/**
+	 * @brief Applies a Pauli gate to this operator (in the Heisenberg picture).
+	 * @param g The Pauli gate to apply.
+	 * @return A coefficient (+1 or -1) resulting from the application. The operator itself is not modified.
+	 */
 	coeff_t apply_pauli(Pauli_gates g) const {
 		return pauli_gates_coeff[std::to_underlying(p_)][std::to_underlying(g)];
 	}
 
+	/**
+	 * @brief Applies a unital noise channel to this operator.
+	 * @param n The type of unital noise.
+	 * @param p The noise probability.
+	 * @return The scaling factor to be applied to the PauliTerm's coefficient.
+	 */
 	coeff_t apply_unital_noise(UnitalNoise n, coeff_t p) const {
 		return coeff_t{ 1 } - (p * unital_noise_map_coeff[std::to_underlying(p_)][std::to_underlying(n)]);
 	}
 
+	/**
+	 * @brief Applies a single-qubit Clifford gate to this operator, modifying it in place.
+	 * @param g The Clifford gate to apply.
+	 * @return A coefficient (+1 or -1) resulting from the application.
+	 */
 	coeff_t apply_clifford(Clifford_Gates_1Q g) {
 		p_ = clifford_gates_map[std::to_underlying(p_)][std::to_underlying(g)];
 		return clifford_gates_coeff[std::to_underlying(p_)][std::to_underlying(g)];
 	}
 
+	/**
+	 * @brief Applies the control part of a CNOT gate to this operator, modifying it and the target in place.
+	 * @param target The Pauli operator on the target qubit.
+	 * @return A coefficient (+1 or -1) resulting from the application.
+	 */
 	coeff_t apply_cx(Pauli& target) {
 		auto res = cx_map[std::to_underlying(p_)][std::to_underlying(target.p_)];
 		p_ = res.first;
@@ -230,6 +293,9 @@ class Pauli {
 			       coeff_t{ 1 };
 	}
 
+	/**
+	 * @brief Overloads the << operator to print a Pauli operator to an output stream.
+	 */
 	friend std::ostream& operator<<(std::ostream& os, Pauli const& p) {
 		os << pauli_char_map[std::to_underlying(p.p_)];
 		return os;
