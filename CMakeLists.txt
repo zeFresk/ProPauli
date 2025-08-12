@@ -135,6 +135,10 @@ if (COVERAGE)
 	endif()
 endif()
 
+#doc 
+if (DOCUMENTATION)
+	add_subdirectory(doc)
+endif()
 
 #configure_file(
 #	"${SRC_DIR}/config.h.in"
