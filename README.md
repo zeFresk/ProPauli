@@ -1,5 +1,10 @@
 # ProPauli: A fast and efficient Quantum Circuit simulator based on Pauli back-propagation
 
+[![Build and tests (MacOS + Linux)](https://github.com/zeFresk/ProPauli/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/zeFresk/ProPauli/actions/workflows/cmake-multi-platform.yml)
+[![Coverage Status](https://coveralls.io/repos/github/zeFresk/ProPauli/badge.svg?branch=main)](https://coveralls.io/github/zeFresk/ProPauli?branch=main)
+[![Latest benchmarks](https://img.shields.io/badge/Benchmarks-View-blue)](https://zefresk.github.io/ProPauli/dev/bench)
+
+
 ProPauli is a modern and efficient C++ library for the simulation of Quantum circuits. It relies on evolving Quantum observables backward in the Heisenberg picture, an approach that can be significantly more efficient for certain classes of quantum algorithms, particularly those where the initial state is simple and the observable is complex. The simulation complexity depends on the complexity of the evolved observable rather than the state. This is especially advantageous for noisy circuits, where Pauli back-propagation allows for efficient classical simulation.
 
 -----
