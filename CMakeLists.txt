@@ -44,20 +44,20 @@ target_compile_features(propaulib PUBLIC cxx_std_23)
 target_compile_options(propaulib PUBLIC
 	$<$<CXX_COMPILER_ID:MSVC>:/W4>
 	$<$<CXX_COMPILER_ID:Clang,GNU>:-Wall -Wextra -Wpedantic>
-			#$<$<CXX_COMPILER_ID:Clang>:-stdlib=libc++>
+									#$<$<CXX_COMPILER_ID:Clang>:-stdlib=libc++>
 	$<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/O2>
 	$<$<AND:$<CONFIG:Release>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-O3 -march=native -g>
 	$<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:Clang>>:-ffast-math>
 	$<$<CONFIG:Debug>:-g>
 	$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>,$<BOOL:${SANITIZE}>>:-fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize=vptr>
 	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:GNU>>:-ftest-coverage -fprofile-arcs>
-	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:Clang>>:-fprofile-instr-generate -fcoverage-mapping>
+	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:Clang>>:-fprofile-instr-generate -fcoverage-mapping --coverage>
 	)
 
 target_link_options(propaulib INTERFACE
 	$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>,$<BOOL:${SANITIZE}>>:-fsanitize=address -fsanitize=undefined -fno-sanitize=vptr>
-	$<$<AND:$<BOOL:${COVERAGE}>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-fprofile-instr-generate>
-			#$<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>
+	$<$<AND:$<BOOL:${COVERAGE}>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-fprofile-instr-generate --coverage>
+									#$<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>
 	)
 
 if (TEST)
@@ -65,7 +65,7 @@ if (TEST)
 	include(FetchContent)
 	FetchContent_Declare(
 		googletest
-			# Specify the commit you depend on and update it regularly.
+									# Specify the commit you depend on and update it regularly.
 		URL https://github.com/google/googletest/archive/52eb8108c5bdec04579160ae17225d66034bd723.zip
 		DOWNLOAD_EXTRACT_TIMESTAMP true
 )
@@ -86,6 +86,7 @@ endif()
 
 # GoogleBenchmark
 if (BENCHMARK)
+	include(FetchContent)
 	FetchContent_Declare(
 		googlebenchmark
 		URL https://github.com/google/benchmark/archive/refs/tags/v1.9.4.zip
@@ -101,10 +102,19 @@ endif()
 
 # coverage
 if (COVERAGE)
-	if (NOT BUILD_TESTS)
-		message(FATAL_ERROR "Can't build coverage report with tests")
+	if (NOT TEST)
+		message(FATAL_ERROR "Can't build coverage report without tests")
 	endif()
 	set(TARGET_NAME UnitTest)
+
+	target_compile_options(UnitTest PUBLIC
+	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:GNU>>:-ftest-coverage -fprofile-arcs -O0 -g>
+	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:Clang>>:-fprofile-instr-generate -fcoverage-mapping --coverage -O0 -g>
+	)
+
+	target_link_options(UnitTest PUBLIC
+	$<$<AND:$<BOOL:${COVERAGE}>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-fprofile-instr-generate --coverage>
+	)
 
 	if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 

@@ -1,0 +1,56 @@
+# Do not run this workflow on pull request since this workflow has permission to modify contents.
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  # deployments permission to deploy GitHub pages website
+  deployments: write
+  # contents permission to update benchmark contents in gh-pages branch
+  contents: write
+
+jobs:
+  benchmark:
+    name: Run Google C++ Benchmark Framework example
+    runs-on: ubuntu-latest
+    needs: build_and_test
+    env:
+      CC: clang
+      CXX: clang++
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Benchmark library
+        uses: actions/cache@v4
+        with:
+          path: examples/cpp/benchmark
+          key: ${{ runner.os }}-googlebenchmark-v1.5.0
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake
+
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build
+          -D CMAKE_BUILD_TYPE=Release
+          -D SANITIZE=OFF
+          -D TEST=OFF
+          -D BENCHMARK=ON
+
+      - name: Build project
+        run: cmake --build build --config Release
+      
+      - name: Run benchmark 
+        run: ./build/Benchmark --benchmark_format=json | tee benchmark_result.json
+
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: C++ Benchmark
+          tool: 'googlecpp'
+          output-file-path: build/benchmark_result.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true

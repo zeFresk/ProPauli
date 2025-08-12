@@ -2,9 +2,12 @@
 #define PP_BENCH_HELPER_HPP
 
 #include <string>
+#include <cmath>
 
 #include "pauli.hpp"
 #include "pauli_term.hpp"
+
+static constexpr coeff_t pi = M_PI;
 
 Pauli random_pauli();
 Pauli_gates random_pauli_gate();

@@ -4,6 +4,7 @@
 #include "pauli.hpp"
 #include "truncate.hpp"
 #include <benchmark/benchmark.h>
+#include <cmath>
 #include <string_view>
 
 static constexpr std::size_t buffer_size = 1024 * 1024;
@@ -133,12 +134,12 @@ class Circuit_ZZ_feature_map : public benchmark::Fixture {
 
 		// Rz
 		for (unsigned i = 0; i < nb_qubits; ++i)
-			qc.add_operation("Rz", i, static_cast<coeff_t>(random_coeff() * std::numbers::pi));
+			qc.add_operation("Rz", i, static_cast<coeff_t>(random_coeff() * pi));
 
 		// non optimal cx - rz - cx
 		for (unsigned i = 0; i < nb_qubits - 1; ++i) {
 			qc.add_operation("Cx", i, i + 1);
-			qc.add_operation("Rz", i + 1, static_cast<coeff_t>(random_coeff() * std::numbers::pi));
+			qc.add_operation("Rz", i + 1, static_cast<coeff_t>(random_coeff() * pi));
 			qc.add_operation("Cx", i, i + 1);
 		}
 	}
@@ -165,11 +166,11 @@ BENCHMARK_DEFINE_F(Circuit_ZZ_feature_map, ZLocal)(benchmark::State& state) {
 }
 
 void r_y(auto& qc, unsigned qubit, coeff_t theta) {
-	qc.add_operation("Rz", qubit, std::numbers::pi / 2.f);
+	qc.add_operation("Rz", qubit, pi / 2.f);
 	qc.add_operation("H", qubit);
 	qc.add_operation("Rz", qubit, theta);
 	qc.add_operation("H", qubit);
-	qc.add_operation("Rz", qubit, -std::numbers::pi / 2.f);
+	qc.add_operation("Rz", qubit, -pi / 2.f);
 }
 
 class Circuit_Efficient_SU2 : public benchmark::Fixture {
@@ -182,11 +183,11 @@ class Circuit_Efficient_SU2 : public benchmark::Fixture {
 
 		// Ry
 		for (unsigned i = 0; i < nb_qubits; ++i)
-			r_y(qc, i, random_coeff() * std::numbers::pi);
+			r_y(qc, i, random_coeff() * pi);
 
 		// Rz
 		for (unsigned i = 0; i < nb_qubits; ++i)
-			qc.add_operation("Rz", i, static_cast<coeff_t>(random_coeff() * std::numbers::pi));
+			qc.add_operation("Rz", i, static_cast<coeff_t>(random_coeff() * pi));
 
 		// cx full
 		for (unsigned i = 0; i < nb_qubits - 1; ++i) {
@@ -199,11 +200,11 @@ class Circuit_Efficient_SU2 : public benchmark::Fixture {
 
 		// Ry
 		for (unsigned i = 0; i < nb_qubits; ++i)
-			r_y(qc, i, random_coeff() * std::numbers::pi);
+			r_y(qc, i, random_coeff() * pi);
 
 		// Rz
 		for (unsigned i = 0; i < nb_qubits; ++i)
-			qc.add_operation("Rz", i, static_cast<coeff_t>(random_coeff() * std::numbers::pi));
+			qc.add_operation("Rz", i, static_cast<coeff_t>(random_coeff() * pi));
 	}
 	void TearDown([[maybe_unused]] benchmark::State const& state) override {}
 	~Circuit_Efficient_SU2() override {}

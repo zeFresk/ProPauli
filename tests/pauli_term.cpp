@@ -12,6 +12,7 @@
 #include "pauli.hpp"
 #include "pauli_term.hpp"
 
+static constexpr coeff_t pi = M_PI;
 static constexpr auto seed = 42;
 
 std::string random_pauli_string(unsigned length) {
@@ -156,7 +157,6 @@ TEST(PauliTerm, apply_cx_single) {
 TEST(PauliTerm, apply_rz_single) {
 	using enum Pauli_enum;
 	using PT = PauliTerm<coeff_t>;
-	using std::numbers::pi;
 	std::array<std::tuple<PT, std::pair<PT, PT>>, 2> truth_table = { { { 1 * X, { 1 * X, -1 * Y } },
 									   { 1 * Y, { 1 * Y, 1 * X } } } };
 	std::array<coeff_t, 10> radians = { { 0, -0, pi, -pi, pi / 2.f, -pi / 2.f, pi / 4.f, -pi / 4.f, pi / 8.f,
@@ -265,7 +265,6 @@ TEST(PauliTerm, apply_cx_multiple) {
 
 TEST(PauliTerm, apply_rz_multiple) {
 	using enum Pauli_enum;
-	using std::numbers::pi;
 	std::array<std::tuple<std::string_view, coeff_t, std::string_view, coeff_t, std::string_view>, 2> truth_table = {
 		{ { "X", 1, "X", -1, "Y" }, { "Y", 1, "Y", 1, "X" } }
 	};
@@ -407,7 +406,7 @@ TEST(PauliTerm, aplitude_damping_xy) {
 
 	for (unsigned i = 0; i < pt.size(); ++i) {
 		pt.apply_amplitude_damping_xy(i, p);
-		EXPECT_FLOAT_EQ(pt.coefficient(), std::pow(std::sqrt(1-p), i+1));
+		EXPECT_FLOAT_EQ(pt.coefficient(), std::pow(std::sqrt(1 - p), i + 1));
 		EXPECT_EQ(pt.phash(), og_ph);
 	}
 }
@@ -422,8 +421,8 @@ TEST(PauliTerm, aplitude_damping_z) {
 		auto np = pt.apply_amplitude_damping_z(i, p);
 		auto nc = np.coefficient();
 		EXPECT_FLOAT_EQ(nc, p);
-		EXPECT_FLOAT_EQ(pt.coefficient(), 1-p);
+		EXPECT_FLOAT_EQ(pt.coefficient(), 1 - p);
 		EXPECT_EQ(pt.phash(), og_ph);
-		EXPECT_EQ(np.pauli_weight(), og_pt.pauli_weight()-1);
+		EXPECT_EQ(np.pauli_weight(), og_pt.pauli_weight() - 1);
 	}
 }

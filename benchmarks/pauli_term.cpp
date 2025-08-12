@@ -62,7 +62,6 @@ static void PauliTerm_apply_clifford(benchmark::State& state) {
 }
 
 static void PauliTerm_apply_rz(benchmark::State& state) {
-	using std::numbers::pi;
 	std::vector<unsigned> random_idx;
 	std::vector<coeff_t> random_theta;
 	random_idx.reserve(buffer_size);
