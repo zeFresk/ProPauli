@@ -160,10 +160,6 @@ std::cout << "Expectation value: " << obs.expectation_value() << std::endl;
 
 This work is based on and implements ideas from the following articles:
 
-  * **Title**: Pauli Propagation: A Computational Framework for Simulating Quantum Systems
-    **Authors**: Manuel S. Rudolph, Tyson Jones, Yanting Teng, Armando Angrisani, Zoë Holmes
-    **Link**: [https://arxiv.org/abs/2505.21606](https://arxiv.org/abs/2505.21606)
+  * _Pauli Propagation: A Computational Framework for Simulating Quantum Systems_, by Manuel S. Rudolph, Tyson Jones, Yanting Teng, Armando Angrisani, Zoë Holmes [https://arxiv.org/abs/2505.21606](https://arxiv.org/abs/2505.21606)
 
-  * **Title**: Efficient simulation of parametrized quantum circuits under non-unital noise through Pauli backpropagation
-    **Authors**: Victor Martinez, Armando Angrisani, Ekaterina Pankovets, Omar Fawzi, Daniel Stilck França
-    **Link**: [https://arxiv.org/abs/2501.13050](https://arxiv.org/abs/2501.13050)
+  * _Efficient simulation of parametrized quantum circuits under non-unital noise through Pauli backpropagation_, by Victor Martinez, Armando Angrisani, Ekaterina Pankovets, Omar Fawzi, Daniel Stilck França [https://arxiv.org/abs/2501.13050](https://arxiv.org/abs/2501.13050)
