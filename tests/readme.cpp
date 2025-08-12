@@ -9,6 +9,7 @@
 #include <iostream>
 
 TEST(Readme, basic) {
+	//! [basic]
 	Circuit qc{ 2 };
 	qc.add_operation("H", 0);
 	qc.add_operation("Rz", 0, 1.57f);
@@ -16,6 +17,7 @@ TEST(Readme, basic) {
 
 	auto result = qc.run(Observable{ "ZZ" });
 	std::cout << "Expectation value: " << result.expectation_value() << std::endl;
+	//! [basic]
 }
 
 TEST(Readme, large_truncation) {
@@ -38,6 +40,7 @@ TEST(Readme, large_truncation) {
 	std::cout << "Expectation value: " << result.expectation_value() << std::endl;
 }
 
+//! [custom_truncator_predicate]
 class MyCustomWeightTruncator : public Truncator<coeff_t> {
     public:
 	MyCustomWeightTruncator(std::size_t weight_to_remove) : weight_to_remove_(weight_to_remove) {}
@@ -62,6 +65,8 @@ TEST(Readme, custom_truncator_class) {
 	auto result = qc.run(Observable{ "XXXX" });
 	std::cout << "Expectation value: " << result.expectation_value() << std::endl;
 }
+
+//! [custom_truncator_predicate]
 
 TEST(Readme, custom_truncator_predicate) {
 	auto predicate = [](const auto& pt) { return pt.pauli_weight() == 2; };
