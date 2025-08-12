@@ -1,4 +1,4 @@
-name: C++ CI
+name: Build and tests (MacOS + Linux)
 
 on:
   # Triggers the workflow on push events but only for the "main" branch

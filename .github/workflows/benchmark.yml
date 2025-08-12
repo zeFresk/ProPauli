@@ -1,4 +1,4 @@
-name: Benchmarks
+name: Benchmarks page generation
 
 # Do not run this workflow on pull request since this workflow has permission to modify contents.
 on:
