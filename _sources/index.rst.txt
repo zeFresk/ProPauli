@@ -22,8 +22,15 @@ Welcome to ProPauli's documentation!
 
    api_reference
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Performance
+
+   Benchmarks <https://zefresk.github.io/ProPauli/dev/bench/>
+
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`search`
+
