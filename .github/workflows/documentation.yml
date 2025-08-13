@@ -23,6 +23,9 @@ jobs:
           packages: cmake doxygen texlive-font-utils
           version: 1.0      
 
+      - name: Install Python dependencies
+        run: pip install -r doc/requirements.txt
+
       - name: Build documentation
         run: |
           cmake -S . -B build -DDOCUMENTATION=ON
