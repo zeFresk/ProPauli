@@ -1,0 +1,35 @@
+name: Build and Deploy Documentation
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write # Required to push to the gh-pages branch
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen texlive-font-utils cmake
+          pip install -r doc/requirements.txt
+
+      - name: Build documentation
+        run: |
+          cmake -S . -B build -DDOCUMENTATION=ON
+          cmake --build build --target doc
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/doc/html
+          keep_files: true
+          dry_run: true
