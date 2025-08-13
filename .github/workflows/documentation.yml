@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: cmake doxygen texlive-font-utils
+          packages: cmake doxygen texlive-font-utils graphviz
           version: 1.0      
 
       - name: Install Python dependencies

@@ -26,7 +26,7 @@ Welcome to ProPauli's documentation!
    :maxdepth: 1
    :caption: Performance
 
-   Benchmarks <dev/bench/index.html>
+   Benchmarks <https://zefresk.github.io/ProPauli/dev/bench/>
 
 Indices and tables
 ==================
