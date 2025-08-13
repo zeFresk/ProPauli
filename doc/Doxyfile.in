@@ -1,0 +1,8 @@
+PROJECT_NAME           = "ProPauli"
+INPUT                  = @DOXYGEN_INPUT_DIR@
+OUTPUT_DIRECTORY       = @DOXYGEN_OUTPUT_DIR@
+RECURSIVE              = YES
+EXTRACT_ALL            = YES
+GENERATE_HTML          = NO
+GENERATE_XML           = YES
+EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@

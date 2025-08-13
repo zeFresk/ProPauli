@@ -1,0 +1,36 @@
+name: Build and Deploy Documentation
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: write # Required to push to the gh-pages branch
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+
+      - name: Install dependencies
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: cmake doxygen texlive-font-utils graphviz
+          version: 1.0      
+
+      - name: Install Python dependencies
+        run: pip install -r doc/requirements.txt
+
+      - name: Build documentation
+        run: |
+          cmake -S . -B build -DDOCUMENTATION=ON
+          cmake --build build --target doc
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/doc/html
+          keep_files: true

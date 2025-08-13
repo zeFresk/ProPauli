@@ -77,7 +77,7 @@ if (TEST)
 
 	enable_testing()
 	include(GoogleTest)
-	file(GLOB TESTS_SRC "${PROJECT_SOURCE_DIR}/tests/*.cpp")
+	file(GLOB TESTS_SRC "${PROJECT_SOURCE_DIR}/tests/*.cpp" "${PROJECT_SOURCE_DIR}/tests/*/*.cpp")
 	add_executable(UnitTest ${TESTS_SRC})
 	target_link_libraries(UnitTest propaulib gtest gtest_main gmock)
 	target_include_directories(UnitTest PUBLIC ${INCLUDE_DIR})
@@ -135,6 +135,10 @@ if (COVERAGE)
 	endif()
 endif()
 
+#doc 
+if (DOCUMENTATION)
+	add_subdirectory(doc)
+endif()
 
 #configure_file(
 #	"${SRC_DIR}/config.h.in"

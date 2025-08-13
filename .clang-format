@@ -98,7 +98,7 @@ PenaltyExcessCharacter: 100
 PenaltyReturnTypeOnItsOwnLine: 60
 
 PointerAlignment: Left # Modifié Right -> Left
-ReflowComments: false
+ReflowComments: IndentOnly
 SortIncludes: false
 #SortUsingDeclarations: false # Unknown to clang-format-4.0
 SpaceAfterCStyleCast: false

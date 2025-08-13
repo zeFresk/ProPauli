@@ -7,6 +7,10 @@
 #include <type_traits>
 #include <unordered_map>
 
+/**
+ * @brief Defines the strengths of different noise channels.
+ * @tparam T The numeric type for the noise strength.
+ */
 template <typename T>
 struct Noise {
 	T depolarizing_strength = 0;
@@ -14,13 +18,26 @@ struct Noise {
 	T amplitude_damping_strength = 0;
 };
 
+/**
+ * @brief A model for applying noise to quantum gates.
+ * @tparam T The numeric type for noise parameters.
+ *
+ * A `NoiseModel` allows you to specify that certain types of noise should be
+ * automatically applied after certain gates in a `Circuit`.
+ */
 template <typename T>
 class NoiseModel {
     private:
 	std::unordered_map<QGate, Noise<T>> noise_map;
 
     public:
+	/**
+	 * @brief Constructs an empty noise model.
+	 *
+	 * @snippet tests/snippets/noise_model.cpp noise_model_usage
+	 */
 	NoiseModel() {}
+
 	template <typename C>
 	void apply_noise_after(C& qc, QGate g, unsigned qubit) const {
 		auto it = noise_map.find(g);
@@ -50,10 +67,17 @@ class NoiseModel {
 
 	template <typename C, typename Real, std::enable_if_t<std::is_floating_point_v<Real>, bool> = true>
 	void apply_noise_after(C& qc, QGate cg, unsigned qubit, [[maybe_unused]] Real theta) {
-		assert(cg == QGate::Rz || cg == QGate::Depolarizing || cg == QGate::Dephasing || cg == QGate::AmplitudeDamping);
+		assert(cg == QGate::Rz || cg == QGate::Depolarizing || cg == QGate::Dephasing ||
+		       cg == QGate::AmplitudeDamping);
 		apply_noise_after(qc, cg, qubit);
 	}
 
+	/**
+	 * @brief Adds a unital noise channel to be applied after a specific gate type.
+	 * @param g The gate type after which the noise should be applied.
+	 * @param un The type of unital noise (Depolarizing or Dephasing).
+	 * @param n The strength/probability of the noise.
+	 */
 	void add_unital_noise_on_gate(QGate g, UnitalNoise un, T n) {
 		auto& nm = noise_map[g];
 		switch (un) {
@@ -68,7 +92,12 @@ class NoiseModel {
 		}
 	}
 
-	void add_amplitude_on_gate(QGate g, T n) {
+	/**
+	 * @brief Adds an amplitude damping channel to be applied after a specific gate type.
+	 * @param g The gate type after which the noise should be applied.
+	 * @param n The strength/probability of the noise.
+	 */
+	void add_amplitude_damping_on_gate(QGate g, T n) {
 		auto& nm = noise_map[g];
 		nm.amplitude_damping_strength = n;
 	}
