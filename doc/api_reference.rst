@@ -23,9 +23,9 @@ Truncators
 .. doxygenclass:: Truncator
    :members:
 .. doxygentypedef:: CoefficientTruncator
-   :members:
+
 .. doxygentypedef:: WeightTruncator
-   :members:
+
 
 Noise Model
 -----------

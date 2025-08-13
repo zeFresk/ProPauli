@@ -21,10 +21,12 @@ set(SPHINX_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/html")
 configure_file(Doxyfile.in "${SPHINX_SOURCE_DIR}/Doxyfile" @ONLY)
 configure_file(conf.py.in "${SPHINX_SOURCE_DIR}/conf.py" @ONLY)
 
+file(GLOB_RECURSE RST_FILES ${SPHINX_SOURCE_DIR} "*.rst")
+
 # --- Doxygen Target ---
 # This target runs Doxygen from the build directory, where the configured Doxyfile is located.
 add_custom_target(DoxygenBuild
-				COMMAND ${DOXYGEN_EXECUTABLE} "${SPHINX_BUILD_DIR}/Doxyfile"
+				COMMAND ${DOXYGEN_EXECUTABLE} "${SPHINX_SOURCE_DIR}/Doxyfile"
 				WORKING_DIRECTORY ${SPHINX_BUILD_DIR}
 				COMMENT "Generating Doxygen XML..."
 				VERBATIM
@@ -33,14 +35,14 @@ add_custom_target(DoxygenBuild
 # --- Sphinx Target ---
 add_custom_command(
 				OUTPUT "${SPHINX_OUTPUT_DIR}/index.html"
-				# Command: sphinx-build [options] <source_dir> <output_dir>
-				# <source_dir> is your 'doc' directory with .rst files.
-				# <output_dir> is where the final HTML goes.
+					# Command: sphinx-build [options] <source_dir> <output_dir>
+					# <source_dir> is your 'doc' directory with .rst files.
+					# <output_dir> is where the final HTML goes.
 				COMMAND ${SPHINX_EXECUTABLE} -b html "${SPHINX_SOURCE_DIR}" "${SPHINX_OUTPUT_DIR}"
-				# The working directory for Sphinx MUST be where the configured `conf.py` is.
-				# This is the key change that fixes the error.
+					# The working directory for Sphinx MUST be where the configured `conf.py` is.
+					# This is the key change that fixes the error.
 				WORKING_DIRECTORY ${SPHINX_BUILD_DIR}
-				DEPENDS DoxygenBuild
+				DEPENDS DoxygenBuild ${RST_FILES}
 				COMMENT "Generating Sphinx HTML documentation..."
 				VERBATIM
 )
