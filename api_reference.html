@@ -1,0 +1,1047 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference &mdash; ProPauli  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Guide: Using the Observable Primitive" href="guides/observable_guide.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ProPauli
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guides/circuit_guide.html">Guide: Building Quantum Circuits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/observable_guide.html">Guide: Using the Observable Primitive</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#circuit">Circuit</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4I0E7Circuit"><code class="docutils literal notranslate"><span class="pre">Circuit</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4I0EN7Circuit7CircuitEj12TruncatorPtrRK10NoiseModelI13Coefficient_tENSt10unique_ptrI16SchedulingPolicyEENSt10unique_ptrI16SchedulingPolicyEE"><code class="docutils literal notranslate"><span class="pre">Circuit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4NK7Circuit9nb_qubitsEv"><code class="docutils literal notranslate"><span class="pre">nb_qubits()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4IDpEN7Circuit13add_operationEvNSt6stringEDpRR1T"><code class="docutils literal notranslate"><span class="pre">add_operation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4IDpEN7Circuit13add_operationEv5QGateDpRR1T"><code class="docutils literal notranslate"><span class="pre">add_operation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N7Circuit3runERK10ObservableI13Coefficient_tE"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4NK7Circuit18nb_splitting_gatesEv"><code class="docutils literal notranslate"><span class="pre">nb_splitting_gates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N7Circuit5resetEv"><code class="docutils literal notranslate"><span class="pre">reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N7Circuit13set_truncatorENSt10unique_ptrI9TruncatorI13Coefficient_tEEE"><code class="docutils literal notranslate"><span class="pre">set_truncator()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N7Circuit16set_merge_policyENSt10unique_ptrI16SchedulingPolicyEE"><code class="docutils literal notranslate"><span class="pre">set_merge_policy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N7Circuit19set_truncate_policyENSt10unique_ptrI16SchedulingPolicyEE"><code class="docutils literal notranslate"><span class="pre">set_truncate_policy()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#observable">Observable</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4I0E10Observable"><code class="docutils literal notranslate"><span class="pre">Observable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10Observable10ObservableENSt11string_viewE1T"><code class="docutils literal notranslate"><span class="pre">Observable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10Observable10ObservableENSt16initializer_listINSt11string_viewEEE"><code class="docutils literal notranslate"><span class="pre">Observable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10Observable10ObservableENSt16initializer_listI9PauliTermI1TEEE"><code class="docutils literal notranslate"><span class="pre">Observable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4I0EN10Observable10ObservableERR4IterRR4Iter"><code class="docutils literal notranslate"><span class="pre">Observable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10Observable11apply_pauliE11Pauli_gatesj"><code class="docutils literal notranslate"><span class="pre">apply_pauli()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10Observable14apply_cliffordE17Clifford_Gates_1Qj"><code class="docutils literal notranslate"><span class="pre">apply_clifford()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10Observable18apply_unital_noiseE11UnitalNoisej1T"><code class="docutils literal notranslate"><span class="pre">apply_unital_noise()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10Observable8apply_cxEjj"><code class="docutils literal notranslate"><span class="pre">apply_cx()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10Observable8apply_rzEj1T"><code class="docutils literal notranslate"><span class="pre">apply_rz()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10Observable23apply_amplitude_dampingEj1T"><code class="docutils literal notranslate"><span class="pre">apply_amplitude_damping()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4NK10Observable17expectation_valueEv"><code class="docutils literal notranslate"><span class="pre">expectation_value()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10ObservableixENSt6size_tE"><code class="docutils literal notranslate"><span class="pre">operator[]()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4NK10ObservableixENSt6size_tE"><code class="docutils literal notranslate"><span class="pre">operator[]()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10Observable5beginEv"><code class="docutils literal notranslate"><span class="pre">begin()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4NK10Observable5beginEv"><code class="docutils literal notranslate"><span class="pre">begin()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4NK10Observable6cbeginEv"><code class="docutils literal notranslate"><span class="pre">cbegin()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10Observable3endEv"><code class="docutils literal notranslate"><span class="pre">end()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4NK10Observable3endEv"><code class="docutils literal notranslate"><span class="pre">end()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4NK10Observable4cendEv"><code class="docutils literal notranslate"><span class="pre">cend()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4NK10Observable4sizeEv"><code class="docutils literal notranslate"><span class="pre">size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10Observable5mergeEv"><code class="docutils literal notranslate"><span class="pre">merge()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4I0EN10Observable8truncateENSt6size_tERR9Truncator"><code class="docutils literal notranslate"><span class="pre">truncate()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#pauliterm">PauliTerm</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4I0E9PauliTerm"><code class="docutils literal notranslate"><span class="pre">PauliTerm</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N9PauliTerm9PauliTermENSt11string_viewE1T"><code class="docutils literal notranslate"><span class="pre">PauliTerm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N9PauliTerm9PauliTermENSt16initializer_listI5PauliEE1T"><code class="docutils literal notranslate"><span class="pre">PauliTerm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N9PauliTerm9PauliTermE5Pauli1T"><code class="docutils literal notranslate"><span class="pre">PauliTerm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N9PauliTerm11apply_pauliE11Pauli_gatesj"><code class="docutils literal notranslate"><span class="pre">apply_pauli()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N9PauliTerm14apply_cliffordE17Clifford_Gates_1Qj"><code class="docutils literal notranslate"><span class="pre">apply_clifford()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N9PauliTerm18apply_unital_noiseE11UnitalNoisej1T"><code class="docutils literal notranslate"><span class="pre">apply_unital_noise()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N9PauliTerm8apply_cxEjj"><code class="docutils literal notranslate"><span class="pre">apply_cx()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N9PauliTerm8apply_rzEj1T"><code class="docutils literal notranslate"><span class="pre">apply_rz()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N9PauliTerm26apply_amplitude_damping_xyEj1T"><code class="docutils literal notranslate"><span class="pre">apply_amplitude_damping_xy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N9PauliTerm25apply_amplitude_damping_zEj1T"><code class="docutils literal notranslate"><span class="pre">apply_amplitude_damping_z()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4NK9PauliTerm17expectation_valueEv"><code class="docutils literal notranslate"><span class="pre">expectation_value()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4NK9PauliTerm5phashEv"><code class="docutils literal notranslate"><span class="pre">phash()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4NK9PauliTerm15equal_bitstringERK9PauliTerm"><code class="docutils literal notranslate"><span class="pre">equal_bitstring()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N9PauliTerm9add_coeffE1T"><code class="docutils literal notranslate"><span class="pre">add_coeff()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4NK9PauliTerm11coefficientEv"><code class="docutils literal notranslate"><span class="pre">coefficient()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4NK9PauliTerm12pauli_weightEv"><code class="docutils literal notranslate"><span class="pre">pauli_weight()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N9PauliTermeqERK9PauliTermRK9PauliTerm"><code class="docutils literal notranslate"><span class="pre">operator==</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#truncators">Truncators</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4I0E9Truncator"><code class="docutils literal notranslate"><span class="pre">Truncator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4NK9Truncator8truncateERNSt6vectorI9PauliTermI1TEEE"><code class="docutils literal notranslate"><span class="pre">truncate()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4I0E20CoefficientTruncator"><code class="docutils literal notranslate"><span class="pre">CoefficientTruncator</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv415WeightTruncator"><code class="docutils literal notranslate"><span class="pre">WeightTruncator</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#noise-model">Noise Model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4I0E10NoiseModel"><code class="docutils literal notranslate"><span class="pre">NoiseModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10NoiseModel10NoiseModelEv"><code class="docutils literal notranslate"><span class="pre">NoiseModel()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10NoiseModel24add_unital_noise_on_gateE5QGate11UnitalNoise1T"><code class="docutils literal notranslate"><span class="pre">add_unital_noise_on_gate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#_CPPv4N10NoiseModel29add_amplitude_damping_on_gateE5QGate1T"><code class="docutils literal notranslate"><span class="pre">add_amplitude_damping_on_gate()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ProPauli</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api_reference.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="api-reference">
+<h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h1>
+<p>This section contains the auto-generated API documentation for the ProPauli library.</p>
+<section id="circuit">
+<h2>Circuit<a class="headerlink" href="#circuit" title="Link to this heading"></a></h2>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0E7Circuit">
+<span id="_CPPv3I0E7Circuit"></span><span id="_CPPv2I0E7Circuit"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Coefficient_t</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">coeff_t</span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classCircuit"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Circuit</span></span></span><a class="headerlink" href="#_CPPv4I0E7Circuit" title="Link to this definition"></a><br /></dt>
+<dd><p>Represents a quantum circuit and provides a high-level simulation interface. </p>
+<p>
+The <a class="reference internal" href="#classCircuit"><span class="std std-ref">Circuit</span></a> class is the main user-facing interface for building and simulating quantum circuits. It allows users to add a sequence of quantum operations and then run a simulation to compute the resulting observable and its expectation value.</p>
+<p>This class manages the complexities of the simulation, including the application of gates, noise, truncation, and merging, based on the provided policies. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Coefficient_t</strong> – The numeric type for coefficients (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., float, double).</p>
+</dd>
+</dl>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN7Circuit7CircuitEj12TruncatorPtrRK10NoiseModelI13Coefficient_tENSt10unique_ptrI16SchedulingPolicyEENSt10unique_ptrI16SchedulingPolicyEE">
+<span id="_CPPv3I0EN7Circuit7CircuitEj12TruncatorPtrRK10NoiseModelI13Coefficient_tENSt10unique_ptrI16SchedulingPolicyEENSt10unique_ptrI16SchedulingPolicyEE"></span><span id="_CPPv2I0EN7Circuit7CircuitEj12TruncatorPtrRK10NoiseModelI13Coefficient_tENSt10unique_ptrI16SchedulingPolicyEENSt10unique_ptrI16SchedulingPolicyEE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TruncatorPtr</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unique_ptr</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E9Truncator" title="Truncator"><span class="n"><span class="pre">Truncator</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7Circuit" title="Circuit::Coefficient_t"><span class="n"><span class="pre">Coefficient_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classCircuit_1a5c041f847f979e60cc8f639ef32366f6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Circuit</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nb_qubits</span></span>, <a class="reference internal" href="#_CPPv4I0EN7Circuit7CircuitEj12TruncatorPtrRK10NoiseModelI13Coefficient_tENSt10unique_ptrI16SchedulingPolicyEENSt10unique_ptrI16SchedulingPolicyEE" title="Circuit::Circuit::TruncatorPtr"><span class="n"><span class="pre">TruncatorPtr</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">truncator</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">make_unique</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">NeverTruncator</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="#_CPPv4I0E10NoiseModel" title="NoiseModel"><span class="n"><span class="pre">NoiseModel</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7Circuit" title="Circuit::Coefficient_t"><span class="n"><span class="pre">Coefficient_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">noise_model</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span>, <span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unique_ptr</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">SchedulingPolicy</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">merge_policy</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">make_unique</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">AlwaysAfterSplittingPolicy</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unique_ptr</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">SchedulingPolicy</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">truncate_policy</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">make_unique</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">AlwaysAfterSplittingPolicy</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN7Circuit7CircuitEj12TruncatorPtrRK10NoiseModelI13Coefficient_tENSt10unique_ptrI16SchedulingPolicyEENSt10unique_ptrI16SchedulingPolicyEE" title="Link to this definition"></a><br /></dt>
+<dd><p>Constructs a new <a class="reference internal" href="#classCircuit"><span class="std std-ref">Circuit</span></a>. </p>
+<p><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="n">Circuit</span><span class="w"> </span><span class="n">qc</span><span class="p">{</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;Rz&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.57f</span><span class="p">);</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;CX&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0u</span><span class="p">,</span><span class="w"> </span><span class="mi">1u</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">qc</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">Observable</span><span class="p">{</span><span class="w"> </span><span class="s">&quot;ZZ&quot;</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Expectation value: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">expectation_value</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+ <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="n">Circuit</span><span class="w"> </span><span class="n">qc</span><span class="p">{</span><span class="w"> </span><span class="mi">64</span><span class="p">,</span>
+<span class="w">                </span><span class="n">combine_truncators_polymorph</span><span class="p">(</span>
+<span class="w">                    </span><span class="n">CoefficientTruncator</span><span class="o">&lt;&gt;</span><span class="p">{</span><span class="w"> </span><span class="mf">0.001f</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="c1">// remove terms with coefficient below 0.001</span>
+<span class="w">                    </span><span class="n">WeightTruncator</span><span class="p">{</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="c1">// remove terms with pauli weight &gt; 6</span>
+<span class="w">                </span><span class="p">)</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// Apply a layer of Hadamard gates</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">64</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span>
+<span class="w">        </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Entangling layer</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">63</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;CX&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">qc</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">Observable</span><span class="p">{</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span><span class="w"> </span><span class="sc">&#39;Z&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Expectation value: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">expectation_value</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+ <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// Policies are passed to the Circuit constructor to control optimization.</span>
+<span class="w">    </span><span class="c1">// This circuit will merge identical Pauli terms only after a splitting gate is applied.</span>
+<span class="w">    </span><span class="n">Circuit</span><span class="w"> </span><span class="nf">qc</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">NeverTruncator</span><span class="o">&gt;</span><span class="p">(),</span>
+<span class="w">        </span><span class="p">{},</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">AlwaysAfterSplittingPolicy</span><span class="o">&gt;</span><span class="p">(),</span><span class="w"> </span><span class="c1">// Merge policy</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">NeverPolicy</span><span class="o">&gt;</span><span class="p">()</span><span class="w">               </span><span class="c1">// Truncate policy</span>
+<span class="w">    </span><span class="p">);</span>
+</pre></div>
+</div>
+ </p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>TruncatorPtr</strong> – Type convertible to a unique_ptr of Truncators, should be deduced </p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>nb_qubits</strong> – The number of qubits in the circuit. </p></li>
+<li><p><strong>truncator</strong> – A unique_ptr to a truncator object that defines how to simplify the observable. </p></li>
+<li><p><strong>noise_model</strong> – A noise model to apply to the gates. </p></li>
+<li><p><strong>merge_policy</strong> – A policy defining when to merge identical Pauli terms. </p></li>
+<li><p><strong>truncate_policy</strong> – A policy defining when to apply the truncator.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7Circuit9nb_qubitsEv">
+<span id="_CPPv3NK7Circuit9nb_qubitsEv"></span><span id="_CPPv2NK7Circuit9nb_qubitsEv"></span><span id="Circuit::nb_qubitsC"></span><span class="target" id="classCircuit_1adc508d43e0e9e3759c153c4a1ee6630a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nb_qubits</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7Circuit9nb_qubitsEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Gets the number of qubits in the circuit. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of qubits. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4IDpEN7Circuit13add_operationEvNSt6stringEDpRR1T">
+<span id="_CPPv3IDpEN7Circuit13add_operationENSt6stringEDpRR1T"></span><span id="_CPPv2IDpEN7Circuit13add_operationENSt6stringEDpRR1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classCircuit_1a483ce8aadf38984d37b7fc7659fc9907"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_operation</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">op</span></span>, <a class="reference internal" href="#_CPPv4IDpEN7Circuit13add_operationEvNSt6stringEDpRR1T" title="Circuit::add_operation::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">...</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">args</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4IDpEN7Circuit13add_operationEvNSt6stringEDpRR1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Adds a quantum operation to the circuit by name. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is a convenience function that looks up the <code class="docutils literal notranslate"><span class="pre">QGate</span></code> enum from a string. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>T</strong> – Parameter pack for the arguments of the operation. </p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>op</strong> – The name of the operation (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., “H”, “CX”, “Rz”). Case-insensitive. </p></li>
+<li><p><strong>args</strong> – The arguments for the operation, such as qubit indices or rotation angles.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4IDpEN7Circuit13add_operationEv5QGateDpRR1T">
+<span id="_CPPv3IDpEN7Circuit13add_operationE5QGateDpRR1T"></span><span id="_CPPv2IDpEN7Circuit13add_operationE5QGateDpRR1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classCircuit_1ae108a8ce92d13b123cd3d0b0d92a4d9f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_operation</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">QGate</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">g</span></span>, <a class="reference internal" href="#_CPPv4IDpEN7Circuit13add_operationEv5QGateDpRR1T" title="Circuit::add_operation::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">...</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">args</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4IDpEN7Circuit13add_operationEv5QGateDpRR1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Adds a quantum operation to the circuit using its enum type. </p>
+<p>
+This is the primary method for adding operations inside the library. It dispatches to the correct internal implementation based on the gate type and arguments. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>T</strong> – Parameter pack for the arguments of the operation. </p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>g</strong> – The <code class="docutils literal notranslate"><span class="pre">QGate</span></code> enum representing the operation. </p></li>
+<li><p><strong>args</strong> – The arguments for the operation, such as qubit indices or rotation angles.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7Circuit3runERK10ObservableI13Coefficient_tE">
+<span id="_CPPv3N7Circuit3runERK10ObservableI13Coefficient_tE"></span><span id="_CPPv2N7Circuit3runERK10ObservableI13Coefficient_tE"></span><span id="Circuit::run__Observable:Coefficient_t:CR"></span><span class="target" id="classCircuit_1a9001e7fb145990d78448a8f8318d1bea"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E10Observable" title="Observable"><span class="n"><span class="pre">Observable</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7Circuit" title="Circuit::Coefficient_t"><span class="n"><span class="pre">Coefficient_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">run</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E10Observable" title="Observable"><span class="n"><span class="pre">Observable</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7Circuit" title="Circuit::Coefficient_t"><span class="n"><span class="pre">Coefficient_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">target_observable</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7Circuit3runERK10ObservableI13Coefficient_tE" title="Link to this definition"></a><br /></dt>
+<dd><p>Runs the simulation on the circuit. </p>
+<p>
+The <code class="docutils literal notranslate"><span class="pre">run</span></code> method executes the simulation by applying each gate in the circuit to the observable in reverse order (Heisenberg picture). It returns the final observable, from which the expectation value can be calculated. <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classObservable_1a07c61a9c8e4614c70da384f64b1b7eb4"><span class="std std-ref">Observable::expectation_value()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target_observable</strong> – The initial observable to be propagated backward through the circuit. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The final, evolved observable after applying all circuit operations in reverse.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7Circuit18nb_splitting_gatesEv">
+<span id="_CPPv3NK7Circuit18nb_splitting_gatesEv"></span><span id="_CPPv2NK7Circuit18nb_splitting_gatesEv"></span><span id="Circuit::nb_splitting_gatesC"></span><span class="target" id="classCircuit_1a276e753a106640e8711a660e9f9f9038"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nb_splitting_gates</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7Circuit18nb_splitting_gatesEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Counts the number of gates in the circuit that can split an observable. </p>
+<p>
+Splitting gates are operations that can increase the number of Pauli terms in the observable, making the simulation more complex. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The total number of splitting gates (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., Rz, AmplitudeDamping).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7Circuit5resetEv">
+<span id="_CPPv3N7Circuit5resetEv"></span><span id="_CPPv2N7Circuit5resetEv"></span><span id="Circuit::reset"></span><span class="target" id="classCircuit_1a460de2a890e7283e7dd5c33f584a6ffe"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7Circuit5resetEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Clears all operations from the circuit. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7Circuit13set_truncatorENSt10unique_ptrI9TruncatorI13Coefficient_tEEE">
+<span id="_CPPv3N7Circuit13set_truncatorENSt10unique_ptrI9TruncatorI13Coefficient_tEEE"></span><span id="_CPPv2N7Circuit13set_truncatorENSt10unique_ptrI9TruncatorI13Coefficient_tEEE"></span><span id="Circuit::set_truncator__std::unique_ptr:Truncator:Coefficient_t::"></span><span class="target" id="classCircuit_1a5260ed089da750ac49c55adcddad415e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set_truncator</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unique_ptr</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E9Truncator" title="Truncator"><span class="n"><span class="pre">Truncator</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7Circuit" title="Circuit::Coefficient_t"><span class="n"><span class="pre">Coefficient_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">truncator</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7Circuit13set_truncatorENSt10unique_ptrI9TruncatorI13Coefficient_tEEE" title="Link to this definition"></a><br /></dt>
+<dd><p>Sets a new truncator for the circuit. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classTruncator"><span class="std std-ref">Truncator</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>truncator</strong> – A unique pointer to the new truncator. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7Circuit16set_merge_policyENSt10unique_ptrI16SchedulingPolicyEE">
+<span id="_CPPv3N7Circuit16set_merge_policyENSt10unique_ptrI16SchedulingPolicyEE"></span><span id="_CPPv2N7Circuit16set_merge_policyENSt10unique_ptrI16SchedulingPolicyEE"></span><span id="Circuit::set_merge_policy__std::unique_ptr:SchedulingPolicy:"></span><span class="target" id="classCircuit_1a3063996ed67d3685b5e20246aae784d4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set_merge_policy</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unique_ptr</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">SchedulingPolicy</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">policy</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7Circuit16set_merge_policyENSt10unique_ptrI16SchedulingPolicyEE" title="Link to this definition"></a><br /></dt>
+<dd><p>Sets a new policy for when to merge Pauli terms. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>SchedulingPolicy</p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>policy</strong> – A unique pointer to the new merge policy. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7Circuit19set_truncate_policyENSt10unique_ptrI16SchedulingPolicyEE">
+<span id="_CPPv3N7Circuit19set_truncate_policyENSt10unique_ptrI16SchedulingPolicyEE"></span><span id="_CPPv2N7Circuit19set_truncate_policyENSt10unique_ptrI16SchedulingPolicyEE"></span><span id="Circuit::set_truncate_policy__std::unique_ptr:SchedulingPolicy:"></span><span class="target" id="classCircuit_1a85b096a9bcb6087073e88081872e16f6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set_truncate_policy</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unique_ptr</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">SchedulingPolicy</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">policy</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7Circuit19set_truncate_policyENSt10unique_ptrI16SchedulingPolicyEE" title="Link to this definition"></a><br /></dt>
+<dd><p>Sets a new policy for when to truncate the observable. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>SchedulingPolicy</p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>policy</strong> – A unique pointer to the new truncate policy. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+<section id="observable">
+<h2>Observable<a class="headerlink" href="#observable" title="Link to this heading"></a></h2>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0E10Observable">
+<span id="_CPPv3I0E10Observable"></span><span id="_CPPv2I0E10Observable"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">coeff_t</span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classObservable"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Observable</span></span></span><a class="headerlink" href="#_CPPv4I0E10Observable" title="Link to this definition"></a><br /></dt>
+<dd><p>Represents a quantum observable as a linear combination of Pauli strings. </p>
+<p>
+An <code class="docutils literal notranslate"><a class="reference internal" href="#classObservable"><span class="std std-ref"><span class="pre">Observable</span></span></a></code> is a sum of <code class="docutils literal notranslate"><a class="reference internal" href="#classPauliTerm"><span class="std std-ref"><span class="pre">PauliTerm</span></span></a></code> objects, each consisting of a Pauli string and a coefficient. This class is the central data structure in the Pauli back-propagation simulation. Quantum gates are applied to this object, evolving it backward in the Heisenberg picture. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>T</strong> – The numeric type for the coefficients (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., float, double).</p>
+</dd>
+</dl>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10Observable10ObservableENSt11string_viewE1T">
+<span id="_CPPv3N10Observable10ObservableENSt11string_viewE1T"></span><span id="_CPPv2N10Observable10ObservableENSt11string_viewE1T"></span><span id="Observable::Observable__std::string_view.T"></span><span class="target" id="classObservable_1a98a185ba144da0efdc395ad8a89b0bc2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Observable</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">pauli_string</span></span>, <a class="reference internal" href="#_CPPv4I0E10Observable" title="Observable::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">coeff</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E10Observable" title="Observable::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">{</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">}</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10Observable10ObservableENSt11string_viewE1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Constructs an observable from a single Pauli string. </p>
+<p><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// From a single Pauli string with a coefficient</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">obs_from_string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Observable</span><span class="p">(</span><span class="s">&quot;IXYZ&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">-1.0f</span><span class="p">);</span>
+</pre></div>
+</div>
+ </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pauli_string</strong> – A string representing the Pauli operators (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., “IXYZ”). </p></li>
+<li><p><strong>coeff</strong> – The coefficient of this Pauli term.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10Observable10ObservableENSt16initializer_listINSt11string_viewEEE">
+<span id="_CPPv3N10Observable10ObservableENSt16initializer_listINSt11string_viewEEE"></span><span id="_CPPv2N10Observable10ObservableENSt16initializer_listINSt11string_viewEEE"></span><span id="Observable::Observable__std::initializer_list:std::string_view:"></span><span class="target" id="classObservable_1a89cd6eb61475ba9a4bf4aa8b0dc7ad7a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Observable</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">initializer_list</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">pauli_string_list</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10Observable10ObservableENSt16initializer_listINSt11string_viewEEE" title="Link to this definition"></a><br /></dt>
+<dd><p>Constructs an observable from a list of Pauli strings. </p>
+<p><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// From an initializer_list of Pauli strings</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">obs_from_string_list</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Observable</span><span class="p">({</span><span class="w"> </span><span class="s">&quot;IXYZ&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;XXXX&quot;</span><span class="w"> </span><span class="p">});</span>
+</pre></div>
+</div>
+ </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pauli_string_list</strong> – An initializer list of Pauli strings. Each will have a coefficient of 1.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10Observable10ObservableENSt16initializer_listI9PauliTermI1TEEE">
+<span id="_CPPv3N10Observable10ObservableENSt16initializer_listI9PauliTermI1TEEE"></span><span id="_CPPv2N10Observable10ObservableENSt16initializer_listI9PauliTermI1TEEE"></span><span id="Observable::Observable__std::initializer_list:PauliTerm:T::"></span><span class="target" id="classObservable_1a2d90bc01ebf8f97082b9f2a9a463d1af"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Observable</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">initializer_list</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm"><span class="n"><span class="pre">PauliTerm</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E10Observable" title="Observable::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">paulis_list</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10Observable10ObservableENSt16initializer_listI9PauliTermI1TEEE" title="Link to this definition"></a><br /></dt>
+<dd><p>Constructs an observable from a list of <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> objects. </p>
+<p><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// From an initializer_list of PauliTerm objects</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">obs_from_pauli_terms</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Observable</span><span class="p">({</span><span class="w"> </span><span class="n">PauliTerm</span><span class="p">(</span><span class="s">&quot;IXYZ&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">-1.0f</span><span class="p">),</span><span class="w"> </span><span class="n">PauliTerm</span><span class="p">(</span><span class="s">&quot;XXXX&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0f</span><span class="p">)</span><span class="w"> </span><span class="p">});</span>
+</pre></div>
+</div>
+ </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>paulis_list</strong> – An initializer list of <code class="docutils literal notranslate"><a class="reference internal" href="#classPauliTerm"><span class="std std-ref"><span class="pre">PauliTerm</span></span></a></code> objects.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN10Observable10ObservableERR4IterRR4Iter">
+<span id="_CPPv3I0EN10Observable10ObservableERR4IterRR4Iter"></span><span id="_CPPv2I0EN10Observable10ObservableERR4IterRR4Iter"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Iter</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classObservable_1a967cf695e7f3362b3e2d0fd1202fc32e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Observable</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN10Observable10ObservableERR4IterRR4Iter" title="Observable::Observable::Iter"><span class="n"><span class="pre">Iter</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">begin</span></span>, <a class="reference internal" href="#_CPPv4I0EN10Observable10ObservableERR4IterRR4Iter" title="Observable::Observable::Iter"><span class="n"><span class="pre">Iter</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">end</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN10Observable10ObservableERR4IterRR4Iter" title="Link to this definition"></a><br /></dt>
+<dd><p>Constructs an observable from a range of <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> objects. </p>
+<p><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// From a range of iterators</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">PauliTerm</span><span class="o">&lt;&gt;&gt;</span><span class="w"> </span><span class="n">terms</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PauliTerm</span><span class="p">(</span><span class="s">&quot;IX&quot;</span><span class="p">),</span><span class="w"> </span><span class="n">PauliTerm</span><span class="p">(</span><span class="s">&quot;XI&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">-1.0f</span><span class="p">)</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">obs_from_iterators</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Observable</span><span class="p">(</span><span class="n">terms</span><span class="p">.</span><span class="n">cbegin</span><span class="p">(),</span><span class="w"> </span><span class="n">terms</span><span class="p">.</span><span class="n">cend</span><span class="p">());</span>
+</pre></div>
+</div>
+ </p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Iter</strong> – An iterator type. </p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>begin</strong> – An iterator to the beginning of the range. </p></li>
+<li><p><strong>end</strong> – An iterator to the end of the range.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10Observable11apply_pauliE11Pauli_gatesj">
+<span id="_CPPv3N10Observable11apply_pauliE11Pauli_gatesj"></span><span id="_CPPv2N10Observable11apply_pauliE11Pauli_gatesj"></span><span id="Observable::apply_pauli__Pauli_gates.unsigned"></span><span class="target" id="classObservable_1a3d06e1bc6c85833fce27e04c3726d021"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_pauli</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">Pauli_gates</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">g</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10Observable11apply_pauliE11Pauli_gatesj" title="Link to this definition"></a><br /></dt>
+<dd><p>Applies a single-qubit Pauli gate to the observable. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>g</strong> – The Pauli gate to apply. </p></li>
+<li><p><strong>qubit</strong> – The index of the qubit to apply the gate to. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10Observable14apply_cliffordE17Clifford_Gates_1Qj">
+<span id="_CPPv3N10Observable14apply_cliffordE17Clifford_Gates_1Qj"></span><span id="_CPPv2N10Observable14apply_cliffordE17Clifford_Gates_1Qj"></span><span id="Observable::apply_clifford__Clifford_Gates_1Q.unsigned"></span><span class="target" id="classObservable_1aedfd367ce8dec664b256a852efe36f20"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_clifford</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">Clifford_Gates_1Q</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">g</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10Observable14apply_cliffordE17Clifford_Gates_1Qj" title="Link to this definition"></a><br /></dt>
+<dd><p>Applies a single-qubit Clifford gate to the observable. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>g</strong> – The Clifford gate to apply (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., Hadamard). </p></li>
+<li><p><strong>qubit</strong> – The index of the qubit to apply the gate to. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10Observable18apply_unital_noiseE11UnitalNoisej1T">
+<span id="_CPPv3N10Observable18apply_unital_noiseE11UnitalNoisej1T"></span><span id="_CPPv2N10Observable18apply_unital_noiseE11UnitalNoisej1T"></span><span id="Observable::apply_unital_noise__UnitalNoise.unsigned.T"></span><span class="target" id="classObservable_1a02456f79db016ff81449aac212a0de56"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_unital_noise</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">UnitalNoise</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">n</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit</span></span>, <a class="reference internal" href="#_CPPv4I0E10Observable" title="Observable::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">p</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10Observable18apply_unital_noiseE11UnitalNoisej1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Applies a single-qubit unital noise channel to the observable. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> – The type of unital noise (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., Depolarizing, Dephasing). </p></li>
+<li><p><strong>qubit</strong> – The index of the qubit to apply the noise to. </p></li>
+<li><p><strong>p</strong> – The noise probability parameter. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10Observable8apply_cxEjj">
+<span id="_CPPv3N10Observable8apply_cxEjj"></span><span id="_CPPv2N10Observable8apply_cxEjj"></span><span id="Observable::apply_cx__unsigned.unsigned"></span><span class="target" id="classObservable_1a83c034c15ce6749e3cfce6c575f371df"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_cx</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit_control</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit_target</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10Observable8apply_cxEjj" title="Link to this definition"></a><br /></dt>
+<dd><p>Applies a CNOT (CX) gate to the observable. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>qubit_control</strong> – The index of the control qubit. </p></li>
+<li><p><strong>qubit_target</strong> – The index of the target qubit. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10Observable8apply_rzEj1T">
+<span id="_CPPv3N10Observable8apply_rzEj1T"></span><span id="_CPPv2N10Observable8apply_rzEj1T"></span><span id="Observable::apply_rz__unsigned.T"></span><span class="target" id="classObservable_1a4ace98f38ee8e0e7e46cf92cc812b663"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_rz</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit</span></span>, <a class="reference internal" href="#_CPPv4I0E10Observable" title="Observable::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">theta</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10Observable8apply_rzEj1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Applies a single-qubit Rz rotation gate to the observable. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is a “splitting” operation. Applying an Rz gate to a Pauli term containing an X or Y operator on the target qubit will result in two output Pauli terms, potentially doubling the size of the observable. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>qubit</strong> – The index of the qubit to apply the rotation to. </p></li>
+<li><p><strong>theta</strong> – The rotation angle in radians.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10Observable23apply_amplitude_dampingEj1T">
+<span id="_CPPv3N10Observable23apply_amplitude_dampingEj1T"></span><span id="_CPPv2N10Observable23apply_amplitude_dampingEj1T"></span><span id="Observable::apply_amplitude_damping__unsigned.T"></span><span class="target" id="classObservable_1a5f145b75adfdfc87546018a762d25fe9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_amplitude_damping</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit</span></span>, <a class="reference internal" href="#_CPPv4I0E10Observable" title="Observable::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">pn</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10Observable23apply_amplitude_dampingEj1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Applies an amplitude damping noise channel. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This can be a “splitting” operation. If the Pauli term has a Z operator on the target qubit, the term will be split into two. If it has X or Y, the coefficient is simply scaled. If it has I, there is no effect. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>qubit</strong> – The index of the qubit to apply the channel to. </p></li>
+<li><p><strong>pn</strong> – The noise probability parameter.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10Observable17expectation_valueEv">
+<span id="_CPPv3NK10Observable17expectation_valueEv"></span><span id="_CPPv2NK10Observable17expectation_valueEv"></span><span id="Observable::expectation_valueC"></span><span class="target" id="classObservable_1a07c61a9c8e4614c70da384f64b1b7eb4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E10Observable" title="Observable::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">expectation_value</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10Observable17expectation_valueEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Calculates the expectation value of the observable. </p>
+<p>
+The expectation value is calculated by summing the coefficients of all Pauli terms that commute with Z on all qubits (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">i.e</span></a>., contain only I and Z operators). </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The expectation value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10ObservableixENSt6size_tE">
+<span id="_CPPv3N10ObservableixENSt6size_tE"></span><span id="_CPPv2N10ObservableixENSt6size_tE"></span><span id="Observable::subscript-operator__std::s"></span><span class="target" id="classObservable_1a7d46437902bb6db584345905b138b218"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm"><span class="n"><span class="pre">PauliTerm</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E10Observable" title="Observable::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">idx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10ObservableixENSt6size_tE" title="Link to this definition"></a><br /></dt>
+<dd><p>Accesses a specific <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> in the observable. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10ObservableixENSt6size_tE">
+<span id="_CPPv3NK10ObservableixENSt6size_tE"></span><span id="_CPPv2NK10ObservableixENSt6size_tE"></span><span id="Observable::subscript-operator__std::sC"></span><span class="target" id="classObservable_1aa3d042a07699b230a776dfa438fd94fe"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm"><span class="n"><span class="pre">PauliTerm</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E10Observable" title="Observable::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">idx</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10ObservableixENSt6size_tE" title="Link to this definition"></a><br /></dt>
+<dd><p>Accesses a specific <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> in the observable (const version). </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10Observable5beginEv">
+<span id="_CPPv3N10Observable5beginEv"></span><span id="_CPPv2N10Observable5beginEv"></span><span id="Observable::begin"></span><span class="target" id="classObservable_1af013d11b5e18b369c72c9a1b66ff9586"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">decltype</span></span><span class="p"><span class="pre">(</span></span><span class="k"><span class="pre">auto</span></span><span class="p"><span class="pre">)</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">begin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10Observable5beginEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Returns an iterator to the beginning of the <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> vector. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10Observable5beginEv">
+<span id="_CPPv3NK10Observable5beginEv"></span><span id="_CPPv2NK10Observable5beginEv"></span><span id="Observable::beginC"></span><span class="target" id="classObservable_1a5def56da8477b6b6355ebfb7cee26be3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">decltype</span></span><span class="p"><span class="pre">(</span></span><span class="k"><span class="pre">auto</span></span><span class="p"><span class="pre">)</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">begin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10Observable5beginEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Returns a const iterator to the beginning of the <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> vector. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10Observable6cbeginEv">
+<span id="_CPPv3NK10Observable6cbeginEv"></span><span id="_CPPv2NK10Observable6cbeginEv"></span><span id="Observable::cbeginC"></span><span class="target" id="classObservable_1a2c6272eae7c8e975391a79ebd959e2b8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">decltype</span></span><span class="p"><span class="pre">(</span></span><span class="k"><span class="pre">auto</span></span><span class="p"><span class="pre">)</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cbegin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10Observable6cbeginEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Returns a const iterator to the beginning of the <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> vector. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10Observable3endEv">
+<span id="_CPPv3N10Observable3endEv"></span><span id="_CPPv2N10Observable3endEv"></span><span id="Observable::end"></span><span class="target" id="classObservable_1a8cfa76cac1613927f2c030f606f53de0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">decltype</span></span><span class="p"><span class="pre">(</span></span><span class="k"><span class="pre">auto</span></span><span class="p"><span class="pre">)</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">end</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10Observable3endEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Returns an iterator to the end of the <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> vector. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10Observable3endEv">
+<span id="_CPPv3NK10Observable3endEv"></span><span id="_CPPv2NK10Observable3endEv"></span><span id="Observable::endC"></span><span class="target" id="classObservable_1a867eeddc24fe352edbb982516f909b60"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">decltype</span></span><span class="p"><span class="pre">(</span></span><span class="k"><span class="pre">auto</span></span><span class="p"><span class="pre">)</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">end</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10Observable3endEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Returns a const iterator to the end of the <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> vector. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10Observable4cendEv">
+<span id="_CPPv3NK10Observable4cendEv"></span><span id="_CPPv2NK10Observable4cendEv"></span><span id="Observable::cendC"></span><span class="target" id="classObservable_1a0bfee9f4ebf028ce149542eee0ebe7ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">decltype</span></span><span class="p"><span class="pre">(</span></span><span class="k"><span class="pre">auto</span></span><span class="p"><span class="pre">)</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cend</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10Observable4cendEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Returns a const iterator to the end of the <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> vector. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10Observable4sizeEv">
+<span id="_CPPv3NK10Observable4sizeEv"></span><span id="_CPPv2NK10Observable4sizeEv"></span><span id="Observable::sizeC"></span><span class="target" id="classObservable_1a470abc86a3abb5a88b33762bf82107d3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10Observable4sizeEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Gets the number of Pauli terms in the observable. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10Observable5mergeEv">
+<span id="_CPPv3N10Observable5mergeEv"></span><span id="_CPPv2N10Observable5mergeEv"></span><span id="Observable::merge"></span><span class="target" id="classObservable_1a022d2afcdffce72e2e60bbcf364674cc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">merge</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10Observable5mergeEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Merges Pauli terms with identical Pauli strings. </p>
+<p>
+This function iterates through all Pauli terms in the observable. If two or more terms have the same Pauli string, their coefficients are added together, and they are replaced by a single term. This is a crucial optimization for reducing the complexity of the simulation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of terms after the merge.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN10Observable8truncateENSt6size_tERR9Truncator">
+<span id="_CPPv3I0EN10Observable8truncateERR9Truncator"></span><span id="_CPPv2I0EN10Observable8truncateERR9Truncator"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Truncator</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classObservable_1a5de6d9d17d9f492e679e5b1456cb3565"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">truncate</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN10Observable8truncateENSt6size_tERR9Truncator" title="Observable::truncate::Truncator"><span class="n"><span class="pre">Truncator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">truncator</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN10Observable8truncateENSt6size_tERR9Truncator" title="Link to this definition"></a><br /></dt>
+<dd><p>Truncates the observable based on a given truncation strategy. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#classTruncator"><span class="std std-ref">Truncator</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Truncator</strong> – The type of the truncator object. </p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>truncator</strong> – The truncator object that defines the truncation logic. </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of Pauli terms removed. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+<section id="pauliterm">
+<h2>PauliTerm<a class="headerlink" href="#pauliterm" title="Link to this heading"></a></h2>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0E9PauliTerm">
+<span id="_CPPv3I0E9PauliTerm"></span><span id="_CPPv2I0E9PauliTerm"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">coeff_t</span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classPauliTerm"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PauliTerm</span></span></span><a class="headerlink" href="#_CPPv4I0E9PauliTerm" title="Link to this definition"></a><br /></dt>
+<dd><p>Represents a single term in an observable, consisting of a Pauli string and a coefficient. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>T</strong> – The numeric type for the coefficient. </p>
+</dd>
+</dl>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PauliTerm9PauliTermENSt11string_viewE1T">
+<span id="_CPPv3N9PauliTerm9PauliTermENSt11string_viewE1T"></span><span id="_CPPv2N9PauliTerm9PauliTermENSt11string_viewE1T"></span><span id="PauliTerm::PauliTerm__std::string_view.T"></span><span class="target" id="classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PauliTerm</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">pauli_string</span></span>, <a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">coefficient</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">{</span></span><span class="m"><span class="pre">1.</span></span><span class="p"><span class="pre">}</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTerm9PauliTermENSt11string_viewE1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Constructs a <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> from a string representation. </p>
+<p><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// From a string_view and a coefficient</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">pt_from_string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PauliTerm</span><span class="p">(</span><span class="s">&quot;IXYZ&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">);</span>
+</pre></div>
+</div>
+ </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pauli_string</strong> – A string like “IXYZ” representing the Pauli operators. </p></li>
+<li><p><strong>coefficient</strong> – The coefficient of the term.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PauliTerm9PauliTermENSt16initializer_listI5PauliEE1T">
+<span id="_CPPv3N9PauliTerm9PauliTermENSt16initializer_listI5PauliEE1T"></span><span id="_CPPv2N9PauliTerm9PauliTermENSt16initializer_listI5PauliEE1T"></span><span id="PauliTerm::PauliTerm__std::initializer_list:Pauli:.T"></span><span class="target" id="classPauliTerm_1ae217979f0ea90d6a267429c2b7794934"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PauliTerm</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">initializer_list</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">Pauli</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">pauli_list</span></span>, <a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">coefficient</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">{</span></span><span class="m"><span class="pre">1.</span></span><span class="p"><span class="pre">}</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTerm9PauliTermENSt16initializer_listI5PauliEE1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Constructs a <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> from an initializer list of Pauli objects. </p>
+<p><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// From an initializer_list of Pauli objects</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">Pauli_enum</span><span class="p">;</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">pt_from_list</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PauliTerm</span><span class="p">({</span><span class="n">I</span><span class="p">,</span><span class="w"> </span><span class="n">X</span><span class="p">,</span><span class="w"> </span><span class="n">Y</span><span class="p">,</span><span class="w"> </span><span class="n">Z</span><span class="p">},</span><span class="w"> </span><span class="mf">-1.0f</span><span class="p">);</span>
+</pre></div>
+</div>
+ </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pauli_list</strong> – An initializer list, <a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., <code class="docutils literal notranslate"><span class="pre">{p_i,</span> <span class="pre">p_x,</span> <span class="pre">p_y,</span> <span class="pre">p_z}</span></code>. </p></li>
+<li><p><strong>coefficient</strong> – The coefficient of the term.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PauliTerm9PauliTermE5Pauli1T">
+<span id="_CPPv3N9PauliTerm9PauliTermE5Pauli1T"></span><span id="_CPPv2N9PauliTerm9PauliTermE5Pauli1T"></span><span id="PauliTerm::PauliTerm__Pauli.T"></span><span class="target" id="classPauliTerm_1a7078c45c983c316bc6c1ba6b2d18ebae"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PauliTerm</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">Pauli</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">pauli</span></span>, <a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">coefficient</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">{</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">}</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTerm9PauliTermE5Pauli1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Constructs a single-qubit <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> from a Pauli object. </p>
+<p><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// From a single Pauli object</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">pt_from_pauli</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PauliTerm</span><span class="p">(</span><span class="n">p_x</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0f</span><span class="p">);</span>
+</pre></div>
+</div>
+ </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pauli</strong> – The Pauli operator. </p></li>
+<li><p><strong>coefficient</strong> – The coefficient of the term.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PauliTerm11apply_pauliE11Pauli_gatesj">
+<span id="_CPPv3N9PauliTerm11apply_pauliE11Pauli_gatesj"></span><span id="_CPPv2N9PauliTerm11apply_pauliE11Pauli_gatesj"></span><span id="PauliTerm::apply_pauli__Pauli_gates.unsigned"></span><span class="target" id="classPauliTerm_1a8053d63ad9ef41b86dd37fcb579dcb69"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_pauli</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">Pauli_gates</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">g</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTerm11apply_pauliE11Pauli_gatesj" title="Link to this definition"></a><br /></dt>
+<dd><p>Applies a Pauli gate to a specific qubit of the term. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PauliTerm14apply_cliffordE17Clifford_Gates_1Qj">
+<span id="_CPPv3N9PauliTerm14apply_cliffordE17Clifford_Gates_1Qj"></span><span id="_CPPv2N9PauliTerm14apply_cliffordE17Clifford_Gates_1Qj"></span><span id="PauliTerm::apply_clifford__Clifford_Gates_1Q.unsigned"></span><span class="target" id="classPauliTerm_1a0733bbef2f30daf822a7ab3a9487375a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_clifford</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">Clifford_Gates_1Q</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">g</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTerm14apply_cliffordE17Clifford_Gates_1Qj" title="Link to this definition"></a><br /></dt>
+<dd><p>Applies a Clifford gate to a specific qubit of the term. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PauliTerm18apply_unital_noiseE11UnitalNoisej1T">
+<span id="_CPPv3N9PauliTerm18apply_unital_noiseE11UnitalNoisej1T"></span><span id="_CPPv2N9PauliTerm18apply_unital_noiseE11UnitalNoisej1T"></span><span id="PauliTerm::apply_unital_noise__UnitalNoise.unsigned.T"></span><span class="target" id="classPauliTerm_1a8420cf4eae7faad755848b883cad158d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_unital_noise</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">UnitalNoise</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">n</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit</span></span>, <a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">p</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTerm18apply_unital_noiseE11UnitalNoisej1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Applies a unital noise channel to a specific qubit of the term. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PauliTerm8apply_cxEjj">
+<span id="_CPPv3N9PauliTerm8apply_cxEjj"></span><span id="_CPPv2N9PauliTerm8apply_cxEjj"></span><span id="PauliTerm::apply_cx__unsigned.unsigned"></span><span class="target" id="classPauliTerm_1abf764bcd413430c4809cffb883b2998e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_cx</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">control</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">target</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTerm8apply_cxEjj" title="Link to this definition"></a><br /></dt>
+<dd><p>Applies a CNOT gate to the term. </p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Control and target qubits must be different. This is enforced by an assertion. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PauliTerm8apply_rzEj1T">
+<span id="_CPPv3N9PauliTerm8apply_rzEj1T"></span><span id="_CPPv2N9PauliTerm8apply_rzEj1T"></span><span id="PauliTerm::apply_rz__unsigned.T"></span><span class="target" id="classPauliTerm_1a83891673048399ba086daa90b0276ea5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm"><span class="n"><span class="pre">PauliTerm</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_rz</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit</span></span>, <a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">theta</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTerm8apply_rzEj1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Applies an Rz gate, potentially splitting the term. </p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The operator on the target qubit must be X or Y. This is enforced by an assertion. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A new <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> if the term is split, otherwise the new term is empty. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PauliTerm26apply_amplitude_damping_xyEj1T">
+<span id="_CPPv3N9PauliTerm26apply_amplitude_damping_xyEj1T"></span><span id="_CPPv2N9PauliTerm26apply_amplitude_damping_xyEj1T"></span><span id="PauliTerm::apply_amplitude_damping_xy__unsigned.T"></span><span class="target" id="classPauliTerm_1a21a88900f34974e144e6e05fdc80484c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_amplitude_damping_xy</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit</span></span>, <a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">p</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTerm26apply_amplitude_damping_xyEj1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Applies the X/Y part of the amplitude damping channel. </p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The operator on the target qubit must be X or Y. This is enforced by an assertion. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PauliTerm25apply_amplitude_damping_zEj1T">
+<span id="_CPPv3N9PauliTerm25apply_amplitude_damping_zEj1T"></span><span id="_CPPv2N9PauliTerm25apply_amplitude_damping_zEj1T"></span><span id="PauliTerm::apply_amplitude_damping_z__unsigned.T"></span><span class="target" id="classPauliTerm_1a60466a103b56d2fc1cc424939c831ce8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm"><span class="n"><span class="pre">PauliTerm</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_amplitude_damping_z</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit</span></span>, <a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">p</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTerm25apply_amplitude_damping_zEj1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Applies the Z part of the amplitude damping channel, splitting the term. </p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The operator on the target qubit must be Z. This is enforced by an assertion. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The new <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> created by the split. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PauliTerm17expectation_valueEv">
+<span id="_CPPv3NK9PauliTerm17expectation_valueEv"></span><span id="_CPPv2NK9PauliTerm17expectation_valueEv"></span><span id="PauliTerm::expectation_valueC"></span><span class="target" id="classPauliTerm_1a9eeea658af2ad5fa19378a65a657e902"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">expectation_value</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PauliTerm17expectation_valueEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Calculates the expectation value of this single term. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The coefficient if the Pauli string contains only I and Z operators, otherwise 0. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PauliTerm5phashEv">
+<span id="_CPPv3NK9PauliTerm5phashEv"></span><span id="_CPPv2NK9PauliTerm5phashEv"></span><span id="PauliTerm::phashC"></span><span class="target" id="classPauliTerm_1a9e1988126e0522a1eebc0ed88ca7ac9f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">phash</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4NK9PauliTerm5phashEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Computes a hash of the Pauli string part of the term. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A hash value. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PauliTerm15equal_bitstringERK9PauliTerm">
+<span id="_CPPv3NK9PauliTerm15equal_bitstringERK9PauliTerm"></span><span id="_CPPv2NK9PauliTerm15equal_bitstringERK9PauliTerm"></span><span id="PauliTerm::equal_bitstring__PauliTermCRC"></span><span class="target" id="classPauliTerm_1ae331a513fc84537e17e18591bbff13e7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">equal_bitstring</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm"><span class="n"><span class="pre">PauliTerm</span></span></a><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">oth</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PauliTerm15equal_bitstringERK9PauliTerm" title="Link to this definition"></a><br /></dt>
+<dd><p>Checks if two <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> objects have the same Pauli string, ignoring the coefficient. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PauliTerm9add_coeffE1T">
+<span id="_CPPv3N9PauliTerm9add_coeffE1T"></span><span id="_CPPv2N9PauliTerm9add_coeffE1T"></span><span id="PauliTerm::add_coeff__T"></span><span class="target" id="classPauliTerm_1acf435521b22f670059f9ab5f886a14ae"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_coeff</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">c</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTerm9add_coeffE1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Adds a value to the term’s coefficient. </p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The resulting coefficient must be between -1 and 1. This is enforced by an assertion. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PauliTerm11coefficientEv">
+<span id="_CPPv3NK9PauliTerm11coefficientEv"></span><span id="_CPPv2NK9PauliTerm11coefficientEv"></span><span id="PauliTerm::coefficientC"></span><span class="target" id="classPauliTerm_1a2af885bcea1f6cef29c5bc449585cc14"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">coefficient</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4NK9PauliTerm11coefficientEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Gets the coefficient of the term. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PauliTerm12pauli_weightEv">
+<span id="_CPPv3NK9PauliTerm12pauli_weightEv"></span><span id="_CPPv2NK9PauliTerm12pauli_weightEv"></span><span id="PauliTerm::pauli_weightC"></span><span class="target" id="classPauliTerm_1a97c290c026b140f37be7db6a9edd382f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">pauli_weight</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PauliTerm12pauli_weightEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Calculates the Pauli weight of the term (number of non-identity operators). </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-friends">Friends</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PauliTermeqERK9PauliTermRK9PauliTerm">
+<span id="_CPPv3N9PauliTermeqERK9PauliTermRK9PauliTerm"></span><span id="_CPPv2N9PauliTermeqERK9PauliTermRK9PauliTerm"></span><span id="PauliTerm::eq-operator__PauliTermCR.PauliTermCR"></span><span class="target" id="classPauliTerm_1ad9bac6cc6cd7e7ee729b2651db528e60"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">friend</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm"><span class="n"><span class="pre">PauliTerm</span></span></a><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm"><span class="n"><span class="pre">PauliTerm</span></span></a><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTermeqERK9PauliTermRK9PauliTerm" title="Link to this definition"></a><br /></dt>
+<dd><p>Checks for equality between two <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> objects. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the Pauli strings and coefficients are identical. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+<section id="truncators">
+<h2>Truncators<a class="headerlink" href="#truncators" title="Link to this heading"></a></h2>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0E9Truncator">
+<span id="_CPPv3I0E9Truncator"></span><span id="_CPPv2I0E9Truncator"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classTruncator"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Truncator</span></span></span><a class="headerlink" href="#_CPPv4I0E9Truncator" title="Link to this definition"></a><br /></dt>
+<dd><p>An abstract base class for defining truncation strategies. </p>
+<p>
+A truncator is responsible for removing Pauli terms from an observable to manage the simulation’s complexity. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>T</strong> – The numeric type of the <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> coefficients.</p>
+</dd>
+</dl>
+<p>Subclassed by PredicateTruncator&lt; P, T &gt;, Truncators&lt; T, Ts &gt;</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9Truncator8truncateERNSt6vectorI9PauliTermI1TEEE">
+<span id="_CPPv3NK9Truncator8truncateERNSt6vectorI9PauliTermI1TEEE"></span><span id="_CPPv2NK9Truncator8truncateERNSt6vectorI9PauliTermI1TEEE"></span><span id="Truncator::truncate__std::vector:PauliTerm:T::RC"></span><span class="target" id="classTruncator_1a2a9c54236ace6fba30c4b90de5481d87"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">truncate</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm"><span class="n"><span class="pre">PauliTerm</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E9Truncator" title="Truncator::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">paulis</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9Truncator8truncateERNSt6vectorI9PauliTermI1TEEE" title="Link to this definition"></a><br /></dt>
+<dd><p>Truncates a vector of Pauli terms in place. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>paulis</strong> – The vector of <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> objects to truncate. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The number of terms removed. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4I0E20CoefficientTruncator">
+<span id="_CPPv3I0E20CoefficientTruncator"></span><span id="_CPPv2I0E20CoefficientTruncator"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">coeff_t</span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="truncate_8hpp_1ab259aba4bc134edaa8148d662d53c1ec"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">CoefficientTruncator</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">decltype</span></span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">PredicateTruncator</span></span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">declval</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">CoefficientPredicate</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E20CoefficientTruncator" title="CoefficientTruncator::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">)</span></span><a class="headerlink" href="#_CPPv4I0E20CoefficientTruncator" title="Link to this definition"></a><br /></dt>
+<dd><p>A truncator that removes Pauli terms with small coefficients. </p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// Removes terms with coefficient magnitude below a threshold</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">coeff_trunc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CoefficientTruncator</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="mf">0.1f</span><span class="p">);</span>
+<span class="w">    </span><span class="n">Observable</span><span class="w"> </span><span class="n">obs_coeff</span><span class="p">({</span><span class="w"> </span><span class="n">PauliTerm</span><span class="p">(</span><span class="s">&quot;I&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">),</span><span class="w"> </span><span class="n">PauliTerm</span><span class="p">(</span><span class="s">&quot;X&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">0.05f</span><span class="p">)</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="n">obs_coeff</span><span class="p">.</span><span class="n">truncate</span><span class="p">(</span><span class="n">coeff_trunc</span><span class="p">);</span><span class="w"> </span><span class="c1">// obs_coeff now only contains the &quot;I&quot; term</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv415WeightTruncator">
+<span id="_CPPv315WeightTruncator"></span><span id="_CPPv215WeightTruncator"></span><span class="target" id="truncate_8hpp_1ad31889ed2ed222c34cb8fb99e36fa0ef"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">WeightTruncator</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">decltype</span></span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">PredicateTruncator</span></span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">declval</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">WeightPredicate</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">)</span></span><a class="headerlink" href="#_CPPv415WeightTruncator" title="Link to this definition"></a><br /></dt>
+<dd><p>A truncator that removes Pauli terms with high Pauli weight. </p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// Removes terms with Pauli weight above a threshold</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">weight_trunc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">WeightTruncator</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+<span class="w">    </span><span class="n">Observable</span><span class="w"> </span><span class="n">obs_weight</span><span class="p">({</span><span class="w"> </span><span class="n">PauliTerm</span><span class="p">(</span><span class="s">&quot;IXYZ&quot;</span><span class="p">),</span><span class="w"> </span><span class="n">PauliTerm</span><span class="p">(</span><span class="s">&quot;IIII&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="n">obs_weight</span><span class="p">.</span><span class="n">truncate</span><span class="p">(</span><span class="n">weight_trunc</span><span class="p">);</span><span class="w"> </span><span class="c1">// obs_weight now only contains the &quot;IIII&quot; term</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="noise-model">
+<h2>Noise Model<a class="headerlink" href="#noise-model" title="Link to this heading"></a></h2>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0E10NoiseModel">
+<span id="_CPPv3I0E10NoiseModel"></span><span id="_CPPv2I0E10NoiseModel"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classNoiseModel"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">NoiseModel</span></span></span><a class="headerlink" href="#_CPPv4I0E10NoiseModel" title="Link to this definition"></a><br /></dt>
+<dd><p>A model for applying noise to quantum gates. </p>
+<p>
+A <code class="docutils literal notranslate"><a class="reference internal" href="#classNoiseModel"><span class="std std-ref"><span class="pre">NoiseModel</span></span></a></code> allows you to specify that certain types of noise should be automatically applied after certain gates in a <code class="docutils literal notranslate"><a class="reference internal" href="#classCircuit"><span class="std std-ref"><span class="pre">Circuit</span></span></a></code>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>T</strong> – The numeric type for noise parameters.</p>
+</dd>
+</dl>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10NoiseModel10NoiseModelEv">
+<span id="_CPPv3N10NoiseModel10NoiseModelEv"></span><span id="_CPPv2N10NoiseModel10NoiseModelEv"></span><span id="NoiseModel::NoiseModel"></span><span class="target" id="classNoiseModel_1ad081ae954849ab8e948ef4da440c7aec"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">NoiseModel</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10NoiseModel10NoiseModelEv" title="Link to this definition"></a><br /></dt>
+<dd><p>Constructs an empty noise model. </p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// Create a noise model</span>
+<span class="w">    </span><span class="n">NoiseModel</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">nm</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Add 1% amplitude damping noise to every CX gate</span>
+<span class="w">    </span><span class="n">nm</span><span class="p">.</span><span class="n">add_amplitude_damping_on_gate</span><span class="p">(</span><span class="n">QGate</span><span class="o">::</span><span class="n">Cx</span><span class="p">,</span><span class="w"> </span><span class="mf">0.01f</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Add 0.5% dephasing noise to every Hadamard gate</span>
+<span class="w">    </span><span class="n">nm</span><span class="p">.</span><span class="n">add_unital_noise_on_gate</span><span class="p">(</span><span class="n">QGate</span><span class="o">::</span><span class="n">H</span><span class="p">,</span><span class="w"> </span><span class="n">UnitalNoise</span><span class="o">::</span><span class="n">Dephasing</span><span class="p">,</span><span class="w"> </span><span class="mf">0.005f</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Create a circuit with this noise model</span>
+<span class="w">    </span><span class="n">Circuit</span><span class="w"> </span><span class="nf">qc</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">NeverTruncator</span><span class="o">&gt;</span><span class="p">(),</span><span class="w"> </span><span class="n">nm</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;CX&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w"> </span><span class="c1">// Noise will be applied automatically</span>
+
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">qc</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">Observable</span><span class="p">(</span><span class="s">&quot;ZZZZ&quot;</span><span class="p">));</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10NoiseModel24add_unital_noise_on_gateE5QGate11UnitalNoise1T">
+<span id="_CPPv3N10NoiseModel24add_unital_noise_on_gateE5QGate11UnitalNoise1T"></span><span id="_CPPv2N10NoiseModel24add_unital_noise_on_gateE5QGate11UnitalNoise1T"></span><span id="NoiseModel::add_unital_noise_on_gate__QGate.UnitalNoise.T"></span><span class="target" id="classNoiseModel_1a72f12c4b83d96387c5aa6f45604deb55"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_unital_noise_on_gate</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">QGate</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">g</span></span>, <span class="n"><span class="pre">UnitalNoise</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">un</span></span>, <a class="reference internal" href="#_CPPv4I0E10NoiseModel" title="NoiseModel::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">n</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10NoiseModel24add_unital_noise_on_gateE5QGate11UnitalNoise1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Adds a unital noise channel to be applied after a specific gate type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>g</strong> – The gate type after which the noise should be applied. </p></li>
+<li><p><strong>un</strong> – The type of unital noise (Depolarizing or Dephasing). </p></li>
+<li><p><strong>n</strong> – The strength/probability of the noise. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10NoiseModel29add_amplitude_damping_on_gateE5QGate1T">
+<span id="_CPPv3N10NoiseModel29add_amplitude_damping_on_gateE5QGate1T"></span><span id="_CPPv2N10NoiseModel29add_amplitude_damping_on_gateE5QGate1T"></span><span id="NoiseModel::add_amplitude_damping_on_gate__QGate.T"></span><span class="target" id="classNoiseModel_1a2996d5408ac8816dbcf56783bba51ef7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_amplitude_damping_on_gate</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">QGate</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">g</span></span>, <a class="reference internal" href="#_CPPv4I0E10NoiseModel" title="NoiseModel::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">n</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10NoiseModel29add_amplitude_damping_on_gateE5QGate1T" title="Link to this definition"></a><br /></dt>
+<dd><p>Adds an amplitude damping channel to be applied after a specific gate type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>g</strong> – The gate type after which the noise should be applied. </p></li>
+<li><p><strong>n</strong> – The strength/probability of the noise. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="guides/observable_guide.html" class="btn btn-neutral float-left" title="Guide: Using the Observable Primitive" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Léo &#34;zeFresk&#34; Chéneau.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

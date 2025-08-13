@@ -1,0 +1,237 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting Started &mdash; ProPauli  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Guide: Building Quantum Circuits" href="guides/circuit_guide.html" />
+    <link rel="prev" title="Welcome to ProPauli’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ProPauli
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#quickstart-your-first-simulation">Quickstart: Your First Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#examples-from-the-readme">Examples from the README</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guides/circuit_guide.html">Guide: Building Quantum Circuits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/observable_guide.html">Guide: Using the Observable Primitive</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ProPauli</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Getting Started</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/getting_started.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="getting-started">
+<span id="id1"></span><h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h1>
+<p>This guide will walk you through installing ProPauli and running your first simulation.</p>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>To use ProPauli, you will need a C++23 compatible compiler (<strong>Clang</strong> is preferred) and <strong>CMake 3.14</strong> or later.</p>
+<p>You can build the library from source with the following commands:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/zefresk/ProPauli.git
+<span class="nb">cd</span><span class="w"> </span>ProPauli
+cmake<span class="w"> </span>-S<span class="w"> </span>.<span class="w"> </span>-B<span class="w"> </span>build<span class="w"> </span>-D<span class="w"> </span><span class="nv">CMAKE_BUILD_TYPE</span><span class="o">=</span>Release
+cmake<span class="w"> </span>--build<span class="w"> </span>build<span class="w"> </span>--config<span class="w"> </span>Release
+</pre></div>
+</div>
+<p>This will build the ProPauli library, which you can then link against in your own projects.</p>
+</section>
+<section id="quickstart-your-first-simulation">
+<h2>Quickstart: Your First Simulation<a class="headerlink" href="#quickstart-your-first-simulation" title="Link to this heading"></a></h2>
+<p>Let’s simulate a simple 8-qubit quantum circuit. This circuit first applies a Hadamard gate to every qubit to create a superposition, then entangles them with a chain of CNOT gates. Finally, we will calculate the expectation value of the <span class="math notranslate nohighlight">\(Z^{\otimes 8}\)</span> observable.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// 1. Initialize an 8-qubit circuit</span>
+<span class="w">    </span><span class="n">Circuit</span><span class="w"> </span><span class="n">qc</span><span class="p">{</span><span class="mi">8</span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// 2. Build the quantum circuit</span>
+<span class="w">    </span><span class="c1">// Apply a Hadamard gate to every qubit</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">8</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="c1">// Create a chain of CNOT gates</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">7</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;CX&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 3. Define the observable to measure</span>
+<span class="w">    </span><span class="c1">// We&#39;ll measure the observable ZZZZZZZZ</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">z_obs_str</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="sc">&#39;Z&#39;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">Observable</span><span class="w"> </span><span class="n">obs</span><span class="p">{</span><span class="n">z_obs_str</span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// 4. Run the simulation</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">final_obs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">qc</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">obs</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 5. Get the expectation value</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">exp_val</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">final_obs</span><span class="p">.</span><span class="n">expectation_value</span><span class="p">();</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Expectation value of &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">z_obs_str</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">exp_val</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>This example demonstrates the complete workflow: initializing a <code class="docutils literal notranslate"><span class="pre">Circuit</span></code>, adding operations, defining an <code class="docutils literal notranslate"><span class="pre">Observable</span></code>, running the simulation, and retrieving the final expectation value.</p>
+</section>
+<section id="examples-from-the-readme">
+<h2>Examples from the README<a class="headerlink" href="#examples-from-the-readme" title="Link to this heading"></a></h2>
+<p>Here are the examples from the README, providing a quick overview of the library’s main features.</p>
+<p><strong>Basic Circuit</strong></p>
+<p>A simple 2-qubit circuit calculating the expectation value of the “ZZ” observable.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="n">Circuit</span><span class="w"> </span><span class="n">qc</span><span class="p">{</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;Rz&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.57f</span><span class="p">);</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;CX&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0u</span><span class="p">,</span><span class="w"> </span><span class="mi">1u</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">qc</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">Observable</span><span class="p">{</span><span class="w"> </span><span class="s">&quot;ZZ&quot;</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Expectation value: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">expectation_value</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>Large Circuit with Truncation</strong></p>
+<p>This demonstrates a 64-qubit circuit that uses truncators to manage the complexity of the simulation. Terms with very small coefficients or a high number of non-identity Pauli operators (high Pauli weight) are removed.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="n">Circuit</span><span class="w"> </span><span class="n">qc</span><span class="p">{</span><span class="w"> </span><span class="mi">64</span><span class="p">,</span>
+<span class="w">                </span><span class="n">combine_truncators_polymorph</span><span class="p">(</span>
+<span class="w">                    </span><span class="n">CoefficientTruncator</span><span class="o">&lt;&gt;</span><span class="p">{</span><span class="w"> </span><span class="mf">0.001f</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="c1">// remove terms with coefficient below 0.001</span>
+<span class="w">                    </span><span class="n">WeightTruncator</span><span class="p">{</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="c1">// remove terms with pauli weight &gt; 6</span>
+<span class="w">                </span><span class="p">)</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// Apply a layer of Hadamard gates</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">64</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span>
+<span class="w">        </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Entangling layer</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">63</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;CX&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">qc</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">Observable</span><span class="p">{</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span><span class="w"> </span><span class="sc">&#39;Z&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Expectation value: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">expectation_value</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>Custom Truncator</strong></p>
+<p>Users can define their own truncation logic. The easiest way is by providing a lambda to the <code class="docutils literal notranslate"><span class="pre">PredicateTruncator</span></code>.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// A custom truncator that removes Pauli terms with a specific weight</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">predicate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pt</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">pt</span><span class="p">.</span><span class="n">pauli_weight</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="n">Circuit</span><span class="w"> </span><span class="n">qc</span><span class="p">{</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">PredicateTruncator</span><span class="o">&lt;</span><span class="k">decltype</span><span class="p">(</span><span class="n">predicate</span><span class="p">)</span><span class="o">&gt;&gt;</span><span class="p">(</span><span class="n">predicate</span><span class="p">)</span><span class="w"> </span><span class="p">};</span>
+
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;Rz&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.57f</span><span class="p">);</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;CX&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0u</span><span class="p">,</span><span class="w"> </span><span class="mi">1u</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">qc</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">Observable</span><span class="p">{</span><span class="w"> </span><span class="s">&quot;XXXX&quot;</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Expectation value: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">expectation_value</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>Noise Model</strong></p>
+<p>This example shows how to define a simple noise model where 1% amplitude damping noise is applied after every CNOT gate.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="n">NoiseModel</span><span class="o">&lt;</span><span class="n">coeff_t</span><span class="o">&gt;</span><span class="w"> </span><span class="n">nm</span><span class="p">;</span>
+<span class="w">    </span><span class="n">nm</span><span class="p">.</span><span class="n">add_amplitude_damping_on_gate</span><span class="p">(</span><span class="n">QGate</span><span class="o">::</span><span class="n">Cx</span><span class="p">,</span><span class="w"> </span><span class="mf">0.01</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">Circuit</span><span class="w"> </span><span class="n">qc</span><span class="p">{</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">NeverTruncator</span><span class="o">&gt;</span><span class="p">(),</span><span class="w"> </span><span class="n">nm</span><span class="w"> </span><span class="p">};</span>
+
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;Rz&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.57f</span><span class="p">);</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;CX&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;CX&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">);</span>
+
+
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">qc</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">Observable</span><span class="p">{</span><span class="w"> </span><span class="s">&quot;ZZZZ&quot;</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Expectation value: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">expectation_value</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to ProPauli’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="guides/circuit_guide.html" class="btn btn-neutral float-right" title="Guide: Building Quantum Circuits" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Léo &#34;zeFresk&#34; Chéneau.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

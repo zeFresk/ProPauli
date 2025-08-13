@@ -1,0 +1,260 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guide: Building Quantum Circuits &mdash; ProPauli  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Guide: Using the Observable Primitive" href="observable_guide.html" />
+    <link rel="prev" title="Getting Started" href="../getting_started.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            ProPauli
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Guide: Building Quantum Circuits</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-circuit-construction">Basic Circuit Construction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#managing-complexity-with-truncators">Managing Complexity with Truncators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#creating-a-custom-truncator">Creating a Custom Truncator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#controlling-optimization-with-scheduling-policies">Controlling Optimization with Scheduling Policies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="observable_guide.html">Guide: Using the Observable Primitive</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ProPauli</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Guide: Building Quantum Circuits</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guides/circuit_guide.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="guide-building-quantum-circuits">
+<span id="circuit-guide"></span><h1>Guide: Building Quantum Circuits<a class="headerlink" href="#guide-building-quantum-circuits" title="Link to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">Circuit</span></code> class is the primary high-level interface for constructing and simulating quantum circuits. This guide explores its features in detail, from basic gate application to advanced optimization with truncators and custom scheduling policies.</p>
+<section id="basic-circuit-construction">
+<h2>Basic Circuit Construction<a class="headerlink" href="#basic-circuit-construction" title="Link to this heading"></a></h2>
+<p>A circuit is initialized with the number of qubits it will operate on. Gates are then added sequentially using the <code class="docutils literal notranslate"><span class="pre">add_operation</span></code> method.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// 1. Initialize an 8-qubit circuit</span>
+<span class="w">    </span><span class="n">Circuit</span><span class="w"> </span><span class="n">qc</span><span class="p">{</span><span class="mi">8</span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// 2. Build the quantum circuit</span>
+<span class="w">    </span><span class="c1">// Apply a Hadamard gate to every qubit</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">8</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="c1">// Create a chain of CNOT gates</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">7</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;CX&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 3. Define the observable to measure</span>
+<span class="w">    </span><span class="c1">// We&#39;ll measure the observable ZZZZZZZZ</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">z_obs_str</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="sc">&#39;Z&#39;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">Observable</span><span class="w"> </span><span class="n">obs</span><span class="p">{</span><span class="n">z_obs_str</span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// 4. Run the simulation</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">final_obs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">qc</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">obs</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 5. Get the expectation value</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">exp_val</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">final_obs</span><span class="p">.</span><span class="n">expectation_value</span><span class="p">();</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Expectation value of &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">z_obs_str</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">exp_val</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="managing-complexity-with-truncators">
+<h2>Managing Complexity with Truncators<a class="headerlink" href="#managing-complexity-with-truncators" title="Link to this heading"></a></h2>
+<p>As a simulation runs, especially with non-Clifford gates or noise, the number of terms in the <code class="docutils literal notranslate"><span class="pre">Observable</span></code> can grow exponentially. Truncators are essential tools for keeping the simulation tractable by removing terms that are unlikely to contribute significantly to the final expectation value.</p>
+<p>ProPauli provides two built-in truncators:</p>
+<ul class="simple">
+<li><p><strong>CoefficientTruncator</strong>: Removes terms whose coefficient has a magnitude below a specified threshold.</p></li>
+<li><p><strong>WeightTruncator</strong>: Removes terms whose Pauli weight (the number of non-identity operators) is above a specified threshold.</p></li>
+</ul>
+<p>They are passed to the <code class="docutils literal notranslate"><span class="pre">Circuit</span></code> constructor.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="n">Circuit</span><span class="w"> </span><span class="n">qc</span><span class="p">{</span><span class="w"> </span><span class="mi">64</span><span class="p">,</span>
+<span class="w">                </span><span class="n">combine_truncators_polymorph</span><span class="p">(</span>
+<span class="w">                    </span><span class="n">CoefficientTruncator</span><span class="o">&lt;&gt;</span><span class="p">{</span><span class="w"> </span><span class="mf">0.001f</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="c1">// remove terms with coefficient below 0.001</span>
+<span class="w">                    </span><span class="n">WeightTruncator</span><span class="p">{</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="c1">// remove terms with pauli weight &gt; 6</span>
+<span class="w">                </span><span class="p">)</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// Apply a layer of Hadamard gates</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">64</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span>
+<span class="w">        </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Entangling layer</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">63</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;CX&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">qc</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">Observable</span><span class="p">{</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span><span class="w"> </span><span class="sc">&#39;Z&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Expectation value: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">expectation_value</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="creating-a-custom-truncator">
+<h2>Creating a Custom Truncator<a class="headerlink" href="#creating-a-custom-truncator" title="Link to this heading"></a></h2>
+<p>You can define custom truncation logic by creating a class that inherits from <code class="docutils literal notranslate"><span class="pre">Truncator</span></code> and implements the <code class="docutils literal notranslate"><span class="pre">truncate</span></code> method.</p>
+<p>However, a more straightforward approach for simple predicates is to use the <code class="docutils literal notranslate"><span class="pre">PredicateTruncator</span></code>, which takes any callable (like a lambda) that returns <code class="docutils literal notranslate"><span class="pre">true</span></code> for terms that should be removed.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// A custom truncator that removes Pauli terms with a specific weight</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">predicate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pt</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">pt</span><span class="p">.</span><span class="n">pauli_weight</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="n">Circuit</span><span class="w"> </span><span class="n">qc</span><span class="p">{</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">PredicateTruncator</span><span class="o">&lt;</span><span class="k">decltype</span><span class="p">(</span><span class="n">predicate</span><span class="p">)</span><span class="o">&gt;&gt;</span><span class="p">(</span><span class="n">predicate</span><span class="p">)</span><span class="w"> </span><span class="p">};</span>
+
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;Rz&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.57f</span><span class="p">);</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;CX&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0u</span><span class="p">,</span><span class="w"> </span><span class="mi">1u</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">qc</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">Observable</span><span class="p">{</span><span class="w"> </span><span class="s">&quot;XXXX&quot;</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Expectation value: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">expectation_value</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="controlling-optimization-with-scheduling-policies">
+<h2>Controlling Optimization with Scheduling Policies<a class="headerlink" href="#controlling-optimization-with-scheduling-policies" title="Link to this heading"></a></h2>
+<p>Merging and truncating are powerful but can be computationally expensive. <strong>Scheduling Policies</strong> give you fine-grained control over <em>when</em> these optimizations are applied during the simulation.</p>
+<p>The two main built-in policies are:</p>
+<ul class="simple">
+<li><p><strong>AlwaysAfterSplittingPolicy (Default)</strong>: Applies the optimization (merge or truncate) immediately after a “splitting” gate (like Rz or Amplitude Damping) is applied. This is often a good default strategy.</p></li>
+<li><p><strong>NeverPolicy</strong>: Disables the optimization entirely.</p></li>
+</ul>
+<p>Policies are passed to the <code class="docutils literal notranslate"><span class="pre">Circuit</span></code> constructor.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// Policies are passed to the Circuit constructor to control optimization.</span>
+<span class="w">    </span><span class="c1">// This circuit will merge identical Pauli terms only after a splitting gate is applied.</span>
+<span class="w">    </span><span class="n">Circuit</span><span class="w"> </span><span class="nf">qc</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">NeverTruncator</span><span class="o">&gt;</span><span class="p">(),</span>
+<span class="w">        </span><span class="p">{},</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">AlwaysAfterSplittingPolicy</span><span class="o">&gt;</span><span class="p">(),</span><span class="w"> </span><span class="c1">// Merge policy</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">NeverPolicy</span><span class="o">&gt;</span><span class="p">()</span><span class="w">               </span><span class="c1">// Truncate policy</span>
+<span class="w">    </span><span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>Custom Scheduling Policies</strong></p>
+<p>For advanced use cases, you can create your own policy by inheriting from <code class="docutils literal notranslate"><span class="pre">SchedulingPolicy</span></code>. This allows you to implement complex logic based on the full simulation state.</p>
+<p>For example, here is a policy that only merges Pauli terms after every second splitting gate:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// A custom policy that merges after every 2 splitting gates have been applied.</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MergeEveryTwoSplitsPolicy</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">SchedulingPolicy</span><span class="w"> </span><span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="n">MergeEveryTwoSplitsPolicy</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">should_apply</span><span class="p">(</span><span class="n">SimulationState</span><span class="w"> </span><span class="k">const</span><span class="o">&amp;</span><span class="w"> </span><span class="n">state</span><span class="p">,</span><span class="w"> </span><span class="n">OperationType</span><span class="w"> </span><span class="n">op_type</span><span class="p">,</span><span class="w"> </span><span class="n">Timing</span><span class="w"> </span><span class="n">timing</span><span class="p">)</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// We only want to merge after a splitting gate is applied</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">op_type</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OperationType</span><span class="o">::</span><span class="n">SplittingGate</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">timing</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">Timing</span><span class="o">::</span><span class="n">After</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="c1">// Check if the number of applied splitting gates is a multiple of 2</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">state</span><span class="p">.</span><span class="n">get_nb_splitting_gates_applied</span><span class="p">()</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>You would then use it in a circuit like this:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="n">Circuit</span><span class="w"> </span><span class="nf">qc</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">NeverTruncator</span><span class="o">&gt;</span><span class="p">(),</span>
+<span class="w">        </span><span class="p">{},</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">MergeEveryTwoSplitsPolicy</span><span class="o">&gt;</span><span class="p">(),</span><span class="w"> </span><span class="c1">// Use our custom merge policy</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">NeverPolicy</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="w">    </span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Add 4 splitting gates</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;Rz&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">);</span><span class="w"> </span><span class="c1">// No merge</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;Rz&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">);</span><span class="w"> </span><span class="c1">// Merge will happen here</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;Rz&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">);</span><span class="w"> </span><span class="c1">// No merge</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;Rz&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">);</span><span class="w"> </span><span class="c1">// Merge will happen here</span>
+
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">qc</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">Observable</span><span class="p">(</span><span class="s">&quot;XXXX&quot;</span><span class="p">));</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Simulation with custom scheduler finished.&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../getting_started.html" class="btn btn-neutral float-left" title="Getting Started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="observable_guide.html" class="btn btn-neutral float-right" title="Guide: Using the Observable Primitive" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Léo &#34;zeFresk&#34; Chéneau.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
