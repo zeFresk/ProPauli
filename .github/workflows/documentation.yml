@@ -15,11 +15,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        
+
       - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y doxygen texlive-font-utils cmake
-          pip install -r doc/requirements.txt
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: cmake doxygen texlive-font-utils
+          version: 1.0      
 
       - name: Build documentation
         run: |
