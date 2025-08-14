@@ -263,9 +263,12 @@ class Observable {
 
 	void check_invariant() const {
 		if (paulis_.size() == 0) {
-			throw std::invalid_argument("Can't use observables of 0 qubits.");
+			throw std::invalid_argument("Can't have empty observable (no terms)");
 		}
 		const auto nb_qubits = paulis_[0].size();
+		if (nb_qubits == 0) {
+			throw std::invalid_argument("0 qubit observable not allowed.");
+		}
 		if (!std::all_of(paulis_.cbegin(), paulis_.cend(),
 				 [=](auto const& pt) { return pt.size() == nb_qubits; })) {
 			throw std::invalid_argument("Can't have observable with mismatching number of qubits.");
