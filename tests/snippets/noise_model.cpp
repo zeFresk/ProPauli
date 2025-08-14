@@ -15,7 +15,7 @@ void noise_model_snippets() {
 	nm.add_unital_noise_on_gate(QGate::H, UnitalNoise::Dephasing, 0.005f);
 
 	// Create a circuit with this noise model
-	Circuit qc(4, std::make_unique<NeverTruncator>(), nm);
+	Circuit qc(4, std::make_shared<NeverTruncator>(), nm);
 
 	qc.add_operation("H", 0);
 	qc.add_operation("CX", 0, 1); // Noise will be applied automatically

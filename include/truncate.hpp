@@ -144,16 +144,16 @@ class Truncators : public Truncator<T> {
  * @snippet tests/snippets/truncate.cpp combine_truncators
  */
 template <typename... Truncs>
-auto combine_truncators(Truncs&&... truncs) {
+auto combine_truncators_raw(Truncs&&... truncs) {
 	return Truncators(std::forward<Truncs>(truncs)...);
 }
 
 /**
- * @brief A helper function to combine multiple truncators and return a unique_ptr to the base class.
+ * @brief A helper function to combine multiple truncators and return a shared_ptr to the base class.
  */
 template <typename... Truncs>
-auto combine_truncators_polymorph(Truncs&&... truncs) {
-	return std::make_unique<decltype(combine_truncators(std::forward<Truncs>(truncs)...))>(
+auto combine_truncators(Truncs&&... truncs) {
+	return std::make_shared<decltype(combine_truncators_raw(std::forward<Truncs>(truncs)...))>(
 		std::forward<Truncs>(truncs)...);
 }
 
