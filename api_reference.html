@@ -184,7 +184,7 @@ The <a class="reference internal" href="#classCircuit"><span class="std std-ref"
 <p>This class manages the complexities of the simulation, including the application of gates, noise, truncation, and merging, based on the provided policies. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>Coefficient_t</strong> – The numeric type for coefficients (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., float, double).</p>
+<dd class="field-odd"><p><strong>Coefficient_t</strong> – The numeric type for coefficients (<a class="reference internal" href="#classObservable_1a98a185ba144da0efdc395ad8a89b0bc2"><span class="std std-ref">e.g</span></a>., float, double).</p>
 </dd>
 </dl>
 <div class="breathe-sectiondef docutils container">
@@ -270,7 +270,7 @@ The <a class="reference internal" href="#classCircuit"><span class="std std-ref"
 </dd>
 <dt class="field-even">Parameters<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><strong>op</strong> – The name of the operation (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., “H”, “CX”, “Rz”). Case-insensitive. </p></li>
+<li><p><strong>op</strong> – The name of the operation (<a class="reference internal" href="#classObservable_1a98a185ba144da0efdc395ad8a89b0bc2"><span class="std std-ref">e.g</span></a>., “H”, “CX”, “Rz”). Case-insensitive. </p></li>
 <li><p><strong>args</strong> – The arguments for the operation, such as qubit indices or rotation angles.</p></li>
 </ul>
 </dd>
@@ -324,7 +324,7 @@ The <code class="docutils literal notranslate"><span class="pre">run</span></cod
 Splitting gates are operations that can increase the number of Pauli terms in the observable, making the simulation more complex. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The total number of splitting gates (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., Rz, AmplitudeDamping).</p>
+<dd class="field-odd"><p>The total number of splitting gates (<a class="reference internal" href="#classObservable_1a98a185ba144da0efdc395ad8a89b0bc2"><span class="std std-ref">e.g</span></a>., Rz, AmplitudeDamping).</p>
 </dd>
 </dl>
 </dd></dl>
@@ -397,7 +397,7 @@ Splitting gates are operations that can increase the number of Pauli terms in th
 An <code class="docutils literal notranslate"><a class="reference internal" href="#classObservable"><span class="std std-ref"><span class="pre">Observable</span></span></a></code> is a sum of <code class="docutils literal notranslate"><a class="reference internal" href="#classPauliTerm"><span class="std std-ref"><span class="pre">PauliTerm</span></span></a></code> objects, each consisting of a Pauli string and a coefficient. This class is the central data structure in the Pauli back-propagation simulation. Quantum gates are applied to this object, evolving it backward in the Heisenberg picture. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>T</strong> – The numeric type for the coefficients (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., float, double).</p>
+<dd class="field-odd"><p><strong>T</strong> – The numeric type for the coefficients (<a class="reference internal" href="#classObservable_1a98a185ba144da0efdc395ad8a89b0bc2"><span class="std std-ref">e.g</span></a>., float, double).</p>
 </dd>
 </dl>
 <div class="breathe-sectiondef docutils container">
@@ -414,7 +414,7 @@ An <code class="docutils literal notranslate"><a class="reference internal" href
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>pauli_string</strong> – A string representing the Pauli operators (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., “IXYZ”). </p></li>
+<li><p><strong>pauli_string</strong> – A string representing the Pauli operators (<a class="reference internal" href="#classObservable_1a98a185ba144da0efdc395ad8a89b0bc2"><span class="std std-ref">e.g</span></a>., “IXYZ”). </p></li>
 <li><p><strong>coeff</strong> – The coefficient of this Pauli term.</p></li>
 </ul>
 </dd>
@@ -497,7 +497,7 @@ An <code class="docutils literal notranslate"><a class="reference internal" href
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>g</strong> – The Clifford gate to apply (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., Hadamard). </p></li>
+<li><p><strong>g</strong> – The Clifford gate to apply (<a class="reference internal" href="#classObservable_1a98a185ba144da0efdc395ad8a89b0bc2"><span class="std std-ref">e.g</span></a>., Hadamard). </p></li>
 <li><p><strong>qubit</strong> – The index of the qubit to apply the gate to. </p></li>
 </ul>
 </dd>
@@ -511,7 +511,7 @@ An <code class="docutils literal notranslate"><a class="reference internal" href
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>n</strong> – The type of unital noise (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., Depolarizing, Dephasing). </p></li>
+<li><p><strong>n</strong> – The type of unital noise (<a class="reference internal" href="#classObservable_1a98a185ba144da0efdc395ad8a89b0bc2"><span class="std std-ref">e.g</span></a>., Depolarizing, Dephasing). </p></li>
 <li><p><strong>qubit</strong> – The index of the qubit to apply the noise to. </p></li>
 <li><p><strong>p</strong> – The noise probability parameter. </p></li>
 </ul>
@@ -574,7 +574,7 @@ An <code class="docutils literal notranslate"><a class="reference internal" href
 <span id="_CPPv3NK10Observable17expectation_valueEv"></span><span id="_CPPv2NK10Observable17expectation_valueEv"></span><span id="Observable::expectation_valueC"></span><span class="target" id="classObservable_1a07c61a9c8e4614c70da384f64b1b7eb4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E10Observable" title="Observable::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">expectation_value</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK10Observable17expectation_valueEv" title="Link to this definition"></a><br /></dt>
 <dd><p>Calculates the expectation value of the observable. </p>
 <p>
-The expectation value is calculated by summing the coefficients of all Pauli terms that commute with Z on all qubits (<a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">i.e</span></a>., contain only I and Z operators). </p>
+The expectation value is calculated by summing the coefficients of all Pauli terms that commute with Z on all qubits (<a class="reference internal" href="#classObservable_1a98a185ba144da0efdc395ad8a89b0bc2"><span class="std std-ref">i.e</span></a>., contain only I and Z operators). </p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The expectation value.</p>
@@ -720,7 +720,7 @@ This function iterates through all Pauli terms in the observable. If two or more
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>pauli_list</strong> – An initializer list, <a class="reference internal" href="#classPauliTerm_1a3dcca1759de5f57aa063611eefb1584a"><span class="std std-ref">e.g</span></a>., <code class="docutils literal notranslate"><span class="pre">{p_i,</span> <span class="pre">p_x,</span> <span class="pre">p_y,</span> <span class="pre">p_z}</span></code>. </p></li>
+<li><p><strong>pauli_list</strong> – An initializer list, <a class="reference internal" href="#classObservable_1a98a185ba144da0efdc395ad8a89b0bc2"><span class="std std-ref">e.g</span></a>., <code class="docutils literal notranslate"><span class="pre">{p_i,</span> <span class="pre">p_x,</span> <span class="pre">p_y,</span> <span class="pre">p_z}</span></code>. </p></li>
 <li><p><strong>coefficient</strong> – The coefficient of the term.</p></li>
 </ul>
 </dd>
@@ -967,6 +967,8 @@ A <code class="docutils literal notranslate"><a class="reference internal" href=
 
 <span class="w">    </span><span class="c1">// Add 0.5% dephasing noise to every Hadamard gate</span>
 <span class="w">    </span><span class="n">nm</span><span class="p">.</span><span class="n">add_unital_noise_on_gate</span><span class="p">(</span><span class="n">QGate</span><span class="o">::</span><span class="n">H</span><span class="p">,</span><span class="w"> </span><span class="n">UnitalNoise</span><span class="o">::</span><span class="n">Dephasing</span><span class="p">,</span><span class="w"> </span><span class="mf">0.005f</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// Add 1% depolarizing noise to every Cx gate</span>
+<span class="w">    </span><span class="n">nm</span><span class="p">.</span><span class="n">add_unital_noise_on_gate</span><span class="p">(</span><span class="n">QGate</span><span class="o">::</span><span class="n">Cx</span><span class="p">,</span><span class="w"> </span><span class="n">UnitalNoise</span><span class="o">::</span><span class="n">Depolarizing</span><span class="p">,</span><span class="w"> </span><span class="mf">0.01f</span><span class="p">);</span>
 
 <span class="w">    </span><span class="c1">// Create a circuit with this noise model</span>
 <span class="w">    </span><span class="n">Circuit</span><span class="w"> </span><span class="nf">qc</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">NeverTruncator</span><span class="o">&gt;</span><span class="p">(),</span><span class="w"> </span><span class="n">nm</span><span class="p">);</span>
