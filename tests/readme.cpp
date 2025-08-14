@@ -36,7 +36,7 @@ TEST(Readme, large_truncation) {
 		qc.add_operation("CX", i, i + 1);
 	}
 
-	auto result = qc.run(Observable{ std::string(64, 'Z') });
+	auto result = qc.run(Observable{ std::string(63, 'Z') + "I" });
 	std::cout << "Expectation value: " << result.expectation_value() << std::endl;
 }
 
