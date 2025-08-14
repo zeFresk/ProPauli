@@ -285,7 +285,7 @@ class Observable {
 	}
 
 	void check_qubit(unsigned qubit) const {
-		if (qubit < 0 || qubit >= nb_qubits()) {
+		if (qubit >= nb_qubits()) {
 			throw std::invalid_argument("Qubit index out of range.");
 		}
 	}

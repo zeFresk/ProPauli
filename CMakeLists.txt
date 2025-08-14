@@ -6,7 +6,7 @@ set(BENCHMARK OFF CACHE BOOL "Build benchmarks")
 set(TEST OFF CACHE BOOL "Build tests")
 
 project(ProPauli
-	VERSION 1.0
+	VERSION 1.1.1
 DESCRIPTION "Fast and efficient C++ library for Pauli Propagation"
 	LANGUAGES CXX)
 
