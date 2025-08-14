@@ -233,3 +233,33 @@ TEST(Circuit, test_circuit1) {
 		EXPECT_NEAR(res.expectation_value(), ev, 1e-4f);
 	}
 }
+
+TEST(Circuit, bad_observable_throw) {
+	Circuit qc{ 4 };
+	Observable bad_obs_small{ "II" };
+	Observable bad_obs_big{ "IIZZZ" };
+	EXPECT_THROW({ auto res = qc.run(bad_obs_small); }, std::invalid_argument);
+	EXPECT_THROW({ auto res = qc.run(bad_obs_big); }, std::invalid_argument);
+}
+
+TEST(Circuit, bad_op_qubit_throw) {
+	Circuit qc{ 4 };
+
+	// before 0
+	EXPECT_THROW({ qc.add_operation("H", -1); }, std::invalid_argument);
+	EXPECT_THROW({ qc.add_operation("H", 4); }, std::invalid_argument);
+
+	EXPECT_THROW({ qc.add_operation("Rz", 4, 1.f); }, std::invalid_argument);
+
+	EXPECT_THROW({ qc.add_operation("cx", 0, 4); }, std::invalid_argument);
+	EXPECT_THROW({ qc.add_operation("cx", 4, 0); }, std::invalid_argument);
+}
+
+TEST(Circuit, add_operation_raw_throw_on_bad_gate) {
+	Circuit qc{ 2 };
+
+	EXPECT_THROW({qc.add_operation(QGate::H, 0, 1);}, std::invalid_argument);
+	EXPECT_THROW({qc.add_operation(QGate::Cx, 0, 0.34f);}, std::invalid_argument);
+	EXPECT_THROW({qc.add_operation(QGate::Rz, 0, 1u);}, std::invalid_argument);
+	EXPECT_THROW({qc.add_operation(QGate::Rz, 0);}, std::invalid_argument);
+}
