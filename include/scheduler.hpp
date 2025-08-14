@@ -68,7 +68,7 @@ struct SimulationState {
 	/** @brief Registers a truncate operation. */
 	void register_truncate(CompressionResult const& result) {
 		nb_terms_history.emplace_back(OperationType::Truncate, result.nb_terms_after());
-		merge_history.emplace_back(nb_terms_history.size() - 1, result);
+		truncate_history.emplace_back(nb_terms_history.size() - 1, result);
 	}
 
 	/** @brief Gets the total number of gates applied so far. */

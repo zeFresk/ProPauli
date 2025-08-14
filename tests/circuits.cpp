@@ -98,8 +98,8 @@ TEST(Circuit, qc_match_observable_result_1) {
 	Circuit qc{ 4,
 		    std::make_unique<NeverTruncator>(),
 		    {},
-		    std::make_unique<NeverPolicy>(),
-		    std::make_unique<NeverPolicy>() };
+		    std::make_unique<AlwaysBeforeSplittingPolicy>(),
+		    std::make_unique<AlwaysAfterSplittingPolicy>() };
 	Observable obs{ "IIII" };
 	auto evolved_obs = obs;
 
@@ -253,6 +253,7 @@ TEST(Circuit, bad_op_qubit_throw) {
 
 	EXPECT_THROW({ qc.add_operation("cx", 0, 4); }, std::invalid_argument);
 	EXPECT_THROW({ qc.add_operation("cx", 4, 0); }, std::invalid_argument);
+	EXPECT_THROW({ qc.add_operation("cx", 0, 0); }, std::invalid_argument);
 }
 
 TEST(Circuit, add_operation_raw_throw_on_bad_gate) {

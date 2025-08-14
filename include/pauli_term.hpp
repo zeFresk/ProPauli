@@ -87,7 +87,7 @@ class PauliTerm {
 
 	/**
 	 * @brief Applies a CNOT gate to the term.
-	 * @warning Control and target qubits must be different. This is enforced by an assertion.
+	 * @pre Control and target qubits must be different.
 	 */
 	void apply_cx(unsigned control, unsigned target) {
 		assert(control != target && "cx can't use same control and target");
@@ -97,7 +97,7 @@ class PauliTerm {
 	/**
 	 * @brief Applies an Rz gate, potentially splitting the term.
 	 * @return A new PauliTerm if the term is split, otherwise the new term is empty.
-	 * @warning The operator on the target qubit must be X or Y. This is enforced by an assertion.
+	 * @pre The operator on the target qubit must be X or Y.
 	 */
 	[[nodiscard]] PauliTerm<T> apply_rz(unsigned qubit, T theta) {
 		assert(paulis_[qubit] != p_i && paulis_[qubit] != p_z && "Should not happen");
@@ -123,7 +123,7 @@ class PauliTerm {
 
 	/**
 	 * @brief Applies the X/Y part of the amplitude damping channel.
-	 * @warning The operator on the target qubit must be X or Y. This is enforced by an assertion.
+	 * @pre The operator on the target qubit must be X or Y.
 	 */
 	void apply_amplitude_damping_xy([[maybe_unused]] unsigned qubit, T p) {
 		assert(paulis_[qubit] != p_z && paulis_[qubit] != p_i && "Should not happen");
@@ -134,7 +134,7 @@ class PauliTerm {
 	/**
 	 * @brief Applies the Z part of the amplitude damping channel, splitting the term.
 	 * @return The new PauliTerm created by the split.
-	 * @warning The operator on the target qubit must be Z. This is enforced by an assertion.
+	 * @pre The operator on the target qubit must be Z.
 	 */
 	[[nodiscard]] PauliTerm<T> apply_amplitude_damping_z(unsigned qubit, T p) {
 		assert(paulis_[qubit] == p_z && "Should not happen");

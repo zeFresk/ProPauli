@@ -114,6 +114,7 @@ class Circuit {
 	 * @tparam T Parameter pack for the arguments of the operation.
 	 * @param op The name of the operation (e.g., "H", "CX", "Rz"). Case-insensitive.
 	 * @param args The arguments for the operation, such as qubit indices or rotation angles.
+	 * @pre qubits indexes should be valid indexes
 	 *
 	 * @note This is a convenience function that looks up the `QGate` enum from a string.
 	 */
@@ -141,6 +142,7 @@ class Circuit {
 	 * @tparam T Parameter pack for the arguments of the operation.
 	 * @param g The `QGate` enum representing the operation.
 	 * @param args The arguments for the operation, such as qubit indices or rotation angles.
+	 * @pre qubits indexes should be valid indexes
 	 *
 	 * This is the primary method for adding operations inside the library. It dispatches
 	 * to the correct internal implementation based on the gate type and arguments.
@@ -155,6 +157,7 @@ class Circuit {
 	/**
 	 * @brief Runs the simulation on the circuit.
 	 * @param target_observable The initial observable to be propagated backward through the circuit.
+	 * @pre target_observable length should match the number of qubits of the circuit.
 	 * @return The final, evolved observable after applying all circuit operations in reverse.
 	 *
 	 * The `run` method executes the simulation by applying each gate in the circuit
@@ -175,14 +178,13 @@ class Circuit {
 				break;
 			}
 			qop.func(obs);
-
-			schedule(state, obs, Timing::After, qop.op_t);
-
 			if (qop.op_t == OperationType::BasicGate) {
 				state.register_basic_gate(obs.size());
 			} else if (qop.op_t == OperationType::SplittingGate) {
 				state.register_splitting_gate(obs.size());
 			}
+
+			schedule(state, obs, Timing::After, qop.op_t);
 		}
 		if (obs.size() > 0) {
 			return obs;
@@ -263,6 +265,7 @@ class Circuit {
 	 * @param g The gate to add (e.g., QGate::H, QGate::X).
 	 * @param qubit The index of the qubit to apply the gate to.
 	 * @throw std::invalid_argument if the gate is not a single-qubit gate.
+	 * @pre qubits index should be a valid index
 	 *
 	 * @snippet tests/readme.cpp basic
 	 */
@@ -288,6 +291,7 @@ class Circuit {
 	 * @param qubit The index of the qubit to apply the gate to.
 	 * @param c The real-valued parameter (e.g., rotation angle).
 	 * @throw std::invalid_argument if the gate does not support a real parameter.
+	 * @pre qubits index should be a valid index
 	 *
 	 * @snippet tests/readme.cpp basic
 	 */
@@ -318,6 +322,8 @@ class Circuit {
 	 * @param control The index of the control qubit.
 	 * @param target The index of the target qubit.
 	 * @throw std::invalid_argument if the gate is not a two-qubit gate.
+	 * @pre qubits index should be a valid index
+	 * @pre control qubit != target qubit
 	 *
 	 * @snippet tests/readme.cpp basic
 	 */
@@ -325,6 +331,10 @@ class Circuit {
 	void add_operation_internal(QGate g, unsigned control, Integer target) {
 		check_qubit(control);
 		check_qubit(target);
+		if (control == static_cast<unsigned>(target)) {
+			throw std::invalid_argument("control must be != from target for 2 qubits gates.");
+		}
+
 		switch (g) {
 		case QGate::Cx:
 			register_op(g, [=](O_t& obs) { obs.apply_cx(control, target); });

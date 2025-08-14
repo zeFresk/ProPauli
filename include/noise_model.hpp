@@ -78,6 +78,7 @@ class NoiseModel {
 	 * @param g The gate type after which the noise should be applied.
 	 * @param un The type of unital noise (Depolarizing or Dephasing).
 	 * @param n The strength/probability of the noise.
+	 * @warning Adding noise to noisy gates (AmplitudeDamping, Depolarizing, Dephasing) is forbidden to prevent infinite loops.
 	 */
 	void add_unital_noise_on_gate(QGate g, UnitalNoise un, T n) {
 		avoid_loops(g);
@@ -98,6 +99,7 @@ class NoiseModel {
 	 * @brief Adds an amplitude damping channel to be applied after a specific gate type.
 	 * @param g The gate type after which the noise should be applied.
 	 * @param n The strength/probability of the noise.
+	 * @warning Adding noise to noisy gates (AmplitudeDamping, Depolarizing, Dephasing) is forbidden to prevent infinite loops.
 	 */
 	void add_amplitude_damping_on_gate(QGate g, T n) {
 		avoid_loops(g);
