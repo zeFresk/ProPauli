@@ -27,7 +27,7 @@ TEST(Truncator, WeightTruncator) {
 TEST(Truncator, MultiTruncator) {
 	WeightTruncator wt{ 4 };
 	CoefficientTruncator<> ct{ 0.1f };
-	auto mt = combine_truncators(std::move(wt), std::move(ct));
+	auto mt = combine_truncators_raw(std::move(wt), std::move(ct));
 	std::vector<PauliTerm<coeff_t>> pts = { { "IIII", 0.49 }, { "YYYY", 0.49 }, { "IIIX", 0.02 } };
 	auto ept = pts[0];
 	auto removed = mt.truncate(pts);
@@ -37,11 +37,11 @@ TEST(Truncator, MultiTruncator) {
 }
 
 TEST(Truncator, polymorphism) {
-	std::unique_ptr<Truncator<coeff_t>> ptr = std::make_unique<WeightTruncator>(3);
-	std::unique_ptr<Truncator<coeff_t>> ptr2 = std::make_unique<CoefficientTruncator<>>(0.01f);
-	std::unique_ptr<Truncator<coeff_t>> ptr3 =
-		combine_truncators_polymorph(WeightTruncator{ 3 }, CoefficientTruncator<>{ 0.01f });
-	std::unique_ptr<Truncator<coeff_t>> ptr4 = std::make_unique<NeverTruncator>();
+	std::shared_ptr<Truncator<coeff_t>> ptr = std::make_shared<WeightTruncator>(3);
+	std::shared_ptr<Truncator<coeff_t>> ptr2 = std::make_shared<CoefficientTruncator<>>(0.01f);
+	std::shared_ptr<Truncator<coeff_t>> ptr3 =
+		combine_truncators(WeightTruncator{ 3 }, CoefficientTruncator<>{ 0.01f });
+	std::shared_ptr<Truncator<coeff_t>> ptr4 = std::make_shared<NeverTruncator>();
 
 	std::vector<PauliTerm<coeff_t>> pts = { { "IIII", 0.49 }, { "YYYY", 0.49 }, { "IIIX", 0.02 } };
 	ptr->truncate(pts);

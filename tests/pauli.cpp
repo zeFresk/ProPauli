@@ -171,7 +171,7 @@ TEST(Pauli, serialize) {
 TEST(Pauli, weight) {
 	using enum Pauli_enum;
 	std::array<std::tuple<Pauli, std::size_t>, 4> truth_table{ { { I, 0 }, { X, 1 }, { Y, 1 }, { Z, 1 } } };
-	for (auto [p, w]: truth_table) {
+	for (auto [p, w] : truth_table) {
 		EXPECT_EQ(p.weight(), w);
 	}
 }

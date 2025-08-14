@@ -75,9 +75,9 @@ class Circuit {
     public:
 	/**
 	 * @brief Constructs a new Circuit.
-	 * @tparam TruncatorPtr Type convertible to a unique_ptr of Truncators, should be deduced
+	 * @tparam TruncatorPtr Type convertible to a shared_ptr of Truncators, should be deduced
 	 * @param nb_qubits The number of qubits in the circuit.
-	 * @param truncator A unique_ptr to a truncator object that defines how to simplify the observable.
+	 * @param truncator A shared_ptr to a truncator object that defines how to simplify the observable.
 	 * @param noise_model A noise model to apply to the gates.
 	 * @param merge_policy A policy defining when to merge identical Pauli terms.
 	 * @param truncate_policy A policy defining when to apply the truncator.
@@ -86,11 +86,11 @@ class Circuit {
 	 * @snippet tests/snippets/circuit.cpp large_circuit_truncation
 	 * @snippet tests/snippets/scheduler.cpp scheduling_policy
 	 */
-	template <typename TruncatorPtr = std::unique_ptr<Truncator<Coefficient_t>>>
-	Circuit(unsigned nb_qubits, TruncatorPtr truncator = std::make_unique<NeverTruncator>(),
+	template <typename TruncatorPtr = std::shared_ptr<Truncator<Coefficient_t>>>
+	Circuit(unsigned nb_qubits, TruncatorPtr truncator = std::make_shared<NeverTruncator>(),
 		NoiseModel<Coefficient_t> const& noise_model = {},
-		std::unique_ptr<SchedulingPolicy> merge_policy = std::make_unique<AlwaysAfterSplittingPolicy>(),
-		std::unique_ptr<SchedulingPolicy> truncate_policy = std::make_unique<AlwaysAfterSplittingPolicy>())
+		std::shared_ptr<SchedulingPolicy> merge_policy = std::make_shared<AlwaysAfterSplittingPolicy>(),
+		std::shared_ptr<SchedulingPolicy> truncate_policy = std::make_shared<AlwaysAfterSplittingPolicy>())
 		: nb_qubits_{ nb_qubits }, merge_policy_{ std::move(merge_policy) },
 		  truncate_policy_{ std::move(truncate_policy) }, truncator_{ std::move(truncator) },
 		  noise_model_(noise_model) {}
@@ -204,29 +204,29 @@ class Circuit {
 	 * @param truncator A unique pointer to the new truncator.
 	 * @see Truncator
 	 */
-	void set_truncator(std::unique_ptr<Truncator<Coefficient_t>> truncator) { truncator_ = std::move(truncator); }
+	void set_truncator(std::shared_ptr<Truncator<Coefficient_t>> truncator) { truncator_ = std::move(truncator); }
 
 	/**
 	 * @brief Sets a new policy for when to merge Pauli terms.
 	 * @param policy A unique pointer to the new merge policy.
 	 * @see SchedulingPolicy
 	 */
-	void set_merge_policy(std::unique_ptr<SchedulingPolicy> policy) { merge_policy_ = std::move(policy); }
+	void set_merge_policy(std::shared_ptr<SchedulingPolicy> policy) { merge_policy_ = std::move(policy); }
 
 	/**
 	 * @brief Sets a new policy for when to truncate the observable.
 	 * @param policy A unique pointer to the new truncate policy.
 	 * @see SchedulingPolicy
 	 */
-	void set_truncate_policy(std::unique_ptr<SchedulingPolicy> policy) { truncate_policy_ = std::move(policy); }
+	void set_truncate_policy(std::shared_ptr<SchedulingPolicy> policy) { truncate_policy_ = std::move(policy); }
 
     private:
 	using Fn = std::function<void(O_t&)>;
 	std::vector<QuantumOp<Fn>> operations_;
 	unsigned nb_qubits_;
-	std::unique_ptr<SchedulingPolicy> merge_policy_;
-	std::unique_ptr<SchedulingPolicy> truncate_policy_;
-	std::unique_ptr<Truncator<Coefficient_t>> truncator_;
+	std::shared_ptr<SchedulingPolicy> merge_policy_;
+	std::shared_ptr<SchedulingPolicy> truncate_policy_;
+	std::shared_ptr<Truncator<Coefficient_t>> truncator_;
 	NoiseModel<Coefficient_t> noise_model_;
 
 	void register_op(QGate qg, Fn&& f) {
