@@ -178,14 +178,13 @@ class Circuit {
 				break;
 			}
 			qop.func(obs);
-
-			schedule(state, obs, Timing::After, qop.op_t);
-
 			if (qop.op_t == OperationType::BasicGate) {
 				state.register_basic_gate(obs.size());
 			} else if (qop.op_t == OperationType::SplittingGate) {
 				state.register_splitting_gate(obs.size());
 			}
+
+			schedule(state, obs, Timing::After, qop.op_t);
 		}
 		if (obs.size() > 0) {
 			return obs;
