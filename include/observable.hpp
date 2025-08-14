@@ -74,6 +74,7 @@ class Observable {
 	 * @brief Applies a single-qubit Pauli gate to the observable.
 	 * @param g The Pauli gate to apply.
 	 * @param qubit The index of the qubit to apply the gate to.
+	 * @pre qubit index must be less than the number of qubits in the observable.
 	 */
 	void apply_pauli(Pauli_gates g, unsigned qubit) {
 		check_qubit(qubit);
@@ -86,6 +87,7 @@ class Observable {
 	 * @brief Applies a single-qubit Clifford gate to the observable.
 	 * @param g The Clifford gate to apply (e.g., Hadamard).
 	 * @param qubit The index of the qubit to apply the gate to.
+	 * @pre qubit index must be less than the number of qubits in the observable.
 	 */
 	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit) {
 		check_qubit(qubit);
@@ -99,6 +101,7 @@ class Observable {
 	 * @param n The type of unital noise (e.g., Depolarizing, Dephasing).
 	 * @param qubit The index of the qubit to apply the noise to.
 	 * @param p The noise probability parameter.
+	 * @pre qubit index must be less than the number of qubits in the observable.
 	 */
 	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p) {
 		check_qubit(qubit);
@@ -111,6 +114,8 @@ class Observable {
 	 * @brief Applies a CNOT (CX) gate to the observable.
 	 * @param qubit_control The index of the control qubit.
 	 * @param qubit_target The index of the target qubit.
+	 * @pre qubits indexes must be less than the number of qubits in the observable.
+	 * @pre control qubit != target qubit
 	 */
 	void apply_cx(unsigned qubit_control, unsigned qubit_target) {
 		check_qubit(qubit_control);
