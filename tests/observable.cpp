@@ -326,4 +326,5 @@ TEST(Observable, bad_gate_target_throw) {
 	EXPECT_THROW({ obs.apply_clifford(Clifford_Gates_1Q::H, 2); }, std::invalid_argument);
 	EXPECT_THROW({ obs.apply_pauli(Pauli_gates::X, 2); }, std::invalid_argument);
 	EXPECT_THROW({ obs.apply_cx(2, 0); }, std::invalid_argument);
+	EXPECT_THROW({ obs.apply_cx(1, 1); }, std::invalid_argument);
 }

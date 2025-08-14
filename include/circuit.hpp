@@ -325,6 +325,10 @@ class Circuit {
 	void add_operation_internal(QGate g, unsigned control, Integer target) {
 		check_qubit(control);
 		check_qubit(target);
+		if (control == static_cast<unsigned>(target)) {
+			throw std::invalid_argument("control must be != from target for 2 qubits gates.");
+		}
+
 		switch (g) {
 		case QGate::Cx:
 			register_op(g, [=](O_t& obs) { obs.apply_cx(control, target); });

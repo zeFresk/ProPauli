@@ -253,6 +253,7 @@ TEST(Circuit, bad_op_qubit_throw) {
 
 	EXPECT_THROW({ qc.add_operation("cx", 0, 4); }, std::invalid_argument);
 	EXPECT_THROW({ qc.add_operation("cx", 4, 0); }, std::invalid_argument);
+	EXPECT_THROW({ qc.add_operation("cx", 0, 0); }, std::invalid_argument);
 }
 
 TEST(Circuit, add_operation_raw_throw_on_bad_gate) {

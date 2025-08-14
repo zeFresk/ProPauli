@@ -115,6 +115,10 @@ class Observable {
 	void apply_cx(unsigned qubit_control, unsigned qubit_target) {
 		check_qubit(qubit_control);
 		check_qubit(qubit_target);
+		if (qubit_control == qubit_target) {
+			throw std::invalid_argument("cx gate target must be != from control.");
+		}
+
 		for (auto& p : paulis_) {
 			p.apply_cx(qubit_control, qubit_target);
 		}
