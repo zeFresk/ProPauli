@@ -271,8 +271,11 @@ The <a class="reference internal" href="#classCircuit"><span class="std std-ref"
 <dt class="field-even">Parameters<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>op</strong> – The name of the operation (<a class="reference internal" href="#classObservable_1a98a185ba144da0efdc395ad8a89b0bc2"><span class="std std-ref">e.g</span></a>., “H”, “CX”, “Rz”). Case-insensitive. </p></li>
-<li><p><strong>args</strong> – The arguments for the operation, such as qubit indices or rotation angles.</p></li>
+<li><p><strong>args</strong> – The arguments for the operation, such as qubit indices or rotation angles. </p></li>
 </ul>
+</dd>
+<dt class="field-odd">Pre<span class="colon">:</span></dt>
+<dd class="field-odd"><p>qubits indexes should be valid indexes</p>
 </dd>
 </dl>
 </dd></dl>
@@ -290,8 +293,11 @@ This is the primary method for adding operations inside the library. It dispatch
 <dt class="field-even">Parameters<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>g</strong> – The <code class="docutils literal notranslate"><span class="pre">QGate</span></code> enum representing the operation. </p></li>
-<li><p><strong>args</strong> – The arguments for the operation, such as qubit indices or rotation angles.</p></li>
+<li><p><strong>args</strong> – The arguments for the operation, such as qubit indices or rotation angles. </p></li>
 </ul>
+</dd>
+<dt class="field-odd">Pre<span class="colon">:</span></dt>
+<dd class="field-odd"><p>qubits indexes should be valid indexes</p>
 </dd>
 </dl>
 </dd></dl>
@@ -310,8 +316,11 @@ The <code class="docutils literal notranslate"><span class="pre">run</span></cod
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>target_observable</strong> – The initial observable to be propagated backward through the circuit. </p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The final, evolved observable after applying all circuit operations in reverse.</p>
+<dt class="field-even">Pre<span class="colon">:</span></dt>
+<dd class="field-even"><p>target_observable length should match the number of qubits of the circuit. </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The final, evolved observable after applying all circuit operations in reverse.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -487,6 +496,9 @@ An <code class="docutils literal notranslate"><a class="reference internal" href
 <li><p><strong>qubit</strong> – The index of the qubit to apply the gate to. </p></li>
 </ul>
 </dd>
+<dt class="field-even">Pre<span class="colon">:</span></dt>
+<dd class="field-even"><p>qubit index must be less than the number of qubits in the observable. </p>
+</dd>
 </dl>
 </dd></dl>
 
@@ -500,6 +512,9 @@ An <code class="docutils literal notranslate"><a class="reference internal" href
 <li><p><strong>g</strong> – The Clifford gate to apply (<a class="reference internal" href="#classObservable_1a98a185ba144da0efdc395ad8a89b0bc2"><span class="std std-ref">e.g</span></a>., Hadamard). </p></li>
 <li><p><strong>qubit</strong> – The index of the qubit to apply the gate to. </p></li>
 </ul>
+</dd>
+<dt class="field-even">Pre<span class="colon">:</span></dt>
+<dd class="field-even"><p>qubit index must be less than the number of qubits in the observable. </p>
 </dd>
 </dl>
 </dd></dl>
@@ -516,6 +531,9 @@ An <code class="docutils literal notranslate"><a class="reference internal" href
 <li><p><strong>p</strong> – The noise probability parameter. </p></li>
 </ul>
 </dd>
+<dt class="field-even">Pre<span class="colon">:</span></dt>
+<dd class="field-even"><p>qubit index must be less than the number of qubits in the observable. </p>
+</dd>
 </dl>
 </dd></dl>
 
@@ -529,6 +547,12 @@ An <code class="docutils literal notranslate"><a class="reference internal" href
 <li><p><strong>qubit_control</strong> – The index of the control qubit. </p></li>
 <li><p><strong>qubit_target</strong> – The index of the target qubit. </p></li>
 </ul>
+</dd>
+<dt class="field-even">Pre<span class="colon">:</span></dt>
+<dd class="field-even"><p>qubits indexes must be less than the number of qubits in the observable. </p>
+</dd>
+<dt class="field-odd">Pre<span class="colon">:</span></dt>
+<dd class="field-odd"><p>control qubit != target qubit </p>
 </dd>
 </dl>
 </dd></dl>
@@ -768,23 +792,23 @@ This function iterates through all Pauli terms in the observable. If two or more
 <dt class="sig sig-object cpp" id="_CPPv4N9PauliTerm8apply_cxEjj">
 <span id="_CPPv3N9PauliTerm8apply_cxEjj"></span><span id="_CPPv2N9PauliTerm8apply_cxEjj"></span><span id="PauliTerm::apply_cx__unsigned.unsigned"></span><span class="target" id="classPauliTerm_1abf764bcd413430c4809cffb883b2998e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_cx</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">control</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">target</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTerm8apply_cxEjj" title="Link to this definition"></a><br /></dt>
 <dd><p>Applies a CNOT gate to the term. </p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Control and target qubits must be different. This is enforced by an assertion. </p>
-</div>
+<dl class="field-list simple">
+<dt class="field-odd">Pre<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Control and target qubits must be different. </p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4N9PauliTerm8apply_rzEj1T">
 <span id="_CPPv3N9PauliTerm8apply_rzEj1T"></span><span id="_CPPv2N9PauliTerm8apply_rzEj1T"></span><span id="PauliTerm::apply_rz__unsigned.T"></span><span class="target" id="classPauliTerm_1a83891673048399ba086daa90b0276ea5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm"><span class="n"><span class="pre">PauliTerm</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_rz</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit</span></span>, <a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">theta</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTerm8apply_rzEj1T" title="Link to this definition"></a><br /></dt>
 <dd><p>Applies an Rz gate, potentially splitting the term. </p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>The operator on the target qubit must be X or Y. This is enforced by an assertion. </p>
-</div>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A new <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> if the term is split, otherwise the new term is empty. </p>
+</dd>
+<dt class="field-even">Pre<span class="colon">:</span></dt>
+<dd class="field-even"><p>The operator on the target qubit must be X or Y. </p>
 </dd>
 </dl>
 </dd></dl>
@@ -793,23 +817,23 @@ This function iterates through all Pauli terms in the observable. If two or more
 <dt class="sig sig-object cpp" id="_CPPv4N9PauliTerm26apply_amplitude_damping_xyEj1T">
 <span id="_CPPv3N9PauliTerm26apply_amplitude_damping_xyEj1T"></span><span id="_CPPv2N9PauliTerm26apply_amplitude_damping_xyEj1T"></span><span id="PauliTerm::apply_amplitude_damping_xy__unsigned.T"></span><span class="target" id="classPauliTerm_1a21a88900f34974e144e6e05fdc80484c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_amplitude_damping_xy</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit</span></span>, <a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">p</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTerm26apply_amplitude_damping_xyEj1T" title="Link to this definition"></a><br /></dt>
 <dd><p>Applies the X/Y part of the amplitude damping channel. </p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>The operator on the target qubit must be X or Y. This is enforced by an assertion. </p>
-</div>
+<dl class="field-list simple">
+<dt class="field-odd">Pre<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The operator on the target qubit must be X or Y. </p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4N9PauliTerm25apply_amplitude_damping_zEj1T">
 <span id="_CPPv3N9PauliTerm25apply_amplitude_damping_zEj1T"></span><span id="_CPPv2N9PauliTerm25apply_amplitude_damping_zEj1T"></span><span id="PauliTerm::apply_amplitude_damping_z__unsigned.T"></span><span class="target" id="classPauliTerm_1a60466a103b56d2fc1cc424939c831ce8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm"><span class="n"><span class="pre">PauliTerm</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">apply_amplitude_damping_z</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">qubit</span></span>, <a class="reference internal" href="#_CPPv4I0E9PauliTerm" title="PauliTerm::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">p</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PauliTerm25apply_amplitude_damping_zEj1T" title="Link to this definition"></a><br /></dt>
 <dd><p>Applies the Z part of the amplitude damping channel, splitting the term. </p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>The operator on the target qubit must be Z. This is enforced by an assertion. </p>
-</div>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The new <a class="reference internal" href="#classPauliTerm"><span class="std std-ref">PauliTerm</span></a> created by the split. </p>
+</dd>
+<dt class="field-even">Pre<span class="colon">:</span></dt>
+<dd class="field-even"><p>The operator on the target qubit must be Z. </p>
 </dd>
 </dl>
 </dd></dl>
@@ -985,6 +1009,10 @@ A <code class="docutils literal notranslate"><a class="reference internal" href=
 <dt class="sig sig-object cpp" id="_CPPv4N10NoiseModel24add_unital_noise_on_gateE5QGate11UnitalNoise1T">
 <span id="_CPPv3N10NoiseModel24add_unital_noise_on_gateE5QGate11UnitalNoise1T"></span><span id="_CPPv2N10NoiseModel24add_unital_noise_on_gateE5QGate11UnitalNoise1T"></span><span id="NoiseModel::add_unital_noise_on_gate__QGate.UnitalNoise.T"></span><span class="target" id="classNoiseModel_1a72f12c4b83d96387c5aa6f45604deb55"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_unital_noise_on_gate</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">QGate</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">g</span></span>, <span class="n"><span class="pre">UnitalNoise</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">un</span></span>, <a class="reference internal" href="#_CPPv4I0E10NoiseModel" title="NoiseModel::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">n</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10NoiseModel24add_unital_noise_on_gateE5QGate11UnitalNoise1T" title="Link to this definition"></a><br /></dt>
 <dd><p>Adds a unital noise channel to be applied after a specific gate type. </p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Adding noise to noisy gates (AmplitudeDamping, Depolarizing, Dephasing) is forbidden to prevent infinite loops. </p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1000,6 +1028,10 @@ A <code class="docutils literal notranslate"><a class="reference internal" href=
 <dt class="sig sig-object cpp" id="_CPPv4N10NoiseModel29add_amplitude_damping_on_gateE5QGate1T">
 <span id="_CPPv3N10NoiseModel29add_amplitude_damping_on_gateE5QGate1T"></span><span id="_CPPv2N10NoiseModel29add_amplitude_damping_on_gateE5QGate1T"></span><span id="NoiseModel::add_amplitude_damping_on_gate__QGate.T"></span><span class="target" id="classNoiseModel_1a2996d5408ac8816dbcf56783bba51ef7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_amplitude_damping_on_gate</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">QGate</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">g</span></span>, <a class="reference internal" href="#_CPPv4I0E10NoiseModel" title="NoiseModel::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">n</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10NoiseModel29add_amplitude_damping_on_gateE5QGate1T" title="Link to this definition"></a><br /></dt>
 <dd><p>Adds an amplitude damping channel to be applied after a specific gate type. </p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Adding noise to noisy gates (AmplitudeDamping, Depolarizing, Dephasing) is forbidden to prevent infinite loops. </p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
