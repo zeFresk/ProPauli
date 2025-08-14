@@ -98,8 +98,8 @@ TEST(Circuit, qc_match_observable_result_1) {
 	Circuit qc{ 4,
 		    std::make_unique<NeverTruncator>(),
 		    {},
-		    std::make_unique<NeverPolicy>(),
-		    std::make_unique<NeverPolicy>() };
+		    std::make_unique<AlwaysBeforeSplittingPolicy>(),
+		    std::make_unique<AlwaysAfterSplittingPolicy>() };
 	Observable obs{ "IIII" };
 	auto evolved_obs = obs;
 
