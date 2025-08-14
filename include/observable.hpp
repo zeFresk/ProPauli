@@ -5,8 +5,12 @@
 #include "pauli_term.hpp"
 
 #include <algorithm>
+#include <cstring>
 #include <initializer_list>
+#include <iostream>
+#include <iterator>
 #include <ostream>
+#include <stdexcept>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -30,7 +34,9 @@ class Observable {
 	 *
 	 * @snippet tests/snippets/observable.cpp observable_from_string
 	 */
-	Observable(std::string_view pauli_string, T coeff = T{ 1 }) : paulis_({ PauliTerm<T>(pauli_string, coeff) }) {}
+	Observable(std::string_view pauli_string, T coeff = T{ 1 }) : paulis_({ PauliTerm<T>(pauli_string, coeff) }) {
+		check_invariant();
+	}
 
 	/**
 	 * @brief Constructs an observable from a list of Pauli strings.
@@ -39,7 +45,9 @@ class Observable {
 	 * @snippet tests/snippets/observable.cpp observable_from_string_list
 	 */
 	Observable(std::initializer_list<std::string_view> pauli_string_list)
-		: paulis_(pauli_string_list.begin(), pauli_string_list.end()) {}
+		: paulis_(pauli_string_list.begin(), pauli_string_list.end()) {
+		check_invariant();
+	}
 
 	/**
 	 * @brief Constructs an observable from a list of PauliTerm objects.
@@ -47,7 +55,7 @@ class Observable {
 	 *
 	 * @snippet tests/snippets/observable.cpp observable_from_pauli_terms
 	 */
-	Observable(std::initializer_list<PauliTerm<T>> paulis_list) : paulis_{ paulis_list } {}
+	Observable(std::initializer_list<PauliTerm<T>> paulis_list) : paulis_{ paulis_list } { check_invariant(); }
 
 	/**
 	 * @brief Constructs an observable from a range of PauliTerm objects.
@@ -58,7 +66,9 @@ class Observable {
 	 * @snippet tests/snippets/observable.cpp observable_from_iterators
 	 */
 	template <typename Iter>
-	Observable(Iter&& begin, Iter&& end) : paulis_{ begin, end } {}
+	Observable(Iter&& begin, Iter&& end) : paulis_{ begin, end } {
+		check_invariant();
+	}
 
 	/**
 	 * @brief Applies a single-qubit Pauli gate to the observable.
@@ -66,6 +76,7 @@ class Observable {
 	 * @param qubit The index of the qubit to apply the gate to.
 	 */
 	void apply_pauli(Pauli_gates g, unsigned qubit) {
+		check_qubit(qubit);
 		for (auto& p : paulis_) {
 			p.apply_pauli(g, qubit);
 		}
@@ -77,6 +88,7 @@ class Observable {
 	 * @param qubit The index of the qubit to apply the gate to.
 	 */
 	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit) {
+		check_qubit(qubit);
 		for (auto& p : paulis_) {
 			p.apply_clifford(g, qubit);
 		}
@@ -89,6 +101,7 @@ class Observable {
 	 * @param p The noise probability parameter.
 	 */
 	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p) {
+		check_qubit(qubit);
 		for (auto& pi : paulis_) {
 			pi.apply_unital_noise(n, qubit, p);
 		}
@@ -100,6 +113,8 @@ class Observable {
 	 * @param qubit_target The index of the target qubit.
 	 */
 	void apply_cx(unsigned qubit_control, unsigned qubit_target) {
+		check_qubit(qubit_control);
+		check_qubit(qubit_target);
 		for (auto& p : paulis_) {
 			p.apply_cx(qubit_control, qubit_target);
 		}
@@ -115,6 +130,7 @@ class Observable {
 	 * output Pauli terms, potentially doubling the size of the observable.
 	 */
 	void apply_rz(unsigned qubit, T theta) {
+		check_qubit(qubit);
 		// paulis_.reserve(paulis_.size() * 2);
 		const auto nb_terms = paulis_.size();
 		for (std::size_t i = 0; i < nb_terms;
@@ -137,6 +153,7 @@ class Observable {
 	 * coefficient is simply scaled. If it has I, there is no effect.
 	 */
 	void apply_amplitude_damping(unsigned qubit, T pn) {
+		check_qubit(qubit);
 		// paulis_.reserve(paulis_.size() * 2);
 		const auto nb_terms = paulis_.size();
 		for (std::size_t i = 0; i < nb_terms; ++i) {
@@ -183,6 +200,8 @@ class Observable {
 	decltype(auto) cend() const { return paulis_.cend(); }
 	/** @brief Gets the number of Pauli terms in the observable. */
 	std::size_t size() const { return paulis_.size(); }
+	/* @brief Get the number of qubits of this Observable */
+	std::size_t nb_qubits() const { return paulis_[0].size(); }
 
 	/**
 	 * @brief Merges Pauli terms with identical Pauli strings.
@@ -223,7 +242,13 @@ class Observable {
 	 */
 	template <typename Truncator>
 	std::size_t truncate(Truncator&& truncator) {
-		return truncator.truncate(paulis_);
+		auto ret = truncator.truncate(paulis_);
+		if (paulis_.size() == 0) { //&& !strcmp(std::getenv("WARN_EMPTY_TREE"), "0")) {
+			std::cerr
+				<< "[ProPauli] Warning: truncation lead to empty tree. Disable this warning by setting `WARN_EMPTY_TREE=0`, if this is intended."
+				<< std::endl;
+		}
+		return ret;
 	}
 
 	friend bool operator==(Observable const& lhs, Observable const& rhs) {
@@ -232,6 +257,23 @@ class Observable {
 
     private:
 	std::vector<PauliTerm<T>> paulis_;
+
+	void check_invariant() const {
+		if (paulis_.size() == 0) {
+			throw std::invalid_argument("Can't use observables of 0 qubits.");
+		}
+		const auto nb_qubits = paulis_[0].size();
+		if (!std::all_of(paulis_.cbegin(), paulis_.cend(),
+				 [=](auto const& pt) { return pt.size() == nb_qubits; })) {
+			throw std::invalid_argument("Can't have observable with mismatching number of qubits.");
+		}
+	}
+
+	void check_qubit(unsigned qubit) const {
+		if (qubit < 0 || qubit >= nb_qubits()) {
+			throw std::invalid_argument("Qubit index out of range.");
+		}
+	}
 };
 
 template <typename T>

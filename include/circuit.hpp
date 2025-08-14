@@ -168,6 +168,9 @@ class Circuit {
 		for (auto const& qop : std::ranges::reverse_view{ operations_ }) {
 			schedule(state, obs, Timing::Before, qop.op_t);
 
+			if (obs.size() == 0) { // maximally mixed state
+				break;
+			}
 			qop.func(obs);
 
 			schedule(state, obs, Timing::After, qop.op_t);
@@ -178,7 +181,11 @@ class Circuit {
 				state.register_splitting_gate(obs.size());
 			}
 		}
-		return obs;
+		if (obs.size() > 0) {
+			return obs;
+		} else {
+			return Observable<Coefficient_t>(std::string(target_observable[0].size(), 'I'), 0.f);
+		}
 	}
 
 	/**

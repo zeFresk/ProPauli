@@ -71,19 +71,19 @@ Circuit qc{ 64,
 };
 
 // Apply a layer of Hadamard gates
-for (unsigned i = 0; i < 64; ++i)
+for (unsigned i = 0; i < 63; ++i)
     qc.add_operation("H", i);
 
 // Apply a layer of Rz gates
-for (unsigned i = 0; i < 64; ++i)
+for (unsigned i = 0; i < 63; ++i)
     qc.add_operation("Rz", i, 0.785f);
 
 // Entangling layer
-for (unsigned i = 0; i < 63; ++i) {
+for (unsigned i = 0; i < 62; ++i) {
     qc.add_operation("CX", i, i + 1);
 }
 
-auto result = qc.run(Observable{ std::string(64, 'Z') });
+auto result = qc.run(Observable{ std::string(64, 'I') });
 std::cout << "Expectation value: " << result.expectation_value() << std::endl;
 ```
 
