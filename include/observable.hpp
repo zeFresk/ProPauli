@@ -243,10 +243,13 @@ class Observable {
 	template <typename Truncator>
 	std::size_t truncate(Truncator&& truncator) {
 		auto ret = truncator.truncate(paulis_);
-		if (paulis_.size() == 0 && !(strcmp(std::getenv("WARN_EMPTY_TREE"), "0") == 0)) {
-			std::cerr
-				<< "[ProPauli] Warning: truncation lead to empty tree. Disable this warning by setting `WARN_EMPTY_TREE=0`, if this is intended."
-				<< std::endl;
+		if (paulis_.size() == 0) {
+			const auto warn_env = std::getenv("WARN_EMPTY_TREE");
+			if (warn_env != nullptr && strcmp(warn_env, "0") != 0) {
+				std::cerr
+					<< "[ProPauli] Warning: truncation lead to empty tree. Disable this warning by setting `WARN_EMPTY_TREE=0`, if this is intended."
+					<< std::endl;
+			}
 		}
 		return ret;
 	}
