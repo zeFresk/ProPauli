@@ -87,7 +87,7 @@ static void Circuit_run_paulis(benchmark::State& state) {
 	const unsigned nb_gates = state.range(1);
 	std::vector<std::size_t> random_num;
 	random_num.reserve(buffer_size);
-	std::generate_n(std::back_inserter(random_num), buffer_size, [&]() { return random_in(state.range(0)); });
+	std::generate_n(std::back_inserter(random_num), buffer_size, [&]() { return random_in(state.range(0)-1); });
 
 	auto qc = Circuit{ static_cast<unsigned>(state.range(0)) };
 
@@ -127,6 +127,7 @@ class Circuit_ZZ_feature_map : public benchmark::Fixture {
 	Circuit_ZZ_feature_map() : qc{ 0 } {}
 	void SetUp(benchmark::State const& state) override {
 		nb_qubits = state.range(0);
+		qc = Circuit(nb_qubits);
 
 		// H
 		for (unsigned i = 0; i < nb_qubits; ++i)
@@ -180,6 +181,7 @@ class Circuit_Efficient_SU2 : public benchmark::Fixture {
 	Circuit_Efficient_SU2() : qc{ 0 } {}
 	void SetUp(benchmark::State const& state) override {
 		nb_qubits = state.range(0);
+		qc = Circuit(nb_qubits);
 
 		// Ry
 		for (unsigned i = 0; i < nb_qubits; ++i)

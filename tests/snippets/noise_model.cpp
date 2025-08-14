@@ -13,6 +13,8 @@ void noise_model_snippets() {
 
 	// Add 0.5% dephasing noise to every Hadamard gate
 	nm.add_unital_noise_on_gate(QGate::H, UnitalNoise::Dephasing, 0.005f);
+	// Add 1% depolarizing noise to every Cx gate
+	nm.add_unital_noise_on_gate(QGate::Cx, UnitalNoise::Depolarizing, 0.01f);
 
 	// Create a circuit with this noise model
 	Circuit qc(4, std::make_shared<NeverTruncator>(), nm);

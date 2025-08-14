@@ -30,6 +30,12 @@ class NoiseModel {
     private:
 	std::unordered_map<QGate, Noise<T>> noise_map;
 
+	void avoid_loops(QGate g) {
+		if (g == QGate::AmplitudeDamping || g == QGate::Depolarizing || g == QGate::Dephasing) {
+			throw std::invalid_argument("Adding noise to noisy gates is forbidden.");
+		}
+	}
+
     public:
 	/**
 	 * @brief Constructs an empty noise model.
@@ -58,17 +64,12 @@ class NoiseModel {
 	template <typename C, typename Integer, std::enable_if_t<std::is_integral_v<Integer>, bool> = true>
 	void apply_noise_after(C& qc, QGate cg, unsigned qubit1, Integer qubit2) const {
 		assert(cg == QGate::Cx);
-		if (cg == QGate::AmplitudeDamping || cg == QGate::Dephasing || cg == QGate::Depolarizing) {
-			throw std::invalid_argument("Can't add more noise to noise!");
-		}
 		apply_noise_after(qc, cg, qubit1);
 		apply_noise_after(qc, cg, qubit2);
 	}
 
 	template <typename C, typename Real, std::enable_if_t<std::is_floating_point_v<Real>, bool> = true>
 	void apply_noise_after(C& qc, QGate cg, unsigned qubit, [[maybe_unused]] Real theta) {
-		assert(cg == QGate::Rz || cg == QGate::Depolarizing || cg == QGate::Dephasing ||
-		       cg == QGate::AmplitudeDamping);
 		apply_noise_after(qc, cg, qubit);
 	}
 
@@ -79,6 +80,7 @@ class NoiseModel {
 	 * @param n The strength/probability of the noise.
 	 */
 	void add_unital_noise_on_gate(QGate g, UnitalNoise un, T n) {
+		avoid_loops(g);
 		auto& nm = noise_map[g];
 		switch (un) {
 		case UnitalNoise::Dephasing:
@@ -98,6 +100,7 @@ class NoiseModel {
 	 * @param n The strength/probability of the noise.
 	 */
 	void add_amplitude_damping_on_gate(QGate g, T n) {
+		avoid_loops(g);
 		auto& nm = noise_map[g];
 		nm.amplitude_damping_strength = n;
 	}

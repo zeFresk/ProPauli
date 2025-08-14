@@ -9,6 +9,7 @@
 #include <iterator>
 #include <numeric>
 #include <algorithm>
+#include <stdexcept>
 #include <string_view>
 
 TEST(Observable, construct_from_string) {
@@ -293,4 +294,36 @@ TEST(Observable, amplitude_damping) {
 	ASSERT_TRUE(zpt != zobs.cend());
 	EXPECT_EQ(std::distance(zobs.cbegin(), zobs.cend()), std::pow(2, zobs[0].size()));
 	EXPECT_FLOAT_EQ(zpt->coefficient(), std::pow(1 - p, zobs[0].size()));
+}
+
+TEST(Observable, bad_init_throw) {
+	EXPECT_THROW({ Observable obs(""); }, std::invalid_argument);
+	EXPECT_THROW(
+		{
+			std::initializer_list<std::string_view> lst = {};
+			Observable obs{ lst };
+		},
+		std::invalid_argument);
+	EXPECT_THROW(
+		{
+			std::initializer_list<PauliTerm<coeff_t>> lst = {};
+			Observable obs{ lst };
+		},
+		std::invalid_argument);
+
+	std::vector<PauliTerm<coeff_t>> lst;
+	EXPECT_THROW({ Observable obs(lst.begin(), lst.end()); }, std::invalid_argument);
+	std::initializer_list<PauliTerm<coeff_t>> lst2 = { PauliTerm("II"), PauliTerm("IIZ") };
+	EXPECT_THROW({ Observable obs{ lst2 }; }, std::invalid_argument);
+}
+
+TEST(Observable, bad_gate_target_throw) {
+	Observable obs{ "II" };
+	EXPECT_THROW({ obs.apply_unital_noise(UnitalNoise::Dephasing, 2, 0.1f); }, std::invalid_argument);
+	EXPECT_THROW({ obs.apply_amplitude_damping(2, 0.1f); }, std::invalid_argument);
+	EXPECT_THROW({ obs.apply_rz(2, 0.1f); }, std::invalid_argument);
+	EXPECT_THROW({ obs.apply_cx(0, 2); }, std::invalid_argument);
+	EXPECT_THROW({ obs.apply_clifford(Clifford_Gates_1Q::H, 2); }, std::invalid_argument);
+	EXPECT_THROW({ obs.apply_pauli(Pauli_gates::X, 2); }, std::invalid_argument);
+	EXPECT_THROW({ obs.apply_cx(2, 0); }, std::invalid_argument);
 }

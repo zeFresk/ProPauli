@@ -163,11 +163,17 @@ class Circuit {
 	 * @see Observable::expectation_value()
 	 */
 	Observable<Coefficient_t> run(Observable<Coefficient_t> const& target_observable) {
+		if (target_observable[0].size() != nb_qubits()) {
+			throw std::invalid_argument("Number of qubits of the circuit doesn't match observable.");
+		}
 		auto obs = target_observable;
 		SimulationState state(nb_splitting_gates());
 		for (auto const& qop : std::ranges::reverse_view{ operations_ }) {
 			schedule(state, obs, Timing::Before, qop.op_t);
 
+			if (obs.size() == 0) { // maximally mixed state
+				break;
+			}
 			qop.func(obs);
 
 			schedule(state, obs, Timing::After, qop.op_t);
@@ -178,7 +184,11 @@ class Circuit {
 				state.register_splitting_gate(obs.size());
 			}
 		}
-		return obs;
+		if (obs.size() > 0) {
+			return obs;
+		} else {
+			return Observable<Coefficient_t>(std::string(target_observable[0].size(), 'I'), 0.f);
+		}
 	}
 
 	/**
@@ -257,6 +267,7 @@ class Circuit {
 	 * @snippet tests/readme.cpp basic
 	 */
 	void add_operation_internal(QGate g, unsigned qubit) {
+		check_qubit(qubit);
 		if (in_array(g, pg_map) != std::cend(pg_map)) {
 			auto it = in_array(g, pg_map);
 			register_op(g, [=](O_t& obs) { obs.apply_pauli(it->second, qubit); });
@@ -282,6 +293,7 @@ class Circuit {
 	 */
 	template <typename Real, std::enable_if_t<std::is_floating_point_v<Real>, bool> = true>
 	void add_operation_internal(QGate g, unsigned qubit, Real c) {
+		check_qubit(qubit);
 		switch (g) {
 		case QGate::Rz:
 			register_op(g, [=](O_t& obs) { obs.apply_rz(qubit, c); });
@@ -311,12 +323,20 @@ class Circuit {
 	 */
 	template <typename Integer, std::enable_if_t<std::is_integral_v<Integer>, bool> = true>
 	void add_operation_internal(QGate g, unsigned control, Integer target) {
+		check_qubit(control);
+		check_qubit(target);
 		switch (g) {
 		case QGate::Cx:
 			register_op(g, [=](O_t& obs) { obs.apply_cx(control, target); });
 			break;
 		default:
 			throw std::invalid_argument("Unsupported gate type with those arguments");
+		}
+	}
+
+	void check_qubit(unsigned qubit) const {
+		if (qubit < 0 || qubit >= nb_qubits()) {
+			throw std::invalid_argument("Qubit index out of range for this circuit.");
 		}
 	}
 };
