@@ -86,7 +86,7 @@ class PredicateTruncator : public Truncator<T> {
 	P pred;
 
     public:
-	PredicateTruncator(P&& p) : pred(std::forward(p)) {}
+	PredicateTruncator(P&& p) : pred(std::forward<P>(p)) {}
 	~PredicateTruncator() override {}
 
 	PredicateTruncator(PredicateTruncator const&) = default;
