@@ -41,9 +41,9 @@ struct SimulationState {
 	 */
 	SimulationState(std::size_t splitting_gates_left)
 		: nb_gates_applied(0), nb_splitting_gates_applied(0), nb_splitting_gates_left(splitting_gates_left) {}
-	SimulationState(SimulationState const&) = delete;
+	SimulationState(SimulationState const&) = default;
 	SimulationState(SimulationState&&) = default;
-	SimulationState& operator=(SimulationState const&) = delete;
+	SimulationState& operator=(SimulationState const&) = default;
 	SimulationState& operator=(SimulationState&&) = default;
 
 	/** @brief Registers the application of a basic (non-splitting) gate. */
