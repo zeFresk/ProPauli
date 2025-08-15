@@ -157,4 +157,37 @@ auto combine_truncators(Truncs&&... truncs) {
 		std::forward<Truncs>(truncs)...);
 }
 
+/**
+ * @brief A class for combining multiple truncators at runtime.
+ *
+ * This class holds a collection of `Truncator` objects and applies them
+ * sequentially to a list of Pauli terms. It provides a flexible way to
+ * create complex truncation strategies dynamically.
+ *
+ * @tparam T The coefficient type, typically `float` or `double`.
+ *
+ * @warning This class introduces some overhead due to virtual function calls. 
+ * For performance-critical code where the truncation strategy is fixed at compile 
+ * time, prefer using `combine_truncators`.
+ */
+template <typename T = coeff_t>
+class RuntimeMultiTruncators : public Truncator<T> {
+	std::vector<std::shared_ptr<Truncator<T>>> truncs;
+
+    public:
+	RuntimeMultiTruncators(std::initializer_list<std::shared_ptr<Truncator<T>>> lst) : truncs{ lst } {}
+	RuntimeMultiTruncators(std::vector<std::shared_ptr<Truncator<T>>> const& lst) : truncs{ lst } {}
+	template <typename Iter>
+	RuntimeMultiTruncators(Iter&& begin, Iter&& end) : truncs(begin, end) {}
+	~RuntimeMultiTruncators() override {}
+
+	std::size_t truncate(std::vector<PauliTerm<T>>& paulis) const override {
+		std::size_t ret = 0;
+		for (const auto& trunc : truncs) {
+			ret += trunc->truncate(paulis);
+		}
+		return ret;
+	}
+};
+
 #endif
