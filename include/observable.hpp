@@ -3,6 +3,7 @@
 
 #include "pauli.hpp"
 #include "pauli_term.hpp"
+#include "merge.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -221,25 +222,8 @@ class Observable {
 	 * replaced by a single term. This is a crucial optimization for reducing the complexity of the simulation.
 	 */
 	std::size_t merge() {
-		// associate pauli string hash with new Pauli Term
-		std::unordered_map<PauliTerm<T>, PauliTerm<T>, std::hash<PauliTerm<T>>, PauliStringEqual<T>> hmap;
-		hmap.reserve(paulis_.size());
-
-		// if new pauli string, copy pauli term, else merge
-		for (auto const& p : paulis_) {
-			auto [it, is_new] = hmap.emplace(p, p);
-			if (!is_new) { // element already exists
-				it->second.add_coeff(p.coefficient());
-			}
-		}
-
-		std::vector<PauliTerm<T>> new_pts;
-		new_pts.reserve(hmap.size());
-		for (auto&& [ph, pt] : hmap) {
-			new_pts.push_back(std::move(pt));
-		}
-		paulis_ = std::move(new_pts);
-		return new_pts.size();
+		merge_inplace_move(paulis_);
+		return paulis_.size();
 	}
 
 	/**

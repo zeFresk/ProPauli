@@ -213,6 +213,13 @@ class PauliTerm {
 	T const& coefficient() const noexcept { return coefficient_; }
 
 	/**
+	 * @brief Sets the coefficient of the term.
+	 */
+	void set_coefficient(T new_c) noexcept {
+		coefficient_ = new_c;
+	}
+
+	/**
 	 * @brief Calculates the Pauli weight of the term (number of non-identity operators).
 	 */
 	std::size_t pauli_weight() const {
