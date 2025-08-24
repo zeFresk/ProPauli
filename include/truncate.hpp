@@ -2,6 +2,7 @@
 #define PP_TRUNCATE_HPP
 
 #include "pauli.hpp"
+#include "pauli_container.hpp"
 #include "pauli_term.hpp"
 
 #include <cstddef>
@@ -20,7 +21,9 @@ class CoefficientPredicate {
     public:
 	CoefficientPredicate(T&& threshold) : threshold_(threshold) {}
 
-	bool operator()(PauliTerm<T> const& pt) const { return std::abs(pt.coefficient()) < threshold_; }
+	bool operator()(ReadOnlyNonOwningPauliTerm<T> const& pt) const {
+		return std::abs(pt.coefficient()) < threshold_;
+	}
 };
 
 /**
@@ -33,7 +36,7 @@ class WeightPredicate {
 	WeightPredicate(std::size_t&& weight_threshold) : weight_threshold_(weight_threshold) {}
 
 	template <typename T>
-	bool operator()(PauliTerm<T> const& pt) const {
+	bool operator()(ReadOnlyNonOwningPauliTerm<T> const& pt) const {
 		return pt.pauli_weight() >= weight_threshold_;
 	}
 };
@@ -45,7 +48,7 @@ class NeverPredicate {
     public:
 	NeverPredicate() = default;
 	template <typename T>
-	bool operator()(PauliTerm<T> const&) const {
+	bool operator()(ReadOnlyNonOwningPauliTerm<T> const&) const {
 		return false;
 	}
 };
@@ -67,7 +70,7 @@ class Truncator {
 	 * @param paulis The vector of PauliTerm objects to truncate.
 	 * @return The number of terms removed.
 	 */
-	virtual std::size_t truncate(std::vector<PauliTerm<T>>& paulis) const = 0;
+	virtual std::size_t truncate(PauliTermContainer<T>& paulis) const = 0;
 };
 
 /**
@@ -94,7 +97,7 @@ class PredicateTruncator : public Truncator<T> {
 	template <typename... Args, std::enable_if_t<std::is_constructible_v<P, Args...>, bool> = true>
 	PredicateTruncator(Args&&... args) : pred{ P(std::forward<Args>(args)...) } {}
 
-	std::size_t truncate(std::vector<PauliTerm<T>>& paulis) const override { return std::erase_if(paulis, pred); }
+	std::size_t truncate(PauliTermContainer<T>& paulis) const override { return std::erase_if(paulis, pred); }
 };
 
 /**
@@ -134,7 +137,7 @@ class Truncators : public Truncator<T> {
 	Truncators(Ts&&... truncs) : truncators(std::forward<Ts>(truncs)...) {}
 	~Truncators() override {}
 
-	std::size_t truncate(std::vector<PauliTerm<T>>& paulis) const override {
+	std::size_t truncate(PauliTermContainer<T>& paulis) const override {
 		return truncate_impl(paulis, std::index_sequence_for<Ts...>{});
 	}
 };
@@ -166,8 +169,8 @@ auto combine_truncators(Truncs&&... truncs) {
  *
  * @tparam T The coefficient type, typically `float` or `double`.
  *
- * @warning This class introduces some overhead due to virtual function calls. 
- * For performance-critical code where the truncation strategy is fixed at compile 
+ * @warning This class introduces some overhead due to virtual function calls.
+ * For performance-critical code where the truncation strategy is fixed at compile
  * time, prefer using `combine_truncators`.
  */
 template <typename T = coeff_t>
@@ -181,7 +184,7 @@ class RuntimeMultiTruncators : public Truncator<T> {
 	RuntimeMultiTruncators(Iter&& begin, Iter&& end) : truncs(begin, end) {}
 	~RuntimeMultiTruncators() override {}
 
-	std::size_t truncate(std::vector<PauliTerm<T>>& paulis) const override {
+	std::size_t truncate(PauliTermContainer<T>& paulis) const override {
 		std::size_t ret = 0;
 		for (const auto& trunc : truncs) {
 			ret += trunc->truncate(paulis);

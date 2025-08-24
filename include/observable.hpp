@@ -3,6 +3,8 @@
 
 #include "pauli.hpp"
 #include "pauli_term.hpp"
+#include "pauli_container.hpp"
+#include "non_owning_pauli_term.hpp"
 #include "merge.hpp"
 
 #include <algorithm>
@@ -13,6 +15,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <string_view>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -35,7 +38,7 @@ class Observable {
 	 *
 	 * @snippet tests/snippets/observable.cpp observable_from_string
 	 */
-	Observable(std::string_view pauli_string, T coeff = T{ 1 }) : paulis_({ PauliTerm<T>(pauli_string, coeff) }) {
+	Observable(std::string_view pauli_string, T coeff = T{ 1 }) : paulis_{ { PauliTerm<T>(pauli_string, coeff) } } {
 		check_invariant();
 	}
 
@@ -45,10 +48,9 @@ class Observable {
 	 *
 	 * @snippet tests/snippets/observable.cpp observable_from_string_list
 	 */
-	Observable(std::initializer_list<std::string_view> pauli_string_list)
-		: paulis_(pauli_string_list.begin(), pauli_string_list.end()) {
+	/*Observable(std::initializer_list<std::string_view> pauli_string_list) : paulis_{ pauli_string_list } {
 		check_invariant();
-	}
+	}*/
 
 	/**
 	 * @brief Constructs an observable from a list of PauliTerm objects.
@@ -66,7 +68,8 @@ class Observable {
 	 *
 	 * @snippet tests/snippets/observable.cpp observable_from_iterators
 	 */
-	template <typename Iter>
+	template <typename Iter,
+		  std::enable_if_t<std::is_constructible_v<std::vector<PauliTerm<T>>, Iter, Iter>, bool> = true>
 	Observable(Iter&& begin, Iter&& end) : paulis_{ begin, end } {
 		check_invariant();
 	}
@@ -79,8 +82,8 @@ class Observable {
 	 */
 	void apply_pauli(Pauli_gates g, unsigned qubit) {
 		check_qubit(qubit);
-		for (auto& p : paulis_) {
-			p.apply_pauli(g, qubit);
+		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
+			paulis_[i].apply_pauli(g, qubit);
 		}
 	}
 
@@ -92,8 +95,8 @@ class Observable {
 	 */
 	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit) {
 		check_qubit(qubit);
-		for (auto& p : paulis_) {
-			p.apply_clifford(g, qubit);
+		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
+			paulis_[i].apply_clifford(g, qubit);
 		}
 	}
 
@@ -106,8 +109,8 @@ class Observable {
 	 */
 	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p) {
 		check_qubit(qubit);
-		for (auto& pi : paulis_) {
-			pi.apply_unital_noise(n, qubit, p);
+		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
+			paulis_[i].apply_unital_noise(n, qubit, p);
 		}
 	}
 
@@ -125,8 +128,8 @@ class Observable {
 			throw std::invalid_argument("cx gate target must be != from control.");
 		}
 
-		for (auto& p : paulis_) {
-			p.apply_cx(qubit_control, qubit_target);
+		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
+			paulis_[i].apply_cx(qubit_control, qubit_target);
 		}
 	}
 
@@ -141,14 +144,13 @@ class Observable {
 	 */
 	void apply_rz(unsigned qubit, T theta) {
 		check_qubit(qubit);
-		// paulis_.reserve(paulis_.size() * 2);
-		const auto nb_terms = paulis_.size();
-		for (std::size_t i = 0; i < nb_terms;
-		     ++i) { // no range based loop (insert at the end -> use after free)
-			auto& p = paulis_[i];
+
+		const auto nb_terms = paulis_.nb_terms();
+		for (std::size_t i = 0; i < nb_terms; ++i) {
+			auto p = paulis_[i];
 			if (!p[qubit].commutes_with(p_z)) {
-				auto new_path = p.apply_rz(qubit, theta);
-				paulis_.push_back(std::move(new_path));
+				auto new_path = paulis_.create_pauliterm();
+				paulis_[i].apply_rz(qubit, theta, new_path);
 			}
 		}
 	}
@@ -165,12 +167,12 @@ class Observable {
 	void apply_amplitude_damping(unsigned qubit, T pn) {
 		check_qubit(qubit);
 		// paulis_.reserve(paulis_.size() * 2);
-		const auto nb_terms = paulis_.size();
+		const auto nb_terms = paulis_.nb_terms();
 		for (std::size_t i = 0; i < nb_terms; ++i) {
-			auto& p = paulis_[i];
+			auto p = paulis_[i];
 			if (p[qubit] == p_z) {
-				auto new_path = p.apply_amplitude_damping_z(qubit, pn);
-				paulis_.push_back(std::move(new_path));
+				auto new_path = paulis_.create_pauliterm();
+				p.apply_amplitude_damping_z(qubit, pn, new_path);
 			} else if (p[qubit] == p_x || p[qubit] == p_y) {
 				p.apply_amplitude_damping_xy(qubit, pn);
 			}
@@ -186,16 +188,16 @@ class Observable {
 	 */
 	T expectation_value() const {
 		T ret = 0;
-		for (auto const& pt : paulis_) {
-			ret += pt.expectation_value();
+		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
+			ret += paulis_[i].expectation_value();
 		}
 		return ret;
 	}
 
 	/** @brief Accesses a specific PauliTerm in the observable. */
-	PauliTerm<T>& operator[](std::size_t idx) { return paulis_[idx]; }
+	NonOwningPauliTerm<T> operator[](std::size_t idx) { return paulis_[idx]; }
 	/** @brief Accesses a specific PauliTerm in the observable (const version). */
-	PauliTerm<T> const& operator[](std::size_t idx) const { return paulis_[idx]; }
+	ReadOnlyNonOwningPauliTerm<T> const operator[](std::size_t idx) const { return paulis_[idx]; }
 	/** @brief Returns an iterator to the beginning of the PauliTerm vector. */
 	decltype(auto) begin() { return paulis_.begin(); }
 	/** @brief Returns a const iterator to the beginning of the PauliTerm vector. */
@@ -209,9 +211,18 @@ class Observable {
 	/** @brief Returns a const iterator to the end of the PauliTerm vector. */
 	decltype(auto) cend() const { return paulis_.cend(); }
 	/** @brief Gets the number of Pauli terms in the observable. */
-	std::size_t size() const { return paulis_.size(); }
+	std::size_t size() const { return paulis_.nb_terms(); }
 	/* @brief Get the number of qubits of this Observable */
-	std::size_t nb_qubits() const { return paulis_[0].size(); }
+	std::size_t nb_qubits() const { return paulis_.nb_qubits(); }
+
+	PauliTerm<T> copy_term(std::size_t idx) const {
+		if (idx >= size()) {
+			throw std::invalid_argument("Index out of range");
+		}
+		auto nopt = (*this)[idx];
+		PauliTerm<T> ret{ nopt.begin(), nopt.end(), nopt.coefficient() };
+		return ret;
+	}
 
 	/**
 	 * @brief Merges Pauli terms with identical Pauli strings.
@@ -222,8 +233,8 @@ class Observable {
 	 * replaced by a single term. This is a crucial optimization for reducing the complexity of the simulation.
 	 */
 	std::size_t merge() {
-		merge_inplace_move(paulis_);
-		return paulis_.size();
+		merge_inplace_noalloc(paulis_);
+		return paulis_.nb_terms();
 	}
 
 	/**
@@ -236,7 +247,7 @@ class Observable {
 	template <typename Truncator>
 	std::size_t truncate(Truncator&& truncator) {
 		auto ret = truncator.truncate(paulis_);
-		if (paulis_.size() == 0) {
+		if (paulis_.nb_terms() == 0) {
 			const auto warn_env = std::getenv("WARN_EMPTY_TREE");
 			if (warn_env == nullptr || strcmp(warn_env, "0") != 0) {
 				std::cerr
@@ -248,24 +259,25 @@ class Observable {
 	}
 
 	friend bool operator==(Observable const& lhs, Observable const& rhs) {
-		return lhs.size() == rhs.size() && std::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin());
+		return lhs.size() == rhs.size() && lhs.paulis_ == rhs.paulis_;
 	}
 
     private:
-	std::vector<PauliTerm<T>> paulis_;
+	// std::vector<PauliTerm<T>> paulis_;
+	PauliTermContainer<T> paulis_;
 
 	void check_invariant() const {
-		if (paulis_.size() == 0) {
+		if (paulis_.nb_terms() == 0) {
 			throw std::invalid_argument("Can't have empty observable (no terms)");
 		}
-		const auto nb_qubits = paulis_[0].size();
+		const auto nb_qubits = this->nb_qubits();
 		if (nb_qubits == 0) {
 			throw std::invalid_argument("0 qubit observable not allowed.");
 		}
-		if (!std::all_of(paulis_.cbegin(), paulis_.cend(),
+		/*if (!std::all_of(paulis_.cbegin(), paulis_.cend(),
 				 [=](auto const& pt) { return pt.size() == nb_qubits; })) {
 			throw std::invalid_argument("Can't have observable with mismatching number of qubits.");
-		}
+		}*/
 	}
 
 	void check_qubit(unsigned qubit) const {
@@ -278,11 +290,11 @@ class Observable {
 template <typename T>
 std::ostream& operator<<(std::ostream& os, Observable<T> const& obs) {
 	bool first = true;
-	for (auto const& pt : obs) {
+	for (std::size_t i = 0; i < obs.size(); ++i) {
 		if (!first) {
 			os << " ";
 		}
-		os << pt;
+		os << obs.copy_term(i); // TODO: optimize
 
 		first = false;
 	}

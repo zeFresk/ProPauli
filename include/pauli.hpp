@@ -174,7 +174,7 @@ class Pauli {
 	 * @brief Constructs a Pauli operator from its enum representation.
 	 * @param pauli The enum value (e.g., Pauli_enum::I).
 	 */
-	constexpr Pauli(Pauli_enum pauli) : p_(pauli) {}
+	constexpr Pauli(Pauli_enum pauli) : p_(pauli) { static_assert(sizeof(Pauli) == sizeof(std::uint8_t)); }
 
 	/**
 	 * @brief Constructs a Pauli operator from a character.

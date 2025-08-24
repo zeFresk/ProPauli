@@ -1,6 +1,7 @@
 #ifndef PP_PAULI_TERM_HPP
 #define PP_PAULI_TERM_HPP
 
+#include "non_owning_pauli_term.hpp"
 #include "pauli.hpp"
 #include "maths.hpp"
 
@@ -63,10 +64,18 @@ class PauliTerm {
 		assert(coefficient_ >= -1 && coefficient_ <= 1 && "Invalid coefficient");
 	}
 
+	template <typename It>
+	PauliTerm(It&& begin, It&& end, T coefficient = T{ 1 }) : paulis_{ begin, end }, coefficient_(coefficient) {
+		assert(coefficient_ >= -1 && coefficient_ <= 1 && "Invalid coefficient");
+	}
+
 	PauliTerm(PauliTerm const&) = default;
 	PauliTerm(PauliTerm&&) noexcept = default;
 	PauliTerm& operator=(PauliTerm const&) = default;
 	PauliTerm& operator=(PauliTerm&&) noexcept = default;
+
+	explicit operator NonOwningPauliTerm<T>() { return NonOwningPauliTerm<T>{ paulis_, coefficient() }; }
+	explicit operator ReadOnlyNonOwningPauliTerm<T>() const { return ReadOnlyNonOwningPauliTerm<T>{ paulis_, coefficient() }; }
 
 	/**
 	 * @brief Applies a Pauli gate to a specific qubit of the term.
@@ -161,6 +170,10 @@ class PauliTerm {
 	Pauli& operator[](std::size_t idx) { return paulis_[idx]; }
 	Pauli const& operator[](std::size_t idx) const { return paulis_[idx]; }
 	decltype(auto) size() const { return paulis_.size(); }
+	decltype(auto) begin() {return paulis_.begin();}
+	decltype(auto) begin() const {return paulis_.begin();}
+	decltype(auto) end() {return paulis_.end();}
+	decltype(auto) end() const {return paulis_.end();}
 
 	/**
 	 * @brief Computes a hash of the Pauli string part of the term.
@@ -183,6 +196,15 @@ class PauliTerm {
 		return (lhs.paulis_.size() == rhs.paulis_.size()) && (lhs.coefficient_ == rhs.coefficient_) &&
 		       std::equal(lhs.paulis_.begin(), lhs.paulis_.end(), rhs.paulis_.begin());
 	}
+
+	friend bool operator==(NonOwningPauliTerm<T> const& lhs, PauliTerm const& rhs) {
+		return lhs == static_cast<ReadOnlyNonOwningPauliTerm<T>>(rhs);
+	}
+
+	friend bool operator==(PauliTerm const& lhs, NonOwningPauliTerm<T> const& rhs) {
+		return rhs == lhs;
+	}
+
 
 	/**
 	 * @brief Checks if two PauliTerm objects have the same Pauli string, ignoring the coefficient.
@@ -215,9 +237,7 @@ class PauliTerm {
 	/**
 	 * @brief Sets the coefficient of the term.
 	 */
-	void set_coefficient(T new_c) noexcept {
-		coefficient_ = new_c;
-	}
+	void set_coefficient(T new_c) noexcept { coefficient_ = new_c; }
 
 	/**
 	 * @brief Calculates the Pauli weight of the term (number of non-identity operators).

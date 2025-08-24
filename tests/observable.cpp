@@ -25,7 +25,7 @@ TEST(Observable, construct_from_string_coeff) {
 }
 
 TEST(Observable, construct_from_nstrings) {
-	Observable obs{ "IXYZ", "XXXX" };
+	Observable obs{ { "IXYZ", "XXXX" } };
 	PauliTerm exp_pt{ "IXYZ", coeff_t{ 1 } };
 	PauliTerm exp_pt2{ "XXXX", coeff_t{ 1 } };
 	EXPECT_EQ(obs[0], exp_pt);
@@ -50,10 +50,10 @@ TEST(Observable, construct_from_iterators) {
 
 TEST(Observable, apply_pauli) {
 	using enum Pauli_gates;
-	Observable obs{ "IXYZ", "ZXYI" };
-	Observable obs_cpy{ "IXYZ", "ZXYI" };
-	auto pt1 = obs_cpy[0];
-	auto pt2 = obs_cpy[1];
+	Observable obs{ { "IXYZ", "ZXYI" } };
+	Observable obs_cpy{ { "IXYZ", "ZXYI" } };
+	auto pt1 = obs_cpy.copy_term(0);
+	auto pt2 = obs_cpy.copy_term(1);
 
 	// I
 	for (std::size_t i = 0; i < 4; ++i) {
@@ -78,10 +78,10 @@ TEST(Observable, apply_pauli) {
 
 TEST(Observable, apply_clifford) {
 	using enum Clifford_Gates_1Q;
-	Observable obs{ "IXYZ", "ZXYI" };
-	Observable obs_cpy{ "IXYZ", "ZXYI" };
-	auto pt1 = obs_cpy[0];
-	auto pt2 = obs_cpy[1];
+	Observable obs{ { "IXYZ", "ZXYI" } };
+	Observable obs_cpy{ { "IXYZ", "ZXYI" } };
+	auto pt1 = obs_cpy.copy_term(0);
+	auto pt2 = obs_cpy.copy_term(1);
 
 	for (std::size_t i = 0; i < 4; ++i) {
 		obs.apply_clifford(H, i);
@@ -93,10 +93,10 @@ TEST(Observable, apply_clifford) {
 	}
 }
 TEST(Observable, apply_cx) {
-	Observable obs{ "IXYZ", "ZXYI" };
-	Observable obs_cpy{ "IXYZ", "ZXYI" };
-	auto pt1 = obs_cpy[0];
-	auto pt2 = obs_cpy[1];
+	Observable obs{ { "IXYZ", "ZXYI" } };
+	Observable obs_cpy{ { "IXYZ", "ZXYI" } };
+	auto pt1 = obs_cpy.copy_term(0);
+	auto pt2 = obs_cpy.copy_term(1);
 
 	for (std::size_t i = 0; i < 4; ++i) {
 		for (std::size_t j = 0; j < 4; ++j) {
@@ -112,10 +112,10 @@ TEST(Observable, apply_cx) {
 	}
 }
 TEST(Observable, apply_rz) {
-	Observable obs{ "IXYZZIXYYZXIZXIZI", "ZXYIXYZXZZZYYXXYY" };
+	Observable obs{ { "IXYZZIXYYZXIZXIZI", "ZXYIXYZXZZZYYXXYY" } };
 	Observable obs_cpy = obs;
-	PauliTerm<coeff_t> pt1_cpy = obs_cpy[0];
-	PauliTerm<coeff_t> pt2_cpy = obs_cpy[1];
+	PauliTerm<coeff_t> pt1_cpy = obs_cpy.copy_term(0);
+	PauliTerm<coeff_t> pt2_cpy = obs_cpy.copy_term(1);
 
 	const coeff_t theta = 1.41421356237;
 
@@ -137,7 +137,7 @@ TEST(Observable, apply_rz) {
 		obs.apply_rz(i, theta);
 
 		for (auto const& pt : pts) { // find all terms inside observable
-			EXPECT_EQ(*std::find(obs.cbegin(), obs.cend(), pt), pt);
+			EXPECT_EQ(*std::find(obs.begin(), obs.end(), pt), pt);
 		}
 		EXPECT_EQ(obs.expectation_value(), expected_ev);
 	}
@@ -293,17 +293,12 @@ TEST(Observable, amplitude_damping) {
 	auto zpt = std::find_if(zobs.cbegin(), zobs.cend(), [=](auto const& pt) { return pt.phash() == z_ph; });
 	ASSERT_TRUE(zpt != zobs.cend());
 	EXPECT_EQ(std::distance(zobs.cbegin(), zobs.cend()), std::pow(2, zobs[0].size()));
-	EXPECT_FLOAT_EQ(zpt->coefficient(), std::pow(1 - p, zobs[0].size()));
+	EXPECT_FLOAT_EQ((*zpt).coefficient(), std::pow(1 - p, zobs[0].size()));
 }
 
 TEST(Observable, bad_init_throw) {
 	EXPECT_THROW({ Observable obs(""); }, std::invalid_argument);
-	EXPECT_THROW(
-		{
-			std::initializer_list<std::string_view> lst = {};
-			Observable obs{ lst };
-		},
-		std::invalid_argument);
+	EXPECT_THROW({ Observable obs{ {} }; }, std::invalid_argument);
 	EXPECT_THROW(
 		{
 			std::initializer_list<PauliTerm<coeff_t>> lst = {};

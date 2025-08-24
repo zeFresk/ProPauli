@@ -1,10 +1,12 @@
 #ifndef PP_MERGE_HPP
 #define PP_MERGE_HPP
 
+#include "pauli_container.hpp"
 #include "pauli_term.hpp"
 
 #include <functional>
 #include <iostream>
+#include <unordered_set>
 #include <vector>
 #include <unordered_map>
 
@@ -47,10 +49,11 @@ void merge_inplace_n2(std::vector<PauliTerm<T>>& paulis_) {
 }
 
 template <typename T>
-std::size_t find_bin(PauliTerm<T> const& obj, std::size_t phash, std::vector<int> bins, std::vector<PauliTerm<T>> const& objs) {
+std::size_t find_bin(PauliTerm<T> const& obj, std::size_t phash, std::vector<int> bins,
+		     std::vector<PauliTerm<T>> const& objs) {
 	auto idx = phash % bins.size();
 	while (bins[idx] != -1 && !obj.equal_bitstring(objs[bins[idx]])) { // hash match but not objects
-		//std::cerr << "collision\n";
+		// std::cerr << "collision\n";
 		idx = (idx + 1) % bins.size();
 	}
 	return idx;
@@ -64,12 +67,12 @@ void merge_inplace_vec(std::vector<PauliTerm<T>>& paulis_) {
 	for (std::size_t i = 0; i < paulis_.size(); ++i) {
 		auto& p = paulis_[i];
 		auto idx = find_bin(p, p.phash(), hashes_bin, paulis_);
-		if (hashes_bin[idx] == -1) { // new pt 
-			hashes_bin[idx] = i; // hash map to this pt 
+		if (hashes_bin[idx] == -1) { // new pt
+			hashes_bin[idx] = i; // hash map to this pt
 		} else { // another pt like this exists
 			auto& oth = paulis_[hashes_bin[idx]];
 			oth.add_coeff(p.coefficient());
-			p *= T{0};
+			p *= T{ 0 };
 		}
 	}
 	std::erase_if(paulis_, [](auto const& pt) { return pt.coefficient() == T{ 0 }; });
@@ -94,10 +97,27 @@ void merge_inplace_move(std::vector<PauliTerm<T>>& paulis_) {
 	new_pts.reserve(hmap.size());
 	for (auto&& [ph, c] : hmap) {
 		new_pts.push_back(std::move(ph));
-		new_pts[new_pts.size()-1].set_coefficient(c);
+		new_pts[new_pts.size() - 1].set_coefficient(c);
 	}
 	paulis_ = std::move(new_pts);
 }
 
+template <typename T>
+void merge_inplace_noalloc(PauliTermContainer<T>& paulis_) {
+	// associate pauli string hash with new Pauli Term
+	std::unordered_set<NonOwningPauliTerm<T>, std::hash<NonOwningPauliTerm<T>>, PauliStringEqualNonOwning<T>> hset;
+	hset.reserve(paulis_.nb_terms());
+
+	for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
+		auto nopt = paulis_[i];
+		auto c = nopt.coefficient();
+		auto [it, is_new] = hset.emplace(std::move(nopt));
+		if (!is_new) { // element already exists
+			const_cast<NonOwningPauliTerm<T>*>(&(*it))->add_coeff(c); // updating coeff doesn't change hash
+			paulis_.remove_pauliterm(i);
+			--i;
+		}
+	}
+}
 
 #endif
