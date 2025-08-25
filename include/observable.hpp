@@ -38,7 +38,9 @@ class Observable {
 	 *
 	 * @snippet tests/snippets/observable.cpp observable_from_string
 	 */
-	Observable(std::string_view pauli_string, T coeff = T{ 1 }) : paulis_{ { PauliTerm<T>(pauli_string, coeff) } } {
+	Observable(std::string_view pauli_string,
+		   typename std::enable_if_t<std::is_convertible_v<T, coeff_t>, T> coeff = T{ 1 })
+		: paulis_{ { PauliTerm<T>(pauli_string, coeff) } } {
 		check_invariant();
 	}
 
@@ -48,9 +50,9 @@ class Observable {
 	 *
 	 * @snippet tests/snippets/observable.cpp observable_from_string_list
 	 */
-	/*Observable(std::initializer_list<std::string_view> pauli_string_list) : paulis_{ pauli_string_list } {
+	Observable(std::initializer_list<std::string_view> pauli_string_list) : paulis_{ pauli_string_list } {
 		check_invariant();
-	}*/
+	}
 
 	/**
 	 * @brief Constructs an observable from a list of PauliTerm objects.
@@ -68,8 +70,7 @@ class Observable {
 	 *
 	 * @snippet tests/snippets/observable.cpp observable_from_iterators
 	 */
-	template <typename Iter,
-		  std::enable_if_t<std::is_constructible_v<std::vector<PauliTerm<T>>, Iter, Iter>, bool> = true>
+	template <PauliTermIterator Iter>
 	Observable(Iter&& begin, Iter&& end) : paulis_{ begin, end } {
 		check_invariant();
 	}

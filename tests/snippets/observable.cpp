@@ -12,7 +12,7 @@ void observable_constructor_snippets() {
 
 	//! [observable_from_string_list]
 	// From an initializer_list of Pauli strings
-	auto obs_from_string_list = Observable{{ "IXYZ", "XXXX" }};
+	auto obs_from_string_list = Observable{ "IXYZ", "XXXX" };
 	//! [observable_from_string_list]
 
 	//! [observable_from_pauli_terms]

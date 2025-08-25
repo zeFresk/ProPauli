@@ -6,6 +6,7 @@
 #include "pauli.hpp"
 #include "pauli_term.hpp"
 #include "truncate.hpp"
+#include <iostream>
 #include <iterator>
 #include <numeric>
 #include <algorithm>
@@ -25,7 +26,7 @@ TEST(Observable, construct_from_string_coeff) {
 }
 
 TEST(Observable, construct_from_nstrings) {
-	Observable obs{ { "IXYZ", "XXXX" } };
+	Observable obs{ "IXYZ", "XXXX" };
 	PauliTerm exp_pt{ "IXYZ", coeff_t{ 1 } };
 	PauliTerm exp_pt2{ "XXXX", coeff_t{ 1 } };
 	EXPECT_EQ(obs[0], exp_pt);
@@ -50,8 +51,8 @@ TEST(Observable, construct_from_iterators) {
 
 TEST(Observable, apply_pauli) {
 	using enum Pauli_gates;
-	Observable obs{ { "IXYZ", "ZXYI" } };
-	Observable obs_cpy{ { "IXYZ", "ZXYI" } };
+	Observable obs{ "IXYZ", "ZXYI" };
+	Observable obs_cpy{ "IXYZ", "ZXYI" };
 	auto pt1 = obs_cpy.copy_term(0);
 	auto pt2 = obs_cpy.copy_term(1);
 
@@ -78,8 +79,8 @@ TEST(Observable, apply_pauli) {
 
 TEST(Observable, apply_clifford) {
 	using enum Clifford_Gates_1Q;
-	Observable obs{ { "IXYZ", "ZXYI" } };
-	Observable obs_cpy{ { "IXYZ", "ZXYI" } };
+	Observable obs{ "IXYZ", "ZXYI" };
+	Observable obs_cpy{ "IXYZ", "ZXYI" };
 	auto pt1 = obs_cpy.copy_term(0);
 	auto pt2 = obs_cpy.copy_term(1);
 
@@ -93,8 +94,8 @@ TEST(Observable, apply_clifford) {
 	}
 }
 TEST(Observable, apply_cx) {
-	Observable obs{ { "IXYZ", "ZXYI" } };
-	Observable obs_cpy{ { "IXYZ", "ZXYI" } };
+	Observable obs{ "IXYZ", "ZXYI" };
+	Observable obs_cpy{ "IXYZ", "ZXYI" };
 	auto pt1 = obs_cpy.copy_term(0);
 	auto pt2 = obs_cpy.copy_term(1);
 
@@ -112,7 +113,7 @@ TEST(Observable, apply_cx) {
 	}
 }
 TEST(Observable, apply_rz) {
-	Observable obs{ { "IXYZZIXYYZXIZXIZI", "ZXYIXYZXZZZYYXXYY" } };
+	Observable obs{ "IXYZZIXYYZXIZXIZI", "ZXYIXYZXZZZYYXXYY" };
 	Observable obs_cpy = obs;
 	PauliTerm<coeff_t> pt1_cpy = obs_cpy.copy_term(0);
 	PauliTerm<coeff_t> pt2_cpy = obs_cpy.copy_term(1);
@@ -177,6 +178,7 @@ TEST(Observable, serialize) {
 TEST(Observable, merge_simple) {
 	Observable obs{ PauliTerm{ "IXYZ", coeff_t{ -0.25 } }, PauliTerm{ "IXYZ", coeff_t{ 0.5 } } };
 	obs.merge();
+	EXPECT_EQ(obs.size(), 1);
 	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
 	EXPECT_EQ(nb_elems_internal, 1);
 	EXPECT_EQ(obs[0], PauliTerm<coeff_t>("IXYZ", 0.25));
@@ -298,7 +300,7 @@ TEST(Observable, amplitude_damping) {
 
 TEST(Observable, bad_init_throw) {
 	EXPECT_THROW({ Observable obs(""); }, std::invalid_argument);
-	EXPECT_THROW({ Observable obs{ {} }; }, std::invalid_argument);
+	EXPECT_THROW({ Observable obs{ std::initializer_list<std::string_view>{} }; }, std::invalid_argument);
 	EXPECT_THROW(
 		{
 			std::initializer_list<PauliTerm<coeff_t>> lst = {};

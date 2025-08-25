@@ -11,6 +11,7 @@
 #include <numeric>
 #include <string_view>
 #include <initializer_list>
+#include <type_traits>
 #include <utility>
 #include <vector>
 #include <cassert>
@@ -36,7 +37,8 @@ class PauliTerm {
 	 *
 	 * @snippet tests/snippets/pauli_term.cpp pauli_term_from_string
 	 */
-	PauliTerm(std::string_view pauli_string, T coefficient = T{ 1. })
+	PauliTerm(std::string_view pauli_string,
+		  typename std::enable_if_t<std::is_convertible_v<T, coeff_t>, T> coefficient = T{ 1.f })
 		: paulis_(pauli_string.begin(), pauli_string.end()), coefficient_(coefficient) {
 		assert(coefficient_ >= -1 && coefficient_ <= 1 && "Invalid coefficient");
 	}
@@ -64,7 +66,7 @@ class PauliTerm {
 		assert(coefficient_ >= -1 && coefficient_ <= 1 && "Invalid coefficient");
 	}
 
-	template <typename It>
+	template <typename It, std::enable_if_t<!std::is_constructible_v<std::string, It>, bool> = true>
 	PauliTerm(It&& begin, It&& end, T coefficient = T{ 1 }) : paulis_{ begin, end }, coefficient_(coefficient) {
 		assert(coefficient_ >= -1 && coefficient_ <= 1 && "Invalid coefficient");
 	}
@@ -75,7 +77,9 @@ class PauliTerm {
 	PauliTerm& operator=(PauliTerm&&) noexcept = default;
 
 	explicit operator NonOwningPauliTerm<T>() { return NonOwningPauliTerm<T>{ paulis_, coefficient() }; }
-	explicit operator ReadOnlyNonOwningPauliTerm<T>() const { return ReadOnlyNonOwningPauliTerm<T>{ paulis_, coefficient() }; }
+	explicit operator ReadOnlyNonOwningPauliTerm<T>() const {
+		return ReadOnlyNonOwningPauliTerm<T>{ paulis_, coefficient() };
+	}
 
 	/**
 	 * @brief Applies a Pauli gate to a specific qubit of the term.
@@ -170,10 +174,10 @@ class PauliTerm {
 	Pauli& operator[](std::size_t idx) { return paulis_[idx]; }
 	Pauli const& operator[](std::size_t idx) const { return paulis_[idx]; }
 	decltype(auto) size() const { return paulis_.size(); }
-	decltype(auto) begin() {return paulis_.begin();}
-	decltype(auto) begin() const {return paulis_.begin();}
-	decltype(auto) end() {return paulis_.end();}
-	decltype(auto) end() const {return paulis_.end();}
+	decltype(auto) begin() { return paulis_.begin(); }
+	decltype(auto) begin() const { return paulis_.begin(); }
+	decltype(auto) end() { return paulis_.end(); }
+	decltype(auto) end() const { return paulis_.end(); }
 
 	/**
 	 * @brief Computes a hash of the Pauli string part of the term.
@@ -201,18 +205,13 @@ class PauliTerm {
 		return lhs == static_cast<ReadOnlyNonOwningPauliTerm<T>>(rhs);
 	}
 
-	friend bool operator==(PauliTerm const& lhs, NonOwningPauliTerm<T> const& rhs) {
-		return rhs == lhs;
-	}
+	friend bool operator==(PauliTerm const& lhs, NonOwningPauliTerm<T> const& rhs) { return rhs == lhs; }
 
 	friend bool operator==(ReadOnlyNonOwningPauliTerm<T> const& lhs, PauliTerm const& rhs) {
 		return lhs == static_cast<ReadOnlyNonOwningPauliTerm<T>>(rhs);
 	}
 
-	friend bool operator==(PauliTerm const& lhs, ReadOnlyNonOwningPauliTerm<T> const& rhs) {
-		return rhs == lhs;
-	}
-
+	friend bool operator==(PauliTerm const& lhs, ReadOnlyNonOwningPauliTerm<T> const& rhs) { return rhs == lhs; }
 
 	/**
 	 * @brief Checks if two PauliTerm objects have the same Pauli string, ignoring the coefficient.
@@ -325,6 +324,13 @@ struct std::hash<PauliTerm<T>> {
 template <typename T>
 struct PauliStringEqual {
 	bool operator()(const PauliTerm<T>& lhs, const PauliTerm<T>& rhs) const { return lhs.equal_bitstring(rhs); }
+};
+
+template <typename T>
+concept PauliTermIterator = requires(T t) {
+	*t;
+	++t;
+	PauliTerm<coeff_t>{ *t };
 };
 
 #endif
