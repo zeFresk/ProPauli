@@ -15,7 +15,7 @@
 template <typename T>
 class ReadOnlyNonOwningPauliTerm {
 	std::span<const Pauli> paulis_;
-	T const& coefficient_;
+	std::reference_wrapper<const T> coefficient_;
 
     public:
 	ReadOnlyNonOwningPauliTerm(std::vector<Pauli> const& arr, T const& coeff) : paulis_(arr), coefficient_(coeff) {}
@@ -101,7 +101,7 @@ class ReadOnlyNonOwningPauliTerm {
 template <typename T>
 class NonOwningPauliTerm {
 	std::span<Pauli> paulis_;
-	T& coefficient_;
+	std::reference_wrapper<T> coefficient_;
 
     public:
 	NonOwningPauliTerm(std::vector<Pauli>& arr, T& coeff) : paulis_(arr), coefficient_(coeff) {}
@@ -110,14 +110,14 @@ class NonOwningPauliTerm {
 	template <typename It>
 	NonOwningPauliTerm(It&& begin, It&& end, T& coeff) : paulis_(begin, end), coefficient_(coeff) {}
 
-	NonOwningPauliTerm(NonOwningPauliTerm const&) = delete;
+	NonOwningPauliTerm(NonOwningPauliTerm const&) = default;
 	NonOwningPauliTerm(NonOwningPauliTerm&&) noexcept = default;
-	NonOwningPauliTerm& operator=(NonOwningPauliTerm const&) = delete;
+	NonOwningPauliTerm& operator=(NonOwningPauliTerm const&) = default;
 	NonOwningPauliTerm& operator=(NonOwningPauliTerm&&) noexcept = default;
 
 	void copy_content(NonOwningPauliTerm<T> const& nopt) {
 		copy_paulis(nopt.paulis_.cbegin(), nopt.paulis_.cend());
-		coefficient_ = nopt.coefficient_;
+		coefficient_.get() = nopt.coefficient_;
 	}
 
 	template <typename It>
@@ -276,7 +276,7 @@ class NonOwningPauliTerm {
 	/**
 	 * @brief Sets the coefficient of the term.
 	 */
-	void set_coefficient(T new_c) noexcept { coefficient_ = new_c; }
+	void set_coefficient(T new_c) noexcept { coefficient_.get() = new_c; }
 
 	/**
 	 * @brief Calculates the Pauli weight of the term (number of non-identity operators).
