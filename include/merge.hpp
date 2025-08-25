@@ -130,7 +130,7 @@ template <typename T>
 void merge_inplace_noalloc(PauliTermContainer<T>& paulis_) {
 	// optimal reserve + template parameters
 	tsl::robin_set<NonOwningPauliTerm<T>, std::hash<NonOwningPauliTerm<T>>, PauliStringEqualNonOwning<T>,
-		       std::allocator<NonOwningPauliTerm<T>>, true>
+		       std::allocator<NonOwningPauliTerm<T>>, false>
 		hset;
 	hset.reserve(paulis_.nb_terms());
 
