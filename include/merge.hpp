@@ -102,6 +102,28 @@ void merge_inplace_move(std::vector<PauliTerm<T>>& paulis_) {
 	paulis_ = std::move(new_pts);
 }
 
+template <class Set>
+double unordered_set_badness(Set const& set) {
+	auto const lambda = set.size() / double(set.bucket_count());
+
+	auto cost = 0.;
+	for (auto const& k : set)
+		cost += set.bucket_size(set.bucket(k));
+	cost /= set.size();
+
+	return std::max(0., cost / (1 + lambda) - 1);
+}
+
+//#define PROFILE_MERGE
+
+#ifdef PROFILE_MERGE
+#include <fstream>
+#include <random>
+
+static std::mt19937 gen;
+static std::uniform_int_distribution dis;
+#endif
+
 template <typename T>
 void merge_inplace_noalloc(PauliTermContainer<T>& paulis_) {
 	// associate pauli string hash with new Pauli Term
@@ -118,6 +140,14 @@ void merge_inplace_noalloc(PauliTermContainer<T>& paulis_) {
 			--i;
 		}
 	}
+
+#ifdef PROFILE_MERGE
+	static std::ofstream log{ std::string("/tmp/pp_merge_profile.") + std::to_string(dis(gen)) +
+				  std::string(".log") };
+
+	auto badness = unordered_set_badness(hset);
+	log << "badness: " << badness << "\n";
+#endif
 }
 
 #endif
