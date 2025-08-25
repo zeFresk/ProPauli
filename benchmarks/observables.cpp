@@ -326,11 +326,11 @@ BENCHMARK(Observable_apply_rz_once)->Range(1, 1024);
 BENCHMARK(Observable_apply_rz_ntimes)->Ranges({ { 1, 1024 }, { 1, 16 } });
 BENCHMARK(Observable_ev_after_nrz)->Ranges({ { 1, 1024 }, { 16, 16 } });
 BENCHMARK(Observable_merge_after_nrz)
-	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 16, 2) });
+	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 8, 2) });
 BENCHMARK(Observable_truncate_coeff_after_nrz)
-	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 16, 2) });
+	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 8, 2) });
 BENCHMARK(Observable_truncate_weight10_after_nrz)
-	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 16, 2) });
+	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 8, 2) });
 BENCHMARK(Observable_appy_amplitude_damping_i)->Range(1, 1024);
 BENCHMARK(Observable_appy_amplitude_damping_xy)->Range(1, 1024);
 BENCHMARK(Observable_appy_amplitude_damping_z)->Range(1, 1024);
