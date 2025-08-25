@@ -205,6 +205,14 @@ class PauliTerm {
 		return rhs == lhs;
 	}
 
+	friend bool operator==(ReadOnlyNonOwningPauliTerm<T> const& lhs, PauliTerm const& rhs) {
+		return lhs == static_cast<ReadOnlyNonOwningPauliTerm<T>>(rhs);
+	}
+
+	friend bool operator==(PauliTerm const& lhs, ReadOnlyNonOwningPauliTerm<T> const& rhs) {
+		return rhs == lhs;
+	}
+
 
 	/**
 	 * @brief Checks if two PauliTerm objects have the same Pauli string, ignoring the coefficient.

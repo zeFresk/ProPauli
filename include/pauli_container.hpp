@@ -31,11 +31,10 @@ class PauliTermContainer {
 
 		raw_paulis.reserve(sp.size() * qubits);
 		raw_coefficients.reserve(sp.size());
-		std::size_t i = 0;
-		for (i = 0; i < sp.size(); ++i) {
-			raw_coefficients.push_back(sp[i].coefficient());
-			for (std::size_t j = 0; j < qubits; ++j) {
-				raw_paulis.push_back(sp[i][j]);
+		for (auto const& pt : sp) {
+			raw_coefficients.push_back(pt.coefficient());
+			for (auto const& p : pt) {
+				raw_paulis.push_back(p);
 			}
 		}
 	}
@@ -74,20 +73,20 @@ class PauliTermContainer {
 	NonOwningPauliTerm<T> operator[](std::size_t idx) {
 		assert(idx < nb_terms());
 		return { raw_paulis.begin() + compute_index(idx, 0),
-			 raw_paulis.begin() + compute_index(idx, qubits) + 1, raw_coefficients[idx] };
+			 raw_paulis.begin() + compute_index(idx, qubits), raw_coefficients[idx] };
 	}
 
 	ReadOnlyNonOwningPauliTerm<T> operator[](std::size_t idx) const {
 		assert(idx < nb_terms());
 		return { raw_paulis.begin() + compute_index(idx, 0),
-			 raw_paulis.begin() + compute_index(idx, qubits) + 1, raw_coefficients[idx] };
+			 raw_paulis.begin() + compute_index(idx, qubits), raw_coefficients[idx] };
 	}
 
 	[[nodiscard]] NonOwningPauliTerm<T> create_pauliterm() {
 		raw_paulis.resize(raw_paulis.size() + qubits, p_i);
 		raw_coefficients.push_back(T{ 0 });
-		return { raw_paulis.begin() + compute_index(raw_paulis.size() - 1, 0),
-			 raw_paulis.begin() + compute_index(raw_paulis.size(), qubits) + 1,
+		return { raw_paulis.begin() + compute_index(nb_terms() - 1, 0),
+			 raw_paulis.begin() + compute_index(nb_terms() - 1, qubits),
 			 raw_coefficients[raw_coefficients.size() - 1] };
 	}
 
@@ -95,7 +94,7 @@ class PauliTermContainer {
 		assert(idx < nb_terms());
 		std::swap(raw_coefficients[idx], raw_coefficients[raw_coefficients.size() - 1]);
 		std::swap_ranges(raw_paulis.begin() + compute_index(idx, 0),
-				 raw_paulis.begin() + compute_index(idx, qubits) + 1,
+				 raw_paulis.begin() + compute_index(idx, qubits),
 				 raw_paulis.begin() + compute_index(nb_terms() - 1, 0));
 		raw_coefficients.pop_back();
 		raw_paulis.pop_back();

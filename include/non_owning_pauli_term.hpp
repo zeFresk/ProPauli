@@ -19,7 +19,8 @@ class ReadOnlyNonOwningPauliTerm {
 
     public:
 	ReadOnlyNonOwningPauliTerm(std::vector<Pauli> const& arr, T const& coeff) : paulis_(arr), coefficient_(coeff) {}
-	ReadOnlyNonOwningPauliTerm(std::span<Pauli> const& arr, T const& coeff) : paulis_(arr), coefficient_(coeff) {}
+	ReadOnlyNonOwningPauliTerm(std::span<const Pauli> const& arr, T const& coeff)
+		: paulis_(arr), coefficient_(coeff) {}
 
 	template <typename It>
 	ReadOnlyNonOwningPauliTerm(It&& begin, It&& end, T const& coeff) : paulis_(begin, end), coefficient_(coeff) {}
@@ -42,9 +43,7 @@ class ReadOnlyNonOwningPauliTerm {
 
 	Pauli const& operator[](std::size_t idx) const { return paulis_[idx]; }
 	decltype(auto) size() const { return paulis_.size(); }
-	decltype(auto) begin() { return paulis_.begin(); }
 	decltype(auto) begin() const { return paulis_.begin(); }
-	decltype(auto) end() { return paulis_.end(); }
 	decltype(auto) end() const { return paulis_.end(); }
 
 	/**
@@ -106,6 +105,7 @@ class NonOwningPauliTerm {
 
     public:
 	NonOwningPauliTerm(std::vector<Pauli>& arr, T& coeff) : paulis_(arr), coefficient_(coeff) {}
+	NonOwningPauliTerm(std::span<Pauli> arr, T& coeff) : paulis_(arr), coefficient_(coeff) {}
 
 	template <typename It>
 	NonOwningPauliTerm(It&& begin, It&& end, T& coeff) : paulis_(begin, end), coefficient_(coeff) {}
@@ -161,6 +161,8 @@ class NonOwningPauliTerm {
 	 */
 	void apply_rz(unsigned qubit, T theta, NonOwningPauliTerm<T>& output) {
 		assert(paulis_[qubit] != p_i && paulis_[qubit] != p_z && "Should not happen");
+
+		output.copy_content(*this);
 
 		auto cos_teta = cos(theta);
 		auto sin_theta = sin(theta);

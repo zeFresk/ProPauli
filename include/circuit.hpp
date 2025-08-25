@@ -166,7 +166,7 @@ class Circuit {
 	 * @see Observable::expectation_value()
 	 */
 	Observable<Coefficient_t> run(Observable<Coefficient_t> const& target_observable) {
-		if (target_observable[0].size() != nb_qubits()) {
+		if (target_observable.nb_qubits() != nb_qubits()) {
 			throw std::invalid_argument("Number of qubits of the circuit doesn't match observable.");
 		}
 		auto obs = target_observable;
