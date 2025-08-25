@@ -35,7 +35,7 @@ class ReadOnlyNonOwningPauliTerm {
 	 * @return The coefficient if the Pauli string contains only I and Z operators, otherwise 0.
 	 */
 	T expectation_value() const {
-		return (std::all_of(paulis_.cbegin(), paulis_.cend(),
+		return (std::all_of(paulis_.begin(), paulis_.end(),
 				    [](auto const& p) { return p.commutes_with(p_z); })) ?
 			       coefficient_ :
 			       T{ 0 };
@@ -73,7 +73,7 @@ class ReadOnlyNonOwningPauliTerm {
 	 */
 	bool equal_bitstring(ReadOnlyNonOwningPauliTerm const& oth) const {
 		return (paulis_.size() == oth.paulis_.size()) &&
-		       std::equal(paulis_.cbegin(), paulis_.cend(), oth.paulis_.cbegin());
+		       std::equal(paulis_.begin(), paulis_.end(), oth.paulis_.begin());
 	}
 
 	/**
@@ -85,7 +85,7 @@ class ReadOnlyNonOwningPauliTerm {
 	 * @brief Calculates the Pauli weight of the term (number of non-identity operators).
 	 */
 	std::size_t pauli_weight() const {
-		return std::accumulate(paulis_.cbegin(), paulis_.cend(), 0,
+		return std::accumulate(paulis_.begin(), paulis_.end(), 0,
 				       [](auto&& acc, auto&& p) { return acc + p.weight(); });
 	}
 
@@ -116,7 +116,7 @@ class NonOwningPauliTerm {
 	NonOwningPauliTerm& operator=(NonOwningPauliTerm&&) noexcept = default;
 
 	void copy_content(NonOwningPauliTerm<T> const& nopt) {
-		copy_paulis(nopt.paulis_.cbegin(), nopt.paulis_.cend());
+		copy_paulis(nopt.paulis_.begin(), nopt.paulis_.end());
 		coefficient_.get() = nopt.coefficient_;
 	}
 
@@ -209,7 +209,7 @@ class NonOwningPauliTerm {
 	 * @return The coefficient if the Pauli string contains only I and Z operators, otherwise 0.
 	 */
 	T expectation_value() const {
-		return (std::all_of(paulis_.cbegin(), paulis_.cend(),
+		return (std::all_of(paulis_.begin(), paulis_.end(),
 				    [](auto const& p) { return p.commutes_with(p_z); })) ?
 			       coefficient_ :
 			       T{ 0 };
@@ -250,7 +250,7 @@ class NonOwningPauliTerm {
 	 */
 	bool equal_bitstring(NonOwningPauliTerm const& oth) const {
 		return (paulis_.size() == oth.paulis_.size()) &&
-		       std::equal(paulis_.cbegin(), paulis_.cend(), oth.paulis_.cbegin());
+		       std::equal(paulis_.begin(), paulis_.end(), oth.paulis_.begin());
 	}
 
 	NonOwningPauliTerm& operator*=(T x) {
@@ -282,7 +282,7 @@ class NonOwningPauliTerm {
 	 * @brief Calculates the Pauli weight of the term (number of non-identity operators).
 	 */
 	std::size_t pauli_weight() const {
-		return std::accumulate(paulis_.cbegin(), paulis_.cend(), 0,
+		return std::accumulate(paulis_.begin(), paulis_.end(), 0,
 				       [](auto&& acc, auto&& p) { return acc + p.weight(); });
 	}
 
