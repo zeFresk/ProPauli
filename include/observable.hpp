@@ -147,7 +147,7 @@ class Observable {
 		check_qubit(qubit);
 
 		const auto nb_terms = paulis_.nb_terms();
-		paulis_.reserve(nb_terms * 2);
+		//paulis_.reserve(nb_terms * 2);
 		for (std::size_t i = 0; i < nb_terms; ++i) {
 			auto p = paulis_[i];
 			if (!p[qubit].commutes_with(p_z)) {

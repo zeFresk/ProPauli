@@ -182,6 +182,7 @@ class PauliTermContainer {
 	}
 
 	[[nodiscard]] NonOwningPauliTerm<T> create_pauliterm() {
+		//raw_paulis.reserve(raw_paulis.size() + qubits);
 		raw_paulis.resize(raw_paulis.size() + qubits);
 		raw_coefficients.push_back(T{ 0 });
 		return { raw_paulis.begin() + compute_index(nb_terms() - 1, 0),

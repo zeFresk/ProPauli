@@ -170,7 +170,6 @@ class Pauli {
 	Pauli_enum p_;
 
     public:
-	Pauli() {}
 	/**
 	 * @brief Constructs a Pauli operator from its enum representation.
 	 * @param pauli The enum value (e.g., Pauli_enum::I).
@@ -212,7 +211,7 @@ class Pauli {
 		}
 	}
 
-	// Pauli() = delete;
+	Pauli() = default;
 	Pauli(Pauli const&) = default;
 	Pauli(Pauli&&) noexcept = default;
 	Pauli& operator=(Pauli const&) = default;
