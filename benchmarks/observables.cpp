@@ -163,7 +163,9 @@ static void Observable_merge_after_nrz(benchmark::State& state) {
 	}
 
 	for (auto _ : state) {
+		state.PauseTiming();
 		auto obs = rd_obs_copy;
+		state.ResumeTiming();
 		obs.merge();
 		benchmark::DoNotOptimize(obs);
 	}
@@ -188,7 +190,9 @@ static void Observable_truncate_coeff_after_nrz(benchmark::State& state) {
 	CoefficientTruncator<coeff_t> ct{ 0.001 };
 
 	for (auto _ : state) {
+		state.PauseTiming();
 		auto obs = rd_obs_copy;
+		state.ResumeTiming();
 		auto nb_truncated = obs.truncate(ct);
 		benchmark::DoNotOptimize(nb_truncated);
 	}
@@ -213,7 +217,9 @@ static void Observable_truncate_weight10_after_nrz(benchmark::State& state) {
 	WeightTruncator wt{ 10 };
 
 	for (auto _ : state) {
+		state.PauseTiming();
 		auto obs = rd_obs_copy;
+		state.ResumeTiming();
 		auto nb_truncated = obs.truncate(wt);
 		benchmark::DoNotOptimize(nb_truncated);
 	}
