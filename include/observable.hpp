@@ -151,7 +151,7 @@ class Observable {
 		for (std::size_t i = 0; i < nb_terms; ++i) {
 			auto p = paulis_[i];
 			if (!p[qubit].commutes_with(p_z)) {
-				auto new_path = paulis_.create_pauliterm();
+				auto new_path = paulis_.duplicate_pauliterm(i);
 				paulis_[i].apply_rz(qubit, theta, new_path);
 			}
 		}
@@ -173,7 +173,7 @@ class Observable {
 		for (std::size_t i = 0; i < nb_terms; ++i) {
 			auto p = paulis_[i];
 			if (p[qubit] == p_z) {
-				auto new_path = paulis_.create_pauliterm(); // invalidate p
+				auto new_path = paulis_.duplicate_pauliterm(i); // invalidate p
 				paulis_[i].apply_amplitude_damping_z(qubit, pn, new_path);
 			} else if (p[qubit] == p_x || p[qubit] == p_y) {
 				p.apply_amplitude_damping_xy(qubit, pn);

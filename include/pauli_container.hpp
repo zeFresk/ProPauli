@@ -40,13 +40,15 @@ class PauliTermContainer {
 	std::vector<T> raw_coefficients;
 	std::size_t qubits;
 
+	static constexpr std::size_t DEFAULT_ALLOC = 8;
+
     public:
 	PauliTermContainer(std::size_t nb_qubits) : qubits(nb_qubits) {
 		if (nb_qubits == 0) {
 			throw std::invalid_argument("Observable with 0 qubits not allowed.");
 		}
-		raw_paulis.reserve(64 * nb_qubits);
-		raw_coefficients.reserve(64);
+		raw_paulis.reserve(DEFAULT_ALLOC * nb_qubits);
+		raw_coefficients.reserve(DEFAULT_ALLOC);
 	}
 
 	PauliTermContainer(std::span<PauliTerm<T>> const& sp) {
@@ -55,9 +57,9 @@ class PauliTermContainer {
 		}
 		qubits = sp[0].size();
 
-		raw_paulis.reserve(sp.size() * qubits);
+		raw_paulis.reserve(DEFAULT_ALLOC * nb_qubits());
 		raw_paulis.resize(sp.size() * qubits);
-		raw_coefficients.reserve(sp.size());
+		raw_coefficients.reserve(DEFAULT_ALLOC);
 
 		std::size_t i = 0;
 		for (auto const& pt : sp) {
@@ -75,11 +77,11 @@ class PauliTermContainer {
 		if (lst.size() == 0) {
 			throw std::invalid_argument("Observable with 0 terms not allowed.");
 		}
-		
+
 		qubits = lst.begin()->size();
-		raw_paulis.reserve(lst.size() * qubits);
+		raw_paulis.reserve(DEFAULT_ALLOC * nb_qubits());
 		raw_paulis.resize(lst.size() * qubits);
-		raw_coefficients.reserve(lst.size());
+		raw_coefficients.reserve(DEFAULT_ALLOC);
 		std::size_t i = 0;
 		for (auto const& pt : lst) {
 			raw_coefficients.push_back(pt.coefficient());
@@ -98,9 +100,9 @@ class PauliTermContainer {
 		}
 
 		qubits = lst.begin()->size();
-		raw_paulis.reserve(lst.size() * qubits);
+		raw_paulis.reserve(DEFAULT_ALLOC * nb_qubits());
 		raw_paulis.resize(lst.size() * qubits);
-		raw_coefficients.reserve(lst.size());
+		raw_coefficients.reserve(DEFAULT_ALLOC);
 		std::size_t i = 0;
 		for (auto const& pt : lst) {
 			if (pt.size() != nb_qubits()) {
@@ -182,12 +184,19 @@ class PauliTermContainer {
 	}
 
 	[[nodiscard]] NonOwningPauliTerm<T> create_pauliterm() {
-		//raw_paulis.reserve(raw_paulis.size() + qubits);
+		// raw_paulis.reserve(raw_paulis.size() + qubits);
 		raw_paulis.resize(raw_paulis.size() + qubits);
 		raw_coefficients.push_back(T{ 0 });
 		return { raw_paulis.begin() + compute_index(nb_terms() - 1, 0),
 			 raw_paulis.begin() + compute_index(nb_terms() - 1, qubits),
 			 raw_coefficients[raw_coefficients.size() - 1] };
+	}
+
+	[[nodiscard]] NonOwningPauliTerm<T> duplicate_pauliterm(std::size_t idx) {
+		assert(idx < nb_terms());
+		auto np = create_pauliterm();
+		np.copy_content((*this)[idx]);
+		return np;
 	}
 
 	void remove_pauliterm(std::size_t idx) {

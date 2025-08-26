@@ -95,7 +95,7 @@ class NonOwningParity : public testing::Test {
 	NonOwningPauliTerm<coeff_t> ronopt_buf;
 
 	NonOwningParity()
-		: dis(0), gen(42), paulis(random_pauli_vector(dis, gen, nb_qubits)), coeff(1), buf(nb_qubits, p_i),
+		: dis(0), gen(42), paulis(random_pauli_vector(dis, gen, nb_qubits)), coeff(1), buf(paulis),
 		  coeff_buf(1), pt(paulis.begin(), paulis.end(), coeff), nopt(paulis, coeff), ronopt(paulis, coeff),
 		  nopt_buf(buf, coeff_buf), ronopt_buf(buf, coeff_buf) {}
 
@@ -183,6 +183,7 @@ TEST_F(NonOwningParity, apply_rz) {
 		auto theta = dis_f(gen);
 
 		if (!nopt[qubit].commutes_with(p_z)) {
+			nopt_buf.copy_content(nopt);
 			nopt.apply_rz(qubit, theta, nopt_buf);
 			auto path = pt.apply_rz(qubit, theta);
 
@@ -202,6 +203,7 @@ TEST_F(NonOwningParity, apply_amplitude_damping) {
 		auto qubit = dis(gen) % nb_qubits;
 
 		if (nopt[qubit] == p_z) {
+			nopt_buf.copy_content(nopt);
 			nopt.apply_amplitude_damping_z(qubit, 0.01, nopt_buf);
 			auto path = pt.apply_amplitude_damping_z(qubit, 0.01);
 

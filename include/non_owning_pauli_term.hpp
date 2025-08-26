@@ -162,8 +162,6 @@ class NonOwningPauliTerm {
 	void apply_rz(unsigned qubit, T theta, NonOwningPauliTerm<T>& output) {
 		assert(paulis_[qubit] != p_i && paulis_[qubit] != p_z && "Should not happen");
 
-		output.copy_content(*this);
-
 		auto cos_teta = cos(theta);
 		auto sin_theta = sin(theta);
 
@@ -197,7 +195,6 @@ class NonOwningPauliTerm {
 	 */
 	void apply_amplitude_damping_z(unsigned qubit, T p, NonOwningPauliTerm<T>& output) {
 		assert(paulis_[qubit] == p_z && "Should not happen");
-		output.copy_content(*this);
 		output.coefficient_ *= p;
 		output.paulis_[qubit] = p_i;
 

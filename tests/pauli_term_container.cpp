@@ -160,6 +160,21 @@ TEST(PauliTermContainer, create_non_empty) {
 	EXPECT_EQ(ptc[2], PauliTerm("ZY", 0.5f));
 }
 
+TEST(PauliTermContainer, duplicate_from) {
+	PauliTermContainer<coeff_t> ptc{ PauliTerm{ "II" }, PauliTerm{ "XX" } };
+	EXPECT_EQ(ptc.nb_terms(), 2);
+	EXPECT_EQ(ptc.nb_qubits(), 2);
+
+	auto new_term = ptc.duplicate_pauliterm(0);
+	EXPECT_EQ(new_term.size(), 2);
+	EXPECT_EQ(ptc.nb_terms(), 3);
+
+	EXPECT_EQ(ptc[0], PauliTerm{ "II" });
+	EXPECT_EQ(ptc[1], PauliTerm{ "XX" });
+	EXPECT_EQ(ptc[2], PauliTerm{ "II" });
+	EXPECT_EQ(new_term, ptc[0]);
+}
+
 TEST(PauliTermContainer, create_remove_non_empty) {
 	PauliTermContainer<coeff_t> ptc{ PauliTerm{ "II" }, PauliTerm{ "XX" } };
 	EXPECT_EQ(ptc.nb_terms(), 2);

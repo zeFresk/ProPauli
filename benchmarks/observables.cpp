@@ -110,7 +110,9 @@ static void Observable_apply_rz_ntimes(benchmark::State& state) {
 	std::size_t nb_rz = state.range(1);
 
 	for (auto _ : state) {
+		state.PauseTiming();
 		auto rd_obs = rd_obs_copy;
+		state.ResumeTiming();
 		for (std::size_t j = 0; j < nb_rz; ++j) {
 			auto qubit = random_idx[i];
 			auto theta = random_theta[i];
