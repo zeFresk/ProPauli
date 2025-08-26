@@ -5,6 +5,7 @@
 #include "observable.hpp"
 
 #include "helper.hpp"
+#include <chrono>
 
 static constexpr auto buffer_size = 1024 * 1024;
 
@@ -110,9 +111,9 @@ static void Observable_apply_rz_ntimes(benchmark::State& state) {
 	std::size_t nb_rz = state.range(1);
 
 	for (auto _ : state) {
-		state.PauseTiming();
 		auto rd_obs = rd_obs_copy;
-		state.ResumeTiming();
+		auto start = std::chrono::high_resolution_clock::now();
+
 		for (std::size_t j = 0; j < nb_rz; ++j) {
 			auto qubit = random_idx[i];
 			auto theta = random_theta[i];
@@ -121,6 +122,10 @@ static void Observable_apply_rz_ntimes(benchmark::State& state) {
 
 			i = (i + 1) % buffer_size;
 		}
+
+		auto end = std::chrono::high_resolution_clock::now();
+		auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+		state.SetIterationTime(elapsed_seconds.count());
 	}
 }
 
@@ -163,11 +168,15 @@ static void Observable_merge_after_nrz(benchmark::State& state) {
 	}
 
 	for (auto _ : state) {
-		state.PauseTiming();
 		auto obs = rd_obs_copy;
-		state.ResumeTiming();
+		auto start = std::chrono::high_resolution_clock::now();
+
 		obs.merge();
 		benchmark::DoNotOptimize(obs);
+
+		auto end = std::chrono::high_resolution_clock::now();
+		auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+		state.SetIterationTime(elapsed_seconds.count());
 	}
 }
 
@@ -190,11 +199,15 @@ static void Observable_truncate_coeff_after_nrz(benchmark::State& state) {
 	CoefficientTruncator<coeff_t> ct{ 0.001 };
 
 	for (auto _ : state) {
-		state.PauseTiming();
 		auto obs = rd_obs_copy;
-		state.ResumeTiming();
+		auto start = std::chrono::high_resolution_clock::now();
+
 		auto nb_truncated = obs.truncate(ct);
 		benchmark::DoNotOptimize(nb_truncated);
+
+		auto end = std::chrono::high_resolution_clock::now();
+		auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+		state.SetIterationTime(elapsed_seconds.count());
 	}
 }
 
@@ -217,11 +230,15 @@ static void Observable_truncate_weight10_after_nrz(benchmark::State& state) {
 	WeightTruncator wt{ 10 };
 
 	for (auto _ : state) {
-		state.PauseTiming();
 		auto obs = rd_obs_copy;
-		state.ResumeTiming();
+		auto start = std::chrono::high_resolution_clock::now();
+
 		auto nb_truncated = obs.truncate(wt);
 		benchmark::DoNotOptimize(nb_truncated);
+
+		auto end = std::chrono::high_resolution_clock::now();
+		auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+		state.SetIterationTime(elapsed_seconds.count());
 	}
 }
 
