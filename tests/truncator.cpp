@@ -7,13 +7,24 @@
 
 TEST(Truncator, CoefficientTruncator) {
 	CoefficientTruncator<> ct{ 0.1f };
-	std::vector<PauliTerm<coeff_t>> pts_data = { { "I", 0.99 }, { "Y", 0.01 } };
+	std::vector<PauliTerm<coeff_t>> pts_data = { { "I", 0.99 }, { "Y", 0.01 }, { "X", 0.5 } };
 	PauliTermContainer<coeff_t> pts{ pts_data };
-	auto ept = pts[0];
+	auto ept = PauliTerm<coeff_t>{ "I", 0.99 };
 	auto removed = ct.truncate(pts);
 	EXPECT_EQ(removed, 1);
-	EXPECT_EQ(pts.nb_terms(), 1);
+	EXPECT_EQ(pts.nb_terms(), 2);
 	EXPECT_EQ(pts[0], ept);
+
+	pts[0].set_coefficient(0.01f);
+
+	auto nopt = pts.duplicate_pauliterm(0);
+	nopt[0] = p_z;
+	nopt.set_coefficient(0.0f);
+
+	removed = ct.truncate(pts);
+	EXPECT_EQ(removed, 2);
+	EXPECT_EQ(pts.nb_terms(), 1);
+	EXPECT_EQ(pts[0], PauliTerm<coeff_t>("X", 0.5));
 }
 
 TEST(Truncator, WeightTruncator) {

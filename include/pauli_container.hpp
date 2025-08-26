@@ -41,6 +41,8 @@ class PauliTermContainer {
 	std::size_t qubits;
 
 	static constexpr std::size_t DEFAULT_ALLOC = 8;
+	static constexpr std::size_t GROWTH_FACTOR_NUM = 5;
+	static constexpr std::size_t GROWTH_FACTOR_DENUM = 2;
 
     public:
 	PauliTermContainer(std::size_t nb_qubits) : qubits(nb_qubits) {
@@ -125,7 +127,7 @@ class PauliTermContainer {
 		qubits = begin->size();
 		auto bcopy = begin;
 
-		raw_paulis.reserve(size * qubits);
+		raw_paulis.reserve(DEFAULT_ALLOC * qubits);
 		raw_paulis.resize(size * qubits);
 		raw_coefficients.reserve(size);
 		std::size_t i = 0;
@@ -140,27 +142,10 @@ class PauliTermContainer {
 		}
 	}
 
-	PauliTermContainer(PauliTermContainer const& oth) : raw_coefficients(oth.raw_coefficients), qubits(oth.qubits) {
-		raw_paulis.resize(oth.raw_paulis.size());
-		for (std::size_t i = 0; i < oth.raw_paulis.size(); ++i) {
-			raw_paulis[i] = oth.raw_paulis[i];
-		}
-		// std::copy(oth.raw_paulis.begin(), oth.raw_paulis.end(), raw_paulis.begin());
-	}
-	PauliTermContainer& operator=(PauliTermContainer const& oth) {
-		PauliTermContainer third(oth);
-		raw_paulis = std::move(third.raw_paulis);
-		raw_coefficients = std::move(third.raw_coefficients);
-		return *this;
-	}
-	PauliTermContainer(PauliTermContainer&& oth)
-		: raw_paulis(std::move(oth.raw_paulis)), raw_coefficients(std::move(oth.raw_coefficients)),
-		  qubits(std::move(oth.qubits)) {}
-	PauliTermContainer& operator=(PauliTermContainer&& oth) {
-		raw_paulis = std::move(oth.raw_paulis);
-		raw_coefficients = std::move(oth.raw_coefficients);
-		return *this;
-	}
+	PauliTermContainer(PauliTermContainer const& oth) = default;
+	PauliTermContainer& operator=(PauliTermContainer const& oth) = default;
+	PauliTermContainer(PauliTermContainer&& oth) = default;
+	PauliTermContainer& operator=(PauliTermContainer&& oth) = default;
 
 	std::size_t compute_index(std::size_t term, std::size_t qubit) const { return term * qubits + qubit; }
 	std::size_t nb_qubits() const { return qubits; }
@@ -183,9 +168,15 @@ class PauliTermContainer {
 		raw_coefficients.reserve(nb_pts);
 	}
 
+	void expand(std::size_t nb = 1) {
+		if ((nb_terms() + nb) * nb_qubits() > raw_paulis.size()) {
+			auto const new_size = (raw_paulis.size() * GROWTH_FACTOR_NUM) / GROWTH_FACTOR_DENUM;
+			raw_paulis.resize(std::max(raw_paulis.size()+(nb*nb_qubits()), new_size));
+		}
+	}
+
 	[[nodiscard]] NonOwningPauliTerm<T> create_pauliterm() {
-		// raw_paulis.reserve(raw_paulis.size() + qubits);
-		raw_paulis.resize(raw_paulis.size() + qubits);
+		expand();
 		raw_coefficients.push_back(T{ 0 });
 		return { raw_paulis.begin() + compute_index(nb_terms() - 1, 0),
 			 raw_paulis.begin() + compute_index(nb_terms() - 1, qubits),
@@ -201,12 +192,11 @@ class PauliTermContainer {
 
 	void remove_pauliterm(std::size_t idx) {
 		assert(idx < nb_terms());
-		std::swap(raw_coefficients[idx], raw_coefficients[raw_coefficients.size() - 1]);
-		std::swap_ranges(raw_paulis.begin() + compute_index(idx, 0),
-				 raw_paulis.begin() + compute_index(idx, qubits),
-				 raw_paulis.begin() + compute_index(nb_terms() - 1, 0));
+		raw_coefficients[idx] = raw_coefficients[raw_coefficients.size() - 1];
+		std::copy(raw_paulis.begin() + compute_index(nb_terms() - 1, 0),
+			  raw_paulis.begin() + compute_index(nb_terms() - 1, qubits),
+			  raw_paulis.begin() + compute_index(idx, 0));
 		raw_coefficients.pop_back();
-		raw_paulis.resize(raw_paulis.size() - qubits);
 	}
 
 	class NonOwningIterator {
@@ -300,15 +290,16 @@ class PauliTermContainer {
 					  std::to_address(raw_coefficients.begin()), nb_qubits() };
 	}
 	NonOwningIterator end() {
-		return NonOwningIterator{ std::to_address(raw_paulis.end()), std::to_address(raw_coefficients.end()),
-					  nb_qubits() };
+		return NonOwningIterator{ std::to_address(raw_paulis.begin() + compute_index(nb_terms() - 1, qubits)),
+					  std::to_address(raw_coefficients.end()), nb_qubits() };
 	}
 	ReadOnlyNonOwningIterator cbegin() const {
 		return ReadOnlyNonOwningIterator{ std::to_address(raw_paulis.cbegin()),
 						  std::to_address(raw_coefficients.cbegin()), nb_qubits() };
 	}
 	ReadOnlyNonOwningIterator cend() const {
-		return ReadOnlyNonOwningIterator{ std::to_address(raw_paulis.cend()),
+		return ReadOnlyNonOwningIterator{ std::to_address(raw_paulis.cbegin() +
+								  compute_index(nb_terms() - 1, qubits)),
 						  std::to_address(raw_coefficients.cend()), nb_qubits() };
 	}
 	auto begin() const { return cbegin(); }
