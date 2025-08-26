@@ -168,7 +168,7 @@ TEST(Observable, serialize) {
 		    Observable{ PauliTerm("IIII", coeff_t{ 0.125 }), PauliTerm("YYYY", coeff_t{ -0.8 }) } } }
 	};
 
-	for (auto const [expected_str, pt] : truth_table) {
+	for (auto const& [expected_str, pt] : truth_table) {
 		std::stringstream ss;
 		ss << pt;
 		EXPECT_EQ(ss.str(), expected_str);

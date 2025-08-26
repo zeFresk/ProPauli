@@ -40,7 +40,7 @@ class Observable {
 	 */
 	Observable(std::string_view pauli_string,
 		   typename std::enable_if_t<std::is_convertible_v<T, coeff_t>, T> coeff = T{ 1 })
-		: paulis_{ { PauliTerm<T>(pauli_string, coeff) } } {
+		: paulis_{ PauliTerm<T>(pauli_string, coeff) } {
 		check_invariant();
 	}
 
@@ -147,6 +147,7 @@ class Observable {
 		check_qubit(qubit);
 
 		const auto nb_terms = paulis_.nb_terms();
+		paulis_.reserve(nb_terms * 2);
 		for (std::size_t i = 0; i < nb_terms; ++i) {
 			auto p = paulis_[i];
 			if (!p[qubit].commutes_with(p_z)) {

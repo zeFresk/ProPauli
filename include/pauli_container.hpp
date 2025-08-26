@@ -14,7 +14,29 @@
 
 template <typename T>
 class PauliTermContainer {
-	std::vector<Pauli> raw_paulis;
+	template <typename O, typename A = std::allocator<O>>
+	class default_init_allocator : public A {
+		typedef std::allocator_traits<A> a_t;
+
+	    public:
+		template <typename U>
+		struct rebind {
+			using other = default_init_allocator<U, typename a_t::template rebind_alloc<U>>;
+		};
+
+		using A::A;
+
+		template <typename U>
+		void construct(U* ptr) noexcept(std::is_nothrow_default_constructible<U>::value) {
+			::new (static_cast<void*>(ptr)) U;
+		}
+		template <typename U, typename... Args>
+		void construct(U* ptr, Args&&... args) {
+			a_t::construct(static_cast<A&>(*this), ptr, std::forward<Args>(args)...);
+		}
+	};
+	std::vector<Pauli, default_init_allocator<Pauli>> raw_paulis;
+	// std::vector<Pauli> raw_paulis;
 	std::vector<T> raw_coefficients;
 	std::size_t qubits;
 
@@ -34,47 +56,66 @@ class PauliTermContainer {
 		qubits = sp[0].size();
 
 		raw_paulis.reserve(sp.size() * qubits);
+		raw_paulis.resize(sp.size() * qubits);
 		raw_coefficients.reserve(sp.size());
+
+		std::size_t i = 0;
 		for (auto const& pt : sp) {
 			raw_coefficients.push_back(pt.coefficient());
 			if (pt.size() != nb_qubits()) {
 				throw std::invalid_argument("All terms in observable must have the same size.");
 			}
 			for (auto const& p : pt) {
-				raw_paulis.push_back(p);
+				raw_paulis[i++] = p;
 			}
 		}
 	}
 
-	PauliTermContainer(std::initializer_list<PauliTerm<T>> lst)
-		: PauliTermContainer(lst.size() > 0 ? lst.begin()->size() : 0) {
+	PauliTermContainer(std::initializer_list<PauliTerm<T>> lst) {
+		if (lst.size() == 0) {
+			throw std::invalid_argument("Observable with 0 terms not allowed.");
+		}
+		
+		qubits = lst.begin()->size();
+		raw_paulis.reserve(lst.size() * qubits);
+		raw_paulis.resize(lst.size() * qubits);
+		raw_coefficients.reserve(lst.size());
+		std::size_t i = 0;
 		for (auto const& pt : lst) {
+			raw_coefficients.push_back(pt.coefficient());
 			if (pt.size() != nb_qubits()) {
-				throw std::invalid_argument("All terms should have the same number of qubits.");
+				throw std::invalid_argument("All terms in observable must have the same size.");
 			}
-			auto nopt = create_pauliterm();
-			nopt.copy_paulis(pt.begin(), pt.end());
-			nopt.set_coefficient(pt.coefficient());
+			for (auto const& p : pt) {
+				raw_paulis[i++] = p;
+			}
 		}
 	}
 
-	PauliTermContainer(std::initializer_list<std::string_view> lst)
-		: PauliTermContainer(lst.size() > 0 ? lst.begin()->size() : 0) {
+	PauliTermContainer(std::initializer_list<std::string_view> lst) {
+		if (lst.size() == 0) {
+			throw std::invalid_argument("Observable with 0 terms not allowed.");
+		}
+
+		qubits = lst.begin()->size();
+		raw_paulis.reserve(lst.size() * qubits);
+		raw_paulis.resize(lst.size() * qubits);
+		raw_coefficients.reserve(lst.size());
+		std::size_t i = 0;
 		for (auto const& pt : lst) {
 			if (pt.size() != nb_qubits()) {
 				throw std::invalid_argument("All pauli strings should have the same number of qubits.");
 			}
-			auto nopt = create_pauliterm();
-			for (std::size_t i = 0; i < pt.size(); ++i) {
-				nopt[i] = Pauli(pt[i]);
+			for (auto const& p : pt) {
+				raw_paulis[i++] = Pauli(p);
 			}
-			nopt.set_coefficient(1.f);
+			raw_coefficients.push_back(1.f);
 		}
 	}
 
 	template <typename It>
 	PauliTermContainer(It&& begin, It&& end) {
-		auto size = std::distance(begin, end);
+		const auto size = std::distance(begin, end);
 		if (size == 0) {
 			throw std::invalid_argument("Observable with 0 terms not allowed.");
 		}
@@ -83,16 +124,40 @@ class PauliTermContainer {
 		auto bcopy = begin;
 
 		raw_paulis.reserve(size * qubits);
+		raw_paulis.resize(size * qubits);
 		raw_coefficients.reserve(size);
+		std::size_t i = 0;
 		for (; bcopy != end; ++bcopy) {
 			raw_coefficients.push_back(bcopy->coefficient());
 			if (bcopy->size() != nb_qubits()) {
 				throw std::invalid_argument("All pauli terms should have the same number of qubits.");
 			}
 			for (std::size_t j = 0; j < qubits; ++j) {
-				raw_paulis.push_back((*bcopy)[j]);
+				raw_paulis[i++] = (*bcopy)[j];
 			}
 		}
+	}
+
+	PauliTermContainer(PauliTermContainer const& oth) : raw_coefficients(oth.raw_coefficients), qubits(oth.qubits) {
+		raw_paulis.resize(oth.raw_paulis.size());
+		for (std::size_t i = 0; i < oth.raw_paulis.size(); ++i) {
+			raw_paulis[i] = oth.raw_paulis[i];
+		}
+		// std::copy(oth.raw_paulis.begin(), oth.raw_paulis.end(), raw_paulis.begin());
+	}
+	PauliTermContainer& operator=(PauliTermContainer const& oth) {
+		PauliTermContainer third(oth);
+		raw_paulis = std::move(third.raw_paulis);
+		raw_coefficients = std::move(third.raw_coefficients);
+		return *this;
+	}
+	PauliTermContainer(PauliTermContainer&& oth)
+		: raw_paulis(std::move(oth.raw_paulis)), raw_coefficients(std::move(oth.raw_coefficients)),
+		  qubits(std::move(oth.qubits)) {}
+	PauliTermContainer& operator=(PauliTermContainer&& oth) {
+		raw_paulis = std::move(oth.raw_paulis);
+		raw_coefficients = std::move(oth.raw_coefficients);
+		return *this;
 	}
 
 	std::size_t compute_index(std::size_t term, std::size_t qubit) const { return term * qubits + qubit; }
@@ -111,8 +176,13 @@ class PauliTermContainer {
 			 raw_coefficients[idx] };
 	}
 
+	void reserve(std::size_t nb_pts) {
+		raw_paulis.reserve(nb_pts * nb_qubits());
+		raw_coefficients.reserve(nb_pts);
+	}
+
 	[[nodiscard]] NonOwningPauliTerm<T> create_pauliterm() {
-		raw_paulis.resize(raw_paulis.size() + qubits, p_i);
+		raw_paulis.resize(raw_paulis.size() + qubits);
 		raw_coefficients.push_back(T{ 0 });
 		return { raw_paulis.begin() + compute_index(nb_terms() - 1, 0),
 			 raw_paulis.begin() + compute_index(nb_terms() - 1, qubits),
@@ -126,7 +196,7 @@ class PauliTermContainer {
 				 raw_paulis.begin() + compute_index(idx, qubits),
 				 raw_paulis.begin() + compute_index(nb_terms() - 1, 0));
 		raw_coefficients.pop_back();
-		raw_paulis.resize(raw_paulis.size() - qubits, p_i);
+		raw_paulis.resize(raw_paulis.size() - qubits);
 	}
 
 	class NonOwningIterator {

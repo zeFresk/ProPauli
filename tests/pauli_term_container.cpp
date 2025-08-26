@@ -34,8 +34,21 @@ TEST(PauliTermContainer, init_span_pt2) {
 	EXPECT_EQ(nopt2, PauliTerm{ "XX" });
 }
 
-TEST(PauliTermContainer, init_initializer_list2) {
+TEST(PauliTermContainer, init_initializer_list2_pt) {
 	PauliTermContainer<coeff_t> ptc{ PauliTerm{ "II" }, PauliTerm{ "XX" } };
+	EXPECT_EQ(ptc.nb_terms(), 2);
+	EXPECT_EQ(ptc.nb_qubits(), 2);
+	auto nopt = ptc[0];
+	EXPECT_EQ(nopt.size(), ptc.nb_qubits());
+	EXPECT_EQ(nopt, PauliTerm{ "II" });
+	auto nopt2 = ptc[1];
+	EXPECT_EQ(nopt2.size(), ptc.nb_qubits());
+	EXPECT_EQ(nopt2, PauliTerm{ "XX" });
+}
+
+TEST(PauliTermContainer, init_initializer_list2_sv) {
+	std::initializer_list<std::string_view> svl = { "II", "XX" };
+	PauliTermContainer<coeff_t> ptc{ svl };
 	EXPECT_EQ(ptc.nb_terms(), 2);
 	EXPECT_EQ(ptc.nb_qubits(), 2);
 	auto nopt = ptc[0];
@@ -305,7 +318,7 @@ TEST(PauliTermContainer, iterator_distance_after_remove) {
 	PauliTermContainer<coeff_t> ptc{ PauliTerm{ "II" }, PauliTerm{ "XX" }, PauliTerm{ "ZZ" } };
 	for (std::size_t i = 0; i < 3; ++i) {
 		EXPECT_EQ(std::distance(ptc.begin(), ptc.end()), 3 - i);
-		EXPECT_EQ(ptc.nb_terms(), 3-i);
+		EXPECT_EQ(ptc.nb_terms(), 3 - i);
 		ptc.remove_pauliterm(0);
 	}
 }
@@ -314,7 +327,7 @@ TEST(PauliTermContainer, iterator_distance_const_after_remove) {
 	PauliTermContainer<coeff_t> ptc{ PauliTerm{ "II" }, PauliTerm{ "XX" }, PauliTerm{ "ZZ" } };
 	for (std::size_t i = 0; i < 3; ++i) {
 		EXPECT_EQ(std::distance(ptc.begin(), ptc.end()), 3 - i);
-		EXPECT_EQ(ptc.nb_terms(), 3-i);
+		EXPECT_EQ(ptc.nb_terms(), 3 - i);
 		ptc.remove_pauliterm(0);
 	}
 }
