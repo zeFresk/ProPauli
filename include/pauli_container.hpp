@@ -57,7 +57,7 @@ constexpr std::array<Underlying, OBJS_PER_UNDERLYING> compute_mask_lut() {
 	return ret;
 }
 
-template <typename T, typename Underlying = std::uint32_t>
+template <typename T, typename Underlying = std::uint8_t>
 class PauliTermContainer {
 	template <typename O, typename A = std::allocator<O>>
 	class default_init_allocator : public A {
@@ -86,6 +86,10 @@ class PauliTermContainer {
 	std::vector<T> raw_coefficients;
 	std::size_t qubits;
 
+	// optimizations
+	std::size_t copy_nb_full;
+	std::size_t copy_nb_left;
+
 	static constexpr std::size_t DEFAULT_ALLOC = 8;
 	static constexpr std::size_t GROWTH_FACTOR_NUM = 5;
 	static constexpr std::size_t GROWTH_FACTOR_DENUM = 2;
@@ -107,7 +111,7 @@ class PauliTermContainer {
 		const auto vec_idx = idx / PAULIS_PER_UNDERLYING;
 		const auto sub_mask = MASK_LUT[sub_idx];
 		const Underlying p_v = static_cast<Underlying>(static_cast<Pauli_enum>(p));
-		//const auto masked_pv = (p_v << (sub_idx * BITS_PER_PAULI)) & sub_mask;
+		// const auto masked_pv = (p_v << (sub_idx * BITS_PER_PAULI)) & sub_mask;
 		const auto masked_pv = (p_v << (sub_idx * BITS_PER_PAULI));
 		raw_bits[vec_idx] = (raw_bits[vec_idx] & ~sub_mask) | masked_pv;
 	}
@@ -121,6 +125,11 @@ class PauliTermContainer {
 		return Pauli(static_cast<Pauli_enum>(normalized));
 	}
 
+	void set_opti() {
+		copy_nb_full = nb_qubits() / PAULIS_PER_UNDERLYING;
+		copy_nb_left = nb_qubits() % PAULIS_PER_UNDERLYING;
+	}
+
     public:
 	PauliTermContainer(std::size_t nb_qubits) : qubits(nb_qubits) {
 		if (nb_qubits == 0) {
@@ -128,6 +137,7 @@ class PauliTermContainer {
 		}
 		resize_paulis(DEFAULT_ALLOC * nb_qubits);
 		raw_coefficients.reserve(DEFAULT_ALLOC);
+		set_opti();
 	}
 
 	PauliTermContainer(std::span<PauliTerm<T>> const& sp) {
@@ -149,6 +159,7 @@ class PauliTermContainer {
 				set_pauli(i++, p);
 			}
 		}
+		set_opti();
 	}
 
 	PauliTermContainer(std::initializer_list<PauliTerm<T>> lst) {
@@ -169,6 +180,7 @@ class PauliTermContainer {
 				set_pauli(i++, p);
 			}
 		}
+		set_opti();
 	}
 
 	PauliTermContainer(std::initializer_list<std::string_view> lst) {
@@ -189,6 +201,7 @@ class PauliTermContainer {
 			}
 			raw_coefficients.push_back(1.f);
 		}
+		set_opti();
 	}
 
 	template <typename It>
@@ -213,6 +226,7 @@ class PauliTermContainer {
 				set_pauli(i++, (*bcopy)[j]);
 			}
 		}
+		set_opti();
 	}
 
 	PauliTermContainer(PauliTermContainer const& oth) = default;
@@ -234,6 +248,20 @@ class PauliTermContainer {
 		assert(pt_index < nb_terms());
 		assert(qubit < nb_qubits());
 		return set_pauli(pt_index * nb_qubits() + qubit, p);
+	}
+
+	void copy_fast(std::size_t index_input, std::size_t index_output) {
+		assert(index_input < nb_terms());
+		assert(index_output < nb_terms());
+		// fast copy
+		std::copy(raw_bits.begin() + (index_input * nb_qubits()),
+			  raw_bits.begin() + (index_input * nb_qubits()) + copy_nb_full,
+			  raw_bits.begin() + (index_output * nb_qubits()));
+
+		// slow copy
+		for (std::size_t i = 0; i < copy_nb_left; ++i) {
+			set_qubit(index_output, copy_nb_full + i, get_qubit(index_input, copy_nb_full + i));
+		}
 	}
 
 	T get_coefficient(std::size_t pt_index) const {
@@ -437,6 +465,12 @@ class PauliTermContainer {
 			}
 		}
 
+		void fast_copy_content(NonOwningPauliTermPacked const& nopt) {
+			assert(&nopt.ptc.get() == &ptc.get());
+			set_coefficient(nopt.coefficient());
+			ptc.get().copy_fast(nopt.idx, idx);
+		}
+
 		operator ReadOnlyNonOwningPauliTermPacked() const { return ReadOnlyNonOwningPauliTermPacked(ptc, idx); }
 
 		void apply_pauli(Pauli_gates g, unsigned qubit) {
@@ -525,7 +559,7 @@ class PauliTermContainer {
 	[[nodiscard]] NonOwningPauliTermPacked duplicate_pauliterm(std::size_t idx) {
 		assert(idx < nb_terms());
 		auto np = create_pauliterm();
-		np.copy_content((*this)[idx]);
+		np.fast_copy_content((*this)[idx]);
 		return np;
 	}
 
