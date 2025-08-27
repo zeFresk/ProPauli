@@ -93,7 +93,7 @@ class PauliTermContainer {
 		const auto vec_idx = idx / PAULIS_PER_UNDERLYING;
 		const auto sub_mask = MASK << (sub_idx * BITS_PER_PAULI);
 		const Underlying p_v = static_cast<Underlying>(static_cast<Pauli_enum>(p));
-		const auto masked_pv = (p_v << (sub_idx * BITS_PER_PAULI)) | sub_mask;
+		const auto masked_pv = (p_v << (sub_idx * BITS_PER_PAULI)) & sub_mask;
 		raw_bits[vec_idx] &= (~sub_mask);
 		raw_bits[vec_idx] |= masked_pv;
 	}
@@ -441,7 +441,6 @@ class PauliTermContainer {
 			assert(qubit < size());
 			auto pauli = get_pauli(qubit);
 			set_coefficient(coefficient() * pauli.apply_unital_noise(n, p));
-			set_pauli(qubit, p);
 		}
 
 		void apply_cx(unsigned control, unsigned target) {

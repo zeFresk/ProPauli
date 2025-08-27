@@ -5,9 +5,6 @@
 #include <cstdint>
 #include <utility>
 
-template <typename T>
-void expand(std::vector<T>& vec, std::size_t nb) {}
-
 static void Memory_vector_int_resize64x2p16(benchmark::State& state) {
 	std::vector<std::int8_t> vec;
 	vec.reserve(8);
@@ -41,15 +38,13 @@ static void Memory_PauliTermContainer_insert64x2p16(benchmark::State& state) {
 
 	for (auto _ : state) {
 		for (std::size_t i = 1; i < (1 << 16); ++i) {
-			auto nopt = ptc.create_pauliterm();
+			[[maybe_unused]] auto nopt = ptc.create_pauliterm();
 			benchmark::DoNotOptimize(ptc);
 		}
 
 		ptc = PauliTermContainer<coeff_t>(64);
 	}
 }
-
-
 
 BENCHMARK(Memory_vector_int_resize64x2p16);
 BENCHMARK(Memory_vector_Pauli_resize64x2p16);
