@@ -18,7 +18,7 @@ TEST(Truncator, CoefficientTruncator) {
 	pts[0].set_coefficient(0.01f);
 
 	auto nopt = pts.duplicate_pauliterm(0);
-	nopt[0] = p_z;
+	nopt.set_pauli(0, p_z);
 	nopt.set_coefficient(0.0f);
 
 	removed = ct.truncate(pts);

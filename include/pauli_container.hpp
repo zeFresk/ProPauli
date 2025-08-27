@@ -13,6 +13,39 @@
 #include <vector>
 
 template <typename T>
+constexpr T compute_mask(T nb_bits) {
+	T ret = 0;
+	for (T i = 0; i < nb_bits; ++i) {
+		ret |= (1 << i);
+	}
+	return ret;
+}
+
+template <typename T>
+constexpr std::size_t minimum_size(std::size_t nb_objs, T objs_per_underlying) {
+	auto rem = nb_objs % objs_per_underlying;
+	auto quo = nb_objs / objs_per_underlying;
+	return quo + (1 * (rem > 0));
+}
+
+template <typename T>
+constexpr T compute_mask_idx(std::size_t idx, T mask, T objs_per_underlying, T bits_per_obj) {
+	auto rem = idx % objs_per_underlying;
+	return mask << (rem * bits_per_obj);
+}
+
+template <typename T>
+constexpr std::size_t compute_idx(std::size_t idx, T objs_per_underlying) {
+	return idx / objs_per_underlying;
+}
+
+template <typename T>
+constexpr void set_on_mask(T& out, T mask, T masked_value) {
+	out &= ~mask; // set bits to 0
+	out |= masked_value;
+}
+
+template <typename T, typename Underlying = std::uint8_t>
 class PauliTermContainer {
 	template <typename O, typename A = std::allocator<O>>
 	class default_init_allocator : public A {
@@ -35,8 +68,9 @@ class PauliTermContainer {
 			a_t::construct(static_cast<A&>(*this), ptr, std::forward<Args>(args)...);
 		}
 	};
-	std::vector<Pauli, default_init_allocator<Pauli>> raw_paulis;
+	// std::vector<Pauli, default_init_allocator<Pauli>> raw_paulis;
 	// std::vector<Pauli> raw_paulis;
+	std::vector<Underlying> raw_bits;
 	std::vector<T> raw_coefficients;
 	std::size_t qubits;
 
@@ -44,12 +78,41 @@ class PauliTermContainer {
 	static constexpr std::size_t GROWTH_FACTOR_NUM = 5;
 	static constexpr std::size_t GROWTH_FACTOR_DENUM = 2;
 
+	static constexpr Underlying BITS_PER_PAULI = 2;
+	static constexpr Underlying MASK = compute_mask<Underlying>(BITS_PER_PAULI);
+	static constexpr Underlying PAULIS_PER_UNDERLYING = (sizeof(Underlying) * 8) / BITS_PER_PAULI;
+	static_assert(MASK == 3);
+
+	void resize_paulis(std::size_t nb_paulis) {
+		const auto required_size = minimum_size(nb_paulis, PAULIS_PER_UNDERLYING);
+		raw_bits.resize(required_size);
+	}
+
+	void set_pauli(std::size_t idx, Pauli p) {
+		const auto sub_idx = idx % PAULIS_PER_UNDERLYING;
+		const auto vec_idx = idx / PAULIS_PER_UNDERLYING;
+		const auto sub_mask = MASK << (sub_idx * BITS_PER_PAULI);
+		const Underlying p_v = static_cast<Underlying>(static_cast<Pauli_enum>(p));
+		const auto masked_pv = (p_v << (sub_idx * BITS_PER_PAULI)) | sub_mask;
+		raw_bits[vec_idx] &= (~sub_mask);
+		raw_bits[vec_idx] |= masked_pv;
+	}
+
+	Pauli get_pauli(std::size_t idx) const {
+		const auto sub_idx = idx % PAULIS_PER_UNDERLYING;
+		const auto vec_idx = idx / PAULIS_PER_UNDERLYING;
+		const auto sub_mask = MASK << (sub_idx * BITS_PER_PAULI);
+		const auto extracted = raw_bits[vec_idx] & sub_mask;
+		const auto normalized = extracted >> (sub_idx * BITS_PER_PAULI);
+		return Pauli(static_cast<Pauli_enum>(normalized));
+	}
+
     public:
 	PauliTermContainer(std::size_t nb_qubits) : qubits(nb_qubits) {
 		if (nb_qubits == 0) {
 			throw std::invalid_argument("Observable with 0 qubits not allowed.");
 		}
-		raw_paulis.reserve(DEFAULT_ALLOC * nb_qubits);
+		resize_paulis(DEFAULT_ALLOC * nb_qubits);
 		raw_coefficients.reserve(DEFAULT_ALLOC);
 	}
 
@@ -59,8 +122,7 @@ class PauliTermContainer {
 		}
 		qubits = sp[0].size();
 
-		raw_paulis.reserve(DEFAULT_ALLOC * nb_qubits());
-		raw_paulis.resize(sp.size() * qubits);
+		resize_paulis(std::max(DEFAULT_ALLOC * nb_qubits(), sp.size() * qubits));
 		raw_coefficients.reserve(DEFAULT_ALLOC);
 
 		std::size_t i = 0;
@@ -70,7 +132,7 @@ class PauliTermContainer {
 				throw std::invalid_argument("All terms in observable must have the same size.");
 			}
 			for (auto const& p : pt) {
-				raw_paulis[i++] = p;
+				set_pauli(i++, p);
 			}
 		}
 	}
@@ -81,8 +143,7 @@ class PauliTermContainer {
 		}
 
 		qubits = lst.begin()->size();
-		raw_paulis.reserve(DEFAULT_ALLOC * nb_qubits());
-		raw_paulis.resize(lst.size() * qubits);
+		resize_paulis(std::max(DEFAULT_ALLOC * nb_qubits(), lst.size() * qubits));
 		raw_coefficients.reserve(DEFAULT_ALLOC);
 		std::size_t i = 0;
 		for (auto const& pt : lst) {
@@ -91,7 +152,7 @@ class PauliTermContainer {
 				throw std::invalid_argument("All terms in observable must have the same size.");
 			}
 			for (auto const& p : pt) {
-				raw_paulis[i++] = p;
+				set_pauli(i++, p);
 			}
 		}
 	}
@@ -102,8 +163,7 @@ class PauliTermContainer {
 		}
 
 		qubits = lst.begin()->size();
-		raw_paulis.reserve(DEFAULT_ALLOC * nb_qubits());
-		raw_paulis.resize(lst.size() * qubits);
+		resize_paulis(std::max(DEFAULT_ALLOC * nb_qubits(), lst.size() * qubits));
 		raw_coefficients.reserve(DEFAULT_ALLOC);
 		std::size_t i = 0;
 		for (auto const& pt : lst) {
@@ -111,7 +171,7 @@ class PauliTermContainer {
 				throw std::invalid_argument("All pauli strings should have the same number of qubits.");
 			}
 			for (auto const& p : pt) {
-				raw_paulis[i++] = Pauli(p);
+				set_pauli(i++, p);
 			}
 			raw_coefficients.push_back(1.f);
 		}
@@ -127,8 +187,7 @@ class PauliTermContainer {
 		qubits = begin->size();
 		auto bcopy = begin;
 
-		raw_paulis.reserve(DEFAULT_ALLOC * qubits);
-		raw_paulis.resize(size * qubits);
+		resize_paulis(std::max(DEFAULT_ALLOC * nb_qubits(), size * qubits));
 		raw_coefficients.reserve(size);
 		std::size_t i = 0;
 		for (; bcopy != end; ++bcopy) {
@@ -137,7 +196,7 @@ class PauliTermContainer {
 				throw std::invalid_argument("All pauli terms should have the same number of qubits.");
 			}
 			for (std::size_t j = 0; j < qubits; ++j) {
-				raw_paulis[i++] = (*bcopy)[j];
+				set_pauli(i++, (*bcopy)[j]);
 			}
 		}
 	}
@@ -151,40 +210,306 @@ class PauliTermContainer {
 	std::size_t nb_qubits() const { return qubits; }
 	std::size_t nb_terms() const { return raw_coefficients.size(); }
 
-	NonOwningPauliTerm<T> operator[](std::size_t idx) {
-		assert(idx < nb_terms());
-		return { raw_paulis.begin() + compute_index(idx, 0), raw_paulis.begin() + compute_index(idx, qubits),
-			 raw_coefficients[idx] };
+	Pauli get_qubit(std::size_t pt_index, std::size_t qubit) const {
+		assert(pt_index < nb_terms());
+		assert(qubit < nb_qubits());
+		return get_pauli(pt_index * nb_qubits() + qubit);
 	}
 
-	ReadOnlyNonOwningPauliTerm<T> operator[](std::size_t idx) const {
-		assert(idx < nb_terms());
-		return { raw_paulis.begin() + compute_index(idx, 0), raw_paulis.begin() + compute_index(idx, qubits),
-			 raw_coefficients[idx] };
+	void set_qubit(std::size_t pt_index, std::size_t qubit, Pauli p) {
+		assert(pt_index < nb_terms());
+		assert(qubit < nb_qubits());
+		return set_pauli(pt_index * nb_qubits() + qubit, p);
 	}
 
-	void reserve(std::size_t nb_pts) {
-		raw_paulis.reserve(nb_pts * nb_qubits());
-		raw_coefficients.reserve(nb_pts);
+	T get_coefficient(std::size_t pt_index) const {
+		assert(pt_index < nb_terms());
+		return raw_coefficients[pt_index];
 	}
 
-	void expand(std::size_t nb = 1) {
-		if ((nb_terms() + nb) * nb_qubits() > raw_paulis.size()) {
-			auto const new_size = (raw_paulis.size() * GROWTH_FACTOR_NUM) / GROWTH_FACTOR_DENUM;
-			raw_paulis.resize(std::max(raw_paulis.size()+(nb*nb_qubits()), new_size));
+	void set_coefficient(std::size_t pt_index, T c) {
+		assert(pt_index < nb_terms());
+		raw_coefficients[pt_index] = c;
+	}
+
+	class ReadOnlyNonOwningPauliTermPacked {
+	    protected:
+		std::reference_wrapper<const PauliTermContainer<T, Underlying>> ptc;
+		std::size_t idx;
+
+	    public:
+		ReadOnlyNonOwningPauliTermPacked(PauliTermContainer<T, Underlying> const& ptc_, std::size_t index)
+			: ptc(ptc_), idx(index) {}
+
+		T expectation_value() const {
+			for (std::size_t i = 0; i < size(); ++i) {
+				if (!get_pauli(i).commutes_with(p_z)) {
+					return T{ 0 };
+				}
+			}
+			return coefficient();
 		}
+
+		Pauli get_pauli(std::size_t qidx) const { return ptc.get().get_qubit(idx, qidx); }
+		decltype(auto) size() const { return ptc.get().nb_qubits(); }
+		// decltype(auto) begin() const { return PackedPauliIterator{ ptc, idx }; }
+		// decltype(auto) end() const { return PackedPauliIterator{ ptc, idx + 1 }; }
+
+		explicit operator PauliTerm<T>() const {
+			std::vector<Pauli> paulis;
+			paulis.reserve(size());
+			for (std::size_t i = 0; i < size(); ++i) {
+				paulis.push_back(get_pauli(i));
+			}
+			return PauliTerm<T>{ paulis.begin(), paulis.end(), coefficient() };
+		}
+
+		std::size_t phash() const noexcept {
+			std::size_t ret = 0;
+			for (std::size_t i = 0; i < size(); ++i) {
+				const std::size_t uv = std::to_underlying(static_cast<Pauli_enum>(get_pauli(i)));
+				ret ^= uv << (i * 2 % (sizeof(std::size_t) * 8));
+			}
+			return ret;
+		}
+
+		friend bool operator==(ReadOnlyNonOwningPauliTermPacked const& lhs,
+				       ReadOnlyNonOwningPauliTermPacked const& rhs) {
+			return (lhs.size() == rhs.size()) && (lhs.coefficient() == rhs.coefficient()) &&
+			       lhs.equal_bitstring(rhs);
+		}
+		friend bool operator==(ReadOnlyNonOwningPauliTermPacked const& lhs, PauliTerm<T> const& rhs) {
+			return static_cast<PauliTerm<T>>(lhs) == rhs;
+		}
+		friend bool operator==(PauliTerm<T> const& lhs, ReadOnlyNonOwningPauliTermPacked const& rhs) {
+			return rhs == lhs;
+		}
+
+		bool equal_bitstring(ReadOnlyNonOwningPauliTermPacked const& oth) const {
+			if (oth.size() != size())
+				return false;
+			for (std::size_t i = 0; i < size(); ++i) {
+				if (get_pauli(i) != oth.get_pauli(i)) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		T coefficient() const noexcept { return ptc.get().get_coefficient(idx); }
+
+		std::size_t pauli_weight() const {
+			std::size_t ret = 0;
+			for (std::size_t i = 0; i < size(); ++i) {
+				ret += get_pauli(i).weight();
+			}
+			return ret;
+		}
+
+		friend std::ostream& operator<<(std::ostream& os, ReadOnlyNonOwningPauliTermPacked const& pt) {
+			os << std::showpos << pt.coefficient() << " ";
+			for (std::size_t i = 0; i < pt.size(); ++i) {
+				os << pt.get_pauli(i);
+			}
+			return os;
+		}
+	};
+
+	class NonOwningPauliTermPacked {
+		std::reference_wrapper<PauliTermContainer<T, Underlying>> ptc;
+		std::size_t idx;
+
+	    public:
+		NonOwningPauliTermPacked(PauliTermContainer<T, Underlying>& ptc_, std::size_t index)
+			: ptc(ptc_), idx(index) {}
+
+		T expectation_value() const {
+			for (std::size_t i = 0; i < ptc.nb_qubits(); ++i) {
+				if (!get_pauli(i).commutes_with(p_z)) {
+					return T{ 0 };
+				}
+			}
+			return ptc.get_coefficient(idx);
+		}
+
+		Pauli get_pauli(std::size_t qidx) const { return ptc.get().get_qubit(idx, qidx); }
+		void set_pauli(std::size_t qidx, Pauli p) { ptc.get().set_qubit(idx, qidx, p); }
+		decltype(auto) size() const { return ptc.get().nb_qubits(); }
+		// decltype(auto) begin() const { return PackedPauliIterator{ ptc, idx }; }
+		// decltype(auto) end() const { return PackedPauliIterator{ ptc, idx + 1 }; }
+
+		explicit operator PauliTerm<T>() const {
+			std::vector<Pauli> paulis;
+			paulis.reserve(size());
+			for (std::size_t i = 0; i < size(); ++i) {
+				paulis.push_back(get_pauli(i));
+			}
+			PauliTerm<T> ret{ paulis.begin(), paulis.end(), coefficient() };
+			return ret;
+		}
+
+		std::size_t phash() const noexcept {
+			std::size_t ret = 0;
+			for (std::size_t i = 0; i < this->size(); ++i) {
+				const std::size_t uv = std::to_underlying(static_cast<Pauli_enum>(get_pauli(i)));
+				ret ^= uv << (i * 2 % (sizeof(std::size_t) * 8));
+			}
+			return ret;
+		}
+
+		friend bool operator==(NonOwningPauliTermPacked const& lhs, NonOwningPauliTermPacked const& rhs) {
+			return (lhs.size() == rhs.size()) && (lhs.coefficient() == rhs.coefficient()) &&
+			       lhs.equal_bitstring(rhs);
+		}
+		friend bool operator==(PauliTerm<T> const& lhs, NonOwningPauliTermPacked const& rhs) {
+			return static_cast<PauliTerm<T>>(rhs) == lhs;
+		}
+		friend bool operator==(NonOwningPauliTermPacked const& lhs, PauliTerm<T> const& rhs) {
+			return rhs == lhs;
+		}
+
+		bool equal_bitstring(NonOwningPauliTermPacked const& oth) const {
+			if (oth.size() != size())
+				return false;
+			for (std::size_t i = 0; i < size(); ++i) {
+				if (get_pauli(i) != oth.get_pauli(i)) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		T coefficient() const noexcept { return ptc.get().get_coefficient(idx); }
+		void set_coefficient(T coeff) { ptc.get().set_coefficient(idx, coeff); }
+		void add_coeff(T coeff) { set_coefficient(coefficient() + coeff); }
+
+		std::size_t pauli_weight() const {
+			std::size_t ret = 0;
+			for (std::size_t i = 0; i < size(); ++i) {
+				ret += get_pauli(i).weight();
+			}
+			return ret;
+		}
+
+		friend std::ostream& operator<<(std::ostream& os, NonOwningPauliTermPacked const& pt) {
+			os << std::showpos << pt.coefficient() << " ";
+			for (std::size_t i = 0; i < pt.size(); ++i) {
+				os << pt.get_pauli(i);
+			}
+			return os;
+		}
+
+		void copy_content(NonOwningPauliTermPacked const& nopt) {
+			copy_paulis(nopt);
+			set_coefficient(nopt.coefficient());
+		}
+
+		void copy_content(ReadOnlyNonOwningPauliTermPacked const& nopt) {
+			copy_paulis(nopt);
+			set_coefficient(nopt.coefficient());
+		}
+
+		void copy_paulis(ReadOnlyNonOwningPauliTermPacked const& ronopt) {
+			assert(ronopt.size() == size());
+			for (std::size_t i = 0; i < size(); ++i) {
+				set_pauli(i, ronopt.get_pauli(i));
+			}
+		}
+
+		void copy_paulis(NonOwningPauliTermPacked const& nopt) {
+			assert(nopt.size() == size());
+			for (std::size_t i = 0; i < size(); ++i) {
+				set_pauli(i, nopt.get_pauli(i));
+			}
+		}
+
+		operator ReadOnlyNonOwningPauliTermPacked() const { return ReadOnlyNonOwningPauliTermPacked(ptc, idx); }
+
+		void apply_pauli(Pauli_gates g, unsigned qubit) {
+			assert(qubit < size());
+			set_coefficient(coefficient() * get_pauli(qubit).apply_pauli(g));
+		}
+
+		void apply_clifford(Clifford_Gates_1Q g, unsigned qubit) {
+			assert(qubit < size());
+			auto p = get_pauli(qubit);
+			set_coefficient(coefficient() * p.apply_clifford(g));
+			set_pauli(qubit, p);
+		}
+
+		void apply_unital_noise(UnitalNoise n, unsigned qubit, T p) {
+			assert(qubit < size());
+			auto pauli = get_pauli(qubit);
+			set_coefficient(coefficient() * pauli.apply_unital_noise(n, p));
+			set_pauli(qubit, p);
+		}
+
+		void apply_cx(unsigned control, unsigned target) {
+			assert(control != target && "cx can't use same control and target");
+			assert(control < size() && target < size());
+			auto pctrl = get_pauli(control);
+			auto ptarg = get_pauli(target);
+			set_coefficient(coefficient() * pctrl.apply_cx(ptarg));
+			set_pauli(control, pctrl);
+			set_pauli(target, ptarg);
+		}
+
+		void apply_rz(unsigned qubit, T theta, NonOwningPauliTermPacked& output) {
+			assert(qubit < size());
+			assert(get_pauli(qubit) != p_i && get_pauli(qubit) != p_z && "Should not happen");
+
+			const auto cos_teta = cos(theta);
+			const auto sin_theta = sin(theta);
+
+			set_coefficient(coefficient() * cos_teta);
+
+			// use commutators?
+			if (get_pauli(qubit) == p_x) {
+				output.set_pauli(qubit, p_y);
+				output.set_coefficient(output.coefficient() * -sin_theta);
+			} else {
+				assert(get_pauli(qubit) == p_y);
+				output.set_pauli(qubit, p_x);
+				output.set_coefficient(output.coefficient() * sin_theta);
+			}
+		}
+
+		void apply_amplitude_damping_xy([[maybe_unused]] unsigned qubit, T p) {
+			assert(qubit < size());
+			assert(get_pauli(qubit) != p_z && get_pauli(qubit) != p_i && "Should not happen");
+
+			set_coefficient(coefficient() * sqrt(1 - p));
+		}
+
+		void apply_amplitude_damping_z(unsigned qubit, T p, NonOwningPauliTermPacked& output) {
+			assert(get_pauli(qubit) == p_z && "Should not happen");
+			output.set_coefficient(output.coefficient() * p);
+			output.set_pauli(qubit, p_i);
+
+			set_coefficient(coefficient() * (1 - p));
+		}
+	};
+
+	using non_owning_t = NonOwningPauliTermPacked;
+	using ro_non_owning_t = ReadOnlyNonOwningPauliTermPacked;
+
+	NonOwningPauliTermPacked operator[](std::size_t idx) {
+		assert(idx < nb_terms());
+		return { *this, idx };
 	}
 
-	[[nodiscard]] NonOwningPauliTerm<T> create_pauliterm() {
-		raw_paulis.resize(raw_paulis.size() + nb_qubits());
-		//expand();
+	ReadOnlyNonOwningPauliTermPacked operator[](std::size_t idx) const {
+		assert(idx < nb_terms());
+		return { *this, idx };
+	}
+
+	[[nodiscard]] NonOwningPauliTermPacked create_pauliterm() {
+		resize_paulis(nb_terms() * nb_qubits() + nb_qubits());
 		raw_coefficients.push_back(T{ 0 });
-		return { raw_paulis.begin() + compute_index(nb_terms() - 1, 0),
-			 raw_paulis.begin() + compute_index(nb_terms() - 1, qubits),
-			 raw_coefficients[raw_coefficients.size() - 1] };
+		return { *this, nb_terms() - 1 };
 	}
 
-	[[nodiscard]] NonOwningPauliTerm<T> duplicate_pauliterm(std::size_t idx) {
+	[[nodiscard]] NonOwningPauliTermPacked duplicate_pauliterm(std::size_t idx) {
 		assert(idx < nb_terms());
 		auto np = create_pauliterm();
 		np.copy_content((*this)[idx]);
@@ -194,38 +519,32 @@ class PauliTermContainer {
 	void remove_pauliterm(std::size_t idx) {
 		assert(idx < nb_terms());
 		raw_coefficients[idx] = raw_coefficients[raw_coefficients.size() - 1];
-		std::copy(raw_paulis.begin() + compute_index(nb_terms() - 1, 0),
-			  raw_paulis.begin() + compute_index(nb_terms() - 1, qubits),
-			  raw_paulis.begin() + compute_index(idx, 0));
+		// TODO: more optimized, should be able to copy Underlying directly if two pts are not allowed to share one Underlying
+		auto last = (*this)[nb_terms() - 1];
+		auto to_del = (*this)[idx];
+		to_del.copy_content(last);
 		raw_coefficients.pop_back();
 	}
 
 	class NonOwningIterator {
-		Pauli* ptr_paulis;
-		T* ptr_coeffs;
-		std::size_t qubits;
+		PauliTermContainer& ptc;
+		std::size_t idx;
 
 	    public:
 		using iterator_category = std::forward_iterator_tag;
 		using difference_type = std::ptrdiff_t;
-		using value_type = NonOwningPauliTerm<T>;
+		using value_type = NonOwningPauliTermPacked;
 		using pointer = value_type*;
 		using reference = value_type&;
 
-		explicit NonOwningIterator(Pauli* ptr_p, T* ptr_c, std::size_t nb_qubits)
-			: ptr_paulis(ptr_p), ptr_coeffs(ptr_c), qubits(nb_qubits) {}
+		explicit NonOwningIterator(PauliTermContainer& pt, std::size_t start_at) : ptc(pt), idx(start_at) {}
 
-		value_type operator*() {
-			return NonOwningPauliTerm<T>{ ptr_paulis + 0, ptr_paulis + qubits, *ptr_coeffs };
-		}
+		value_type operator*() { return NonOwningPauliTermPacked{ ptc, idx }; }
 
-		value_type operator->() const {
-			return NonOwningPauliTerm<T>{ ptr_paulis + 0, ptr_paulis + qubits, *ptr_coeffs };
-		}
+		value_type operator->() const { return NonOwningPauliTermPacked{ ptc, idx }; }
 
 		NonOwningIterator& operator++() {
-			ptr_paulis += qubits;
-			ptr_coeffs++;
+			++idx;
 			return *this;
 		}
 
@@ -236,7 +555,7 @@ class PauliTermContainer {
 		}
 
 		friend bool operator==(NonOwningIterator const& lhs, NonOwningIterator const& rhs) {
-			return lhs.ptr_paulis == rhs.ptr_paulis && lhs.ptr_coeffs == rhs.ptr_coeffs;
+			return &lhs.ptc == &rhs.ptc && lhs.idx == rhs.idx;
 		}
 		friend bool operator!=(NonOwningIterator const& lhs, NonOwningIterator const& rhs) {
 			return !(lhs == rhs);
@@ -244,65 +563,46 @@ class PauliTermContainer {
 	};
 
 	class ReadOnlyNonOwningIterator {
-		Pauli const* ptr_paulis;
-		T const* ptr_coeffs;
-		std::size_t qubits;
+		PauliTermContainer const& ptc;
+		std::size_t idx;
 
 	    public:
 		using iterator_category = std::forward_iterator_tag;
 		using difference_type = std::ptrdiff_t;
-		using value_type = ReadOnlyNonOwningPauliTerm<T>;
+		using value_type = ReadOnlyNonOwningPauliTermPacked;
 		using pointer = value_type*;
 		using reference = value_type&;
 
-		explicit ReadOnlyNonOwningIterator(Pauli const* ptr_p, T const* ptr_c, std::size_t nb_qubits)
-			: ptr_paulis(ptr_p), ptr_coeffs(ptr_c), qubits(nb_qubits) {}
+		explicit ReadOnlyNonOwningIterator(PauliTermContainer const& pt, std::size_t start_at)
+			: ptc(pt), idx(start_at) {}
 
-		value_type operator*() const {
-			return ReadOnlyNonOwningPauliTerm{ ptr_paulis + 0, ptr_paulis + qubits, *ptr_coeffs };
-		}
+		value_type operator*() { return { ptc, idx }; }
 
-		value_type operator->() const {
-			return ReadOnlyNonOwningPauliTerm{ ptr_paulis + 0, ptr_paulis + qubits, *ptr_coeffs };
-		}
+		value_type operator->() const { return { ptc, idx }; }
 
 		ReadOnlyNonOwningIterator& operator++() {
-			ptr_paulis += qubits;
-			ptr_coeffs++;
+			++idx;
 			return *this;
 		}
 
 		ReadOnlyNonOwningIterator operator++(int) {
-			NonOwningIterator ret = *this;
+			ReadOnlyNonOwningIterator ret = *this;
 			++(*this);
 			return ret;
 		}
 
 		friend bool operator==(ReadOnlyNonOwningIterator const& lhs, ReadOnlyNonOwningIterator const& rhs) {
-			return lhs.ptr_paulis == rhs.ptr_paulis && lhs.ptr_coeffs == rhs.ptr_coeffs;
+			return &lhs.ptc == &rhs.ptc && lhs.idx == rhs.idx;
 		}
 		friend bool operator!=(ReadOnlyNonOwningIterator const& lhs, ReadOnlyNonOwningIterator const& rhs) {
 			return !(lhs == rhs);
 		}
 	};
 
-	NonOwningIterator begin() {
-		return NonOwningIterator{ std::to_address(raw_paulis.begin()),
-					  std::to_address(raw_coefficients.begin()), nb_qubits() };
-	}
-	NonOwningIterator end() {
-		return NonOwningIterator{ std::to_address(raw_paulis.begin() + compute_index(nb_terms() - 1, qubits)),
-					  std::to_address(raw_coefficients.end()), nb_qubits() };
-	}
-	ReadOnlyNonOwningIterator cbegin() const {
-		return ReadOnlyNonOwningIterator{ std::to_address(raw_paulis.cbegin()),
-						  std::to_address(raw_coefficients.cbegin()), nb_qubits() };
-	}
-	ReadOnlyNonOwningIterator cend() const {
-		return ReadOnlyNonOwningIterator{ std::to_address(raw_paulis.cbegin() +
-								  compute_index(nb_terms() - 1, qubits)),
-						  std::to_address(raw_coefficients.cend()), nb_qubits() };
-	}
+	NonOwningIterator begin() { return NonOwningIterator{ *this, 0 }; }
+	NonOwningIterator end() { return NonOwningIterator{ *this, nb_terms() }; }
+	ReadOnlyNonOwningIterator cbegin() const { return ReadOnlyNonOwningIterator{ *this, 0 }; }
+	ReadOnlyNonOwningIterator cend() const { return ReadOnlyNonOwningIterator{ *this, nb_terms() }; }
 	auto begin() const { return cbegin(); }
 	auto end() const { return cend(); }
 
@@ -334,7 +634,7 @@ template <typename T, typename Predicate>
 size_t erase_if(PauliTermContainer<T>& paulis, Predicate&& predicate) {
 	auto deleted = 0;
 	for (std::size_t i = 0; i < paulis.nb_terms(); ++i) {
-		const ReadOnlyNonOwningPauliTerm<T> ronopt = paulis[i];
+		const auto ronopt = paulis[i];
 		if (predicate(ronopt)) {
 			paulis.remove_pauliterm(i);
 			--i;
@@ -344,5 +644,15 @@ size_t erase_if(PauliTermContainer<T>& paulis, Predicate&& predicate) {
 	return deleted;
 }
 } // namespace std
+
+template <typename T>
+struct GenericPauliTermHash {
+	std::size_t operator()(T const& pt) const noexcept { return pt.phash(); }
+};
+
+template <typename T>
+struct GenericPauliStringEqual {
+	bool operator()(T const& lhs, T const& rhs) const { return lhs.equal_bitstring(rhs); }
+};
 
 #endif

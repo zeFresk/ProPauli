@@ -21,7 +21,8 @@ class CoefficientPredicate {
     public:
 	CoefficientPredicate(T&& threshold) : threshold_(threshold) {}
 
-	bool operator()(ReadOnlyNonOwningPauliTerm<T> const& pt) const {
+	template <typename GenericPauliTerm>
+	bool operator()(GenericPauliTerm const& pt) const {
 		return std::abs(pt.coefficient()) < threshold_;
 	}
 };
@@ -35,8 +36,8 @@ class WeightPredicate {
     public:
 	WeightPredicate(std::size_t&& weight_threshold) : weight_threshold_(weight_threshold) {}
 
-	template <typename T>
-	bool operator()(ReadOnlyNonOwningPauliTerm<T> const& pt) const {
+	template <typename GenericPauliTerm>
+	bool operator()(GenericPauliTerm const& pt) const {
 		return pt.pauli_weight() >= weight_threshold_;
 	}
 };
@@ -47,8 +48,9 @@ class WeightPredicate {
 class NeverPredicate {
     public:
 	NeverPredicate() = default;
-	template <typename T>
-	bool operator()(ReadOnlyNonOwningPauliTerm<T> const&) const {
+
+	template <typename GenericPauliTerm>
+	bool operator()(GenericPauliTerm const&) const {
 		return false;
 	}
 };

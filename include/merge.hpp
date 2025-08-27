@@ -6,6 +6,7 @@
 
 #include <functional>
 #include <iostream>
+#include <type_traits>
 #include <unordered_set>
 #include <vector>
 #include <unordered_map>
@@ -128,9 +129,10 @@ static std::uniform_int_distribution dis;
 
 template <typename T>
 void merge_inplace_noalloc(PauliTermContainer<T>& paulis_) {
+	using nopt_t = std::remove_cvref_t<decltype(paulis_)>::non_owning_t;
 	// optimal reserve + template parameters
-	tsl::robin_set<NonOwningPauliTerm<T>, std::hash<NonOwningPauliTerm<T>>, PauliStringEqualNonOwning<T>,
-		       std::allocator<NonOwningPauliTerm<T>>, false>
+	tsl::robin_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>, std::allocator<nopt_t>,
+		       false>
 		hset;
 	hset.reserve(paulis_.nb_terms());
 
@@ -139,7 +141,7 @@ void merge_inplace_noalloc(PauliTermContainer<T>& paulis_) {
 		auto c = nopt.coefficient();
 		auto [it, is_new] = hset.emplace(std::move(nopt));
 		if (!is_new) { // element already exists
-			const_cast<NonOwningPauliTerm<T>*>(&(*it))->add_coeff(c); // updating coeff doesn't change hash
+			const_cast<nopt_t*>(&(*it))->add_coeff(c); // updating coeff doesn't change hash
 			paulis_.remove_pauliterm(i);
 			--i;
 		}

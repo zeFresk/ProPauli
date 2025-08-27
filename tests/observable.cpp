@@ -147,7 +147,7 @@ TEST(Observable, apply_rz) {
 TEST(Observable, apply_rz_inverse) {
 	Observable obs{ "IIXIIIIIIIII" };
 	auto before_ev = obs.expectation_value();
-	assert(!obs[0][2].commutes_with(p_z));
+	EXPECT_TRUE(!obs[0].get_pauli(2).commutes_with(p_z));
 	obs.apply_rz(2, 0.125);
 	obs.apply_rz(2, -0.125);
 	auto after_ev = obs.expectation_value();

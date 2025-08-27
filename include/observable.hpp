@@ -147,10 +147,10 @@ class Observable {
 		check_qubit(qubit);
 
 		const auto nb_terms = paulis_.nb_terms();
-		//paulis_.reserve(nb_terms * 2);
+		// paulis_.reserve(nb_terms * 2);
 		for (std::size_t i = 0; i < nb_terms; ++i) {
 			auto p = paulis_[i];
-			if (!p[qubit].commutes_with(p_z)) {
+			if (!p.get_pauli(qubit).commutes_with(p_z)) {
 				auto new_path = paulis_.duplicate_pauliterm(i);
 				paulis_[i].apply_rz(qubit, theta, new_path);
 			}
@@ -172,10 +172,10 @@ class Observable {
 		const auto nb_terms = paulis_.nb_terms();
 		for (std::size_t i = 0; i < nb_terms; ++i) {
 			auto p = paulis_[i];
-			if (p[qubit] == p_z) {
+			if (p.get_pauli(qubit) == p_z) {
 				auto new_path = paulis_.duplicate_pauliterm(i); // invalidate p
 				paulis_[i].apply_amplitude_damping_z(qubit, pn, new_path);
-			} else if (p[qubit] == p_x || p[qubit] == p_y) {
+			} else if (p.get_pauli(qubit) == p_x || p.get_pauli(qubit) == p_y) {
 				p.apply_amplitude_damping_xy(qubit, pn);
 			}
 		}
@@ -197,9 +197,9 @@ class Observable {
 	}
 
 	/** @brief Accesses a specific PauliTerm in the observable. */
-	NonOwningPauliTerm<T> operator[](std::size_t idx) { return paulis_[idx]; }
+	auto operator[](std::size_t idx) { return paulis_[idx]; }
 	/** @brief Accesses a specific PauliTerm in the observable (const version). */
-	ReadOnlyNonOwningPauliTerm<T> const operator[](std::size_t idx) const { return paulis_[idx]; }
+	auto operator[](std::size_t idx) const { return paulis_[idx]; }
 	/** @brief Returns an iterator to the beginning of the PauliTerm vector. */
 	decltype(auto) begin() { return paulis_.begin(); }
 	/** @brief Returns a const iterator to the beginning of the PauliTerm vector. */
@@ -221,9 +221,9 @@ class Observable {
 		if (idx >= size()) {
 			throw std::invalid_argument("Index out of range");
 		}
+		// TODO: optimize
 		auto nopt = (*this)[idx];
-		PauliTerm<T> ret{ nopt.begin(), nopt.end(), nopt.coefficient() };
-		return ret;
+		return static_cast<PauliTerm<T>>(nopt);
 	}
 
 	/**

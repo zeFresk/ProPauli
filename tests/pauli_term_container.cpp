@@ -136,8 +136,8 @@ TEST(PauliTermContainer, create_empty) {
 	EXPECT_EQ(ptc.nb_terms(), 1);
 
 	new_term.set_coefficient(0.5f);
-	new_term[0] = p_z;
-	new_term[1] = p_y;
+	new_term.set_pauli(0, p_z);
+	new_term.set_pauli(1, p_y);
 
 	EXPECT_EQ(ptc[0], PauliTerm("ZY", 0.5f));
 }
@@ -152,8 +152,8 @@ TEST(PauliTermContainer, create_non_empty) {
 	EXPECT_EQ(ptc.nb_terms(), 3);
 
 	new_term.set_coefficient(0.5f);
-	new_term[0] = p_z;
-	new_term[1] = p_y;
+	new_term.set_pauli(0, p_z);
+	new_term.set_pauli(1, p_y);
 
 	EXPECT_EQ(ptc[0], PauliTerm{ "II" });
 	EXPECT_EQ(ptc[1], PauliTerm{ "XX" });
@@ -185,8 +185,8 @@ TEST(PauliTermContainer, create_remove_non_empty) {
 	EXPECT_EQ(ptc.nb_terms(), 3);
 
 	new_term.set_coefficient(0.5f);
-	new_term[0] = p_z;
-	new_term[1] = p_y;
+	new_term.set_pauli(0, p_z);
+	new_term.set_pauli(1, p_y);
 
 	EXPECT_EQ(ptc[0], PauliTerm{ "II" });
 	EXPECT_EQ(ptc[1], PauliTerm{ "XX" });
@@ -234,8 +234,8 @@ TEST(PauliTermContainer, create_remove_create_non_empty) {
 	EXPECT_EQ(ptc.nb_terms(), 3);
 
 	new_term.set_coefficient(0.5f);
-	new_term[0] = p_z;
-	new_term[1] = p_y;
+	new_term.set_pauli(0, p_z);
+	new_term.set_pauli(1, p_y);
 
 	EXPECT_EQ(ptc[0], PauliTerm{ "II" });
 	EXPECT_EQ(ptc[1], PauliTerm{ "XX" });
@@ -273,8 +273,8 @@ TEST(PauliTermContainer, create_remove_create_non_empty) {
 	ASSERT_EQ(ptc.nb_terms(), 0);
 
 	auto nopt = ptc.create_pauliterm();
-	nopt[0] = p_x;
-	nopt[1] = p_x;
+	nopt.set_pauli(0, p_x);
+	nopt.set_pauli(1, p_x);
 
 	nopt.set_coefficient(1.f);
 
@@ -284,7 +284,7 @@ TEST(PauliTermContainer, create_remove_create_non_empty) {
 TEST(PauliTermContainer, erase_if) {
 	PauliTermContainer<coeff_t> ptc{ PauliTerm{ "II" }, PauliTerm{ "XX" }, PauliTerm{ "XI" } };
 	ASSERT_EQ(ptc.nb_terms(), 3);
-	auto deleted = std::erase_if(ptc, [](auto const& p) { return p[0] == p[1]; });
+	auto deleted = std::erase_if(ptc, [](auto const& p) { return p.get_pauli(0) == p.get_pauli(1); });
 	EXPECT_EQ(deleted, 2);
 	EXPECT_EQ(ptc.nb_terms(), 1);
 	EXPECT_EQ(ptc[0], PauliTerm{ "XI" });
@@ -293,14 +293,14 @@ TEST(PauliTermContainer, erase_if) {
 TEST(PauliTermContainer, erase_if_create_after) {
 	PauliTermContainer<coeff_t> ptc{ PauliTerm{ "II" }, PauliTerm{ "XX" }, PauliTerm{ "XI" } };
 	ASSERT_EQ(ptc.nb_terms(), 3);
-	auto deleted = std::erase_if(ptc, [](auto const& p) { return p[0] == p[1]; });
+	auto deleted = std::erase_if(ptc, [](auto const& p) { return p.get_pauli(0) == p.get_pauli(1); });
 	EXPECT_EQ(deleted, 2);
 	EXPECT_EQ(ptc.nb_terms(), 1);
 	EXPECT_EQ(ptc[0], PauliTerm{ "XI" });
 
 	auto nopt = ptc.create_pauliterm();
-	nopt[0] = p_z;
-	nopt[1] = p_x;
+	nopt.set_pauli(0, p_z);
+	nopt.set_pauli(1, p_x);
 	nopt.set_coefficient(1.f);
 	EXPECT_EQ(ptc[1], PauliTerm{ "ZX" });
 }
@@ -308,14 +308,14 @@ TEST(PauliTermContainer, erase_if_create_after) {
 TEST(PauliTermContainer, iterator_for_range) {
 	PauliTermContainer<coeff_t> ptc{ PauliTerm{ "II" }, PauliTerm{ "XX" }, PauliTerm{ "ZZ" } };
 	for (const auto& ronopt : ptc) {
-		EXPECT_EQ(ronopt[0], ronopt[1]);
+		EXPECT_EQ(ronopt.get_pauli(0), ronopt.get_pauli(1));
 	}
 	for (auto nopt : ptc) {
-		nopt[0] = p_y;
+		nopt.set_pauli(0, p_y);
 	}
 	for (const auto& ronopt : ptc) {
-		EXPECT_NE(ronopt[0], ronopt[1]);
-		EXPECT_EQ(ronopt[0], p_y);
+		EXPECT_NE(ronopt.get_pauli(0), ronopt.get_pauli(1));
+		EXPECT_EQ(ronopt.get_pauli(0), p_y);
 	}
 }
 
