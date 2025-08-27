@@ -6,6 +6,7 @@
 #include "non_owning_pauli_term.hpp"
 
 #include <algorithm>
+#include <iostream>
 #include <iterator>
 #include <memory>
 #include <string_view>
@@ -45,6 +46,17 @@ constexpr void set_on_mask(T& out, T mask, T masked_value) {
 	out |= masked_value;
 }
 
+template <typename Underlying, std::size_t OBJS_PER_UNDERLYING>
+constexpr std::array<Underlying, OBJS_PER_UNDERLYING> compute_mask_lut() {
+	const Underlying bits_per_obj = (sizeof(Underlying) * 8) / OBJS_PER_UNDERLYING;
+	const Underlying mask = compute_mask<Underlying>(bits_per_obj);
+	std::array<Underlying, OBJS_PER_UNDERLYING> ret;
+	for (Underlying i = 0; i < OBJS_PER_UNDERLYING; ++i) {
+		ret[i] = mask << (i * bits_per_obj);
+	}
+	return ret;
+}
+
 template <typename T, typename Underlying = std::uint8_t>
 class PauliTermContainer {
 	template <typename O, typename A = std::allocator<O>>
@@ -82,6 +94,8 @@ class PauliTermContainer {
 	static constexpr Underlying MASK = compute_mask<Underlying>(BITS_PER_PAULI);
 	static constexpr Underlying PAULIS_PER_UNDERLYING = (sizeof(Underlying) * 8) / BITS_PER_PAULI;
 	static_assert(MASK == 3);
+	static constexpr auto MASK_LUT = compute_mask_lut<Underlying, PAULIS_PER_UNDERLYING>();
+	static_assert(MASK_LUT.size() == PAULIS_PER_UNDERLYING);
 
 	void resize_paulis(std::size_t nb_paulis) {
 		const auto required_size = minimum_size(nb_paulis, PAULIS_PER_UNDERLYING);
@@ -91,17 +105,17 @@ class PauliTermContainer {
 	void set_pauli(std::size_t idx, Pauli p) {
 		const auto sub_idx = idx % PAULIS_PER_UNDERLYING;
 		const auto vec_idx = idx / PAULIS_PER_UNDERLYING;
-		const auto sub_mask = MASK << (sub_idx * BITS_PER_PAULI);
+		const auto sub_mask = MASK_LUT[sub_idx];
 		const Underlying p_v = static_cast<Underlying>(static_cast<Pauli_enum>(p));
-		const auto masked_pv = (p_v << (sub_idx * BITS_PER_PAULI)) & sub_mask;
-		raw_bits[vec_idx] &= (~sub_mask);
-		raw_bits[vec_idx] |= masked_pv;
+		//const auto masked_pv = (p_v << (sub_idx * BITS_PER_PAULI)) & sub_mask;
+		const auto masked_pv = (p_v << (sub_idx * BITS_PER_PAULI));
+		raw_bits[vec_idx] = (raw_bits[vec_idx] & ~sub_mask) | masked_pv;
 	}
 
 	Pauli get_pauli(std::size_t idx) const {
 		const auto sub_idx = idx % PAULIS_PER_UNDERLYING;
 		const auto vec_idx = idx / PAULIS_PER_UNDERLYING;
-		const auto sub_mask = MASK << (sub_idx * BITS_PER_PAULI);
+		const auto sub_mask = MASK_LUT[sub_idx];
 		const auto extracted = raw_bits[vec_idx] & sub_mask;
 		const auto normalized = extracted >> (sub_idx * BITS_PER_PAULI);
 		return Pauli(static_cast<Pauli_enum>(normalized));
