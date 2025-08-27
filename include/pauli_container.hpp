@@ -57,7 +57,7 @@ constexpr std::array<Underlying, OBJS_PER_UNDERLYING> compute_mask_lut() {
 	return ret;
 }
 
-template <typename T, typename Underlying = std::uint8_t>
+template <typename T, typename Underlying = std::uint32_t>
 class PauliTermContainer {
 	template <typename O, typename A = std::allocator<O>>
 	class default_init_allocator : public A {
