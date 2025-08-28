@@ -3,18 +3,15 @@
 
 #include "pauli.hpp"
 #include "pauli_term.hpp"
-#include "non_owning_pauli_term.hpp"
 
 #include <algorithm>
 #include <bit>
 #include <cstddef>
 #include <iostream>
 #include <iterator>
-#include <memory>
 #include <string_view>
 #include <utility>
 #include <vector>
-#include <ranges>
 
 template <typename T>
 constexpr T compute_mask(T nb_bits) {
@@ -80,52 +77,8 @@ constexpr int count_nonzero_pairs(T input) {
 
 	return std::popcount(result_bits);
 }
-template <typename TOut, typename ItIn>
-class AdapterIt {
-	ItIn it;
-	std::shared_ptr<TOut> obj;
 
-	void init() {
-		if (obj == nullptr) {
-			obj = std::make_shared<TOut>(*it);
-		}
-	}
-
-    public:
-	AdapterIt(ItIn&& it_in) : it(it_in), obj(nullptr) {}
-
-	using iterator_category = std::forward_iterator_tag;
-	using difference_type = std::ptrdiff_t;
-	using value_type = TOut;
-	using pointer = value_type*;
-	using reference = value_type&;
-
-	reference operator*() {
-		init();
-		return *obj;
-	}
-	pointer operator->() {
-		init();
-		return obj.get();
-	}
-
-	AdapterIt& operator++() {
-		it++;
-		obj = nullptr;
-		return *this;
-	}
-
-	AdapterIt operator++(int) {
-		AdapterIt tmp = *this;
-		++(*this);
-		return tmp;
-	}
-
-	friend bool operator==(AdapterIt const& lhs, AdapterIt const& rhs) { return lhs.it == rhs.it; }
-	friend bool operator!=(AdapterIt const& lhs, AdapterIt const& rhs) { return !(lhs == rhs); }
-};
-
-template <typename T, typename Underlying = std::uint8_t>
+template <typename T, typename Underlying = std::uint64_t>
 class PauliTermContainer {
 	template <typename O, typename A = std::allocator<O>>
 	class default_init_allocator : public A {
