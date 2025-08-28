@@ -270,6 +270,19 @@ class PauliTermContainer {
 			  raw_bits.begin() + (index_output * nb_underlying_per_pt));
 	}
 
+	std::size_t fast_phash(std::size_t index) const noexcept {
+		assert(index < nb_terms());
+		const auto start_idx = index * nb_underlying_per_pt;
+		static constexpr std::size_t shift_num = sizeof(Underlying) * 8;
+		static constexpr std::size_t max_shift = sizeof(std::size_t) * 8;
+		std::size_t ret = 0;
+		for (std::size_t i = 0; i < nb_underlying_per_pt; ++i) {
+			const std::size_t uv = raw_bits[start_idx + i];
+			ret ^= uv << ((i * shift_num) % max_shift);
+		}
+		return ret;
+	}
+
 	T get_coefficient(std::size_t pt_index) const {
 		assert(pt_index < nb_terms());
 		return raw_coefficients[pt_index];
@@ -312,14 +325,7 @@ class PauliTermContainer {
 			return PauliTerm<T>{ paulis.begin(), paulis.end(), coefficient() };
 		}
 
-		std::size_t phash() const noexcept {
-			std::size_t ret = 0;
-			for (std::size_t i = 0; i < size(); ++i) {
-				const std::size_t uv = std::to_underlying(static_cast<Pauli_enum>(get_pauli(i)));
-				ret ^= uv << (i * 2 % (sizeof(std::size_t) * 8));
-			}
-			return ret;
-		}
+		std::size_t phash() const noexcept { return ptc.get().fast_phash(idx); }
 
 		friend bool operator==(ReadOnlyNonOwningPauliTermPacked const& lhs,
 				       ReadOnlyNonOwningPauliTermPacked const& rhs) {
@@ -396,14 +402,7 @@ class PauliTermContainer {
 			return ret;
 		}
 
-		std::size_t phash() const noexcept {
-			std::size_t ret = 0;
-			for (std::size_t i = 0; i < this->size(); ++i) {
-				const std::size_t uv = std::to_underlying(static_cast<Pauli_enum>(get_pauli(i)));
-				ret ^= uv << (i * 2 % (sizeof(std::size_t) * 8));
-			}
-			return ret;
-		}
+		std::size_t phash() const noexcept { return ptc.get().fast_phash(idx); }
 
 		friend bool operator==(NonOwningPauliTermPacked const& lhs, NonOwningPauliTermPacked const& rhs) {
 			return (lhs.size() == rhs.size()) && (lhs.coefficient() == rhs.coefficient()) &&
@@ -575,7 +574,7 @@ class PauliTermContainer {
 		// TODO: more optimized, should be able to copy Underlying directly if two pts are not allowed to share one Underlying
 		auto last = (*this)[nb_terms() - 1];
 		auto to_del = (*this)[idx];
-		to_del.copy_content(last);
+		to_del.fast_copy_content(last);
 		raw_coefficients.pop_back();
 	}
 
@@ -635,7 +634,7 @@ class PauliTermContainer {
 
 		ReadOnlyNonOwningIterator& operator++() {
 			++idx;
-			return *this;
+			return *this;;
 		}
 
 		ReadOnlyNonOwningIterator operator++(int) {
