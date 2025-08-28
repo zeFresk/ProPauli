@@ -4,11 +4,13 @@
 #include <vector>
 #include <numeric>
 
+//! [adapter_it_usage]
 // A simple struct that can be constructed from an int
 struct NumberString {
     std::string data;
     explicit NumberString(int val) : data("Number: " + std::to_string(val)) {}
 };
+//! [adapter_it_usage]
 
 void adapter_it_snippets() {
     //! [adapter_it_usage]
