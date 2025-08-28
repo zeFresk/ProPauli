@@ -138,7 +138,9 @@ TEST(Observable, apply_rz) {
 		obs.apply_rz(i, theta);
 
 		for (auto const& pt : pts) { // find all terms inside observable
-			EXPECT_EQ(*std::find(obs.begin(), obs.end(), pt), pt);
+			auto it = std::find(obs.begin(), obs.end(), pt);
+			ASSERT_NE(it, obs.end());
+			EXPECT_EQ(*it, pt);
 		}
 		EXPECT_EQ(obs.expectation_value(), expected_ev);
 	}

@@ -21,6 +21,15 @@ TEST(PauliTermContainer, init_span_pt1) {
 	EXPECT_EQ(nopt, PauliTerm{ "II" });
 }
 
+TEST(PauliTermContainer, init_sv1) {
+	PauliTermContainer<coeff_t> ptc{ "XYZX" };
+	EXPECT_EQ(ptc.nb_terms(), 1);
+	EXPECT_EQ(ptc.nb_qubits(), 4);
+	auto nopt = ptc[0];
+	EXPECT_EQ(nopt.size(), ptc.nb_qubits());
+	EXPECT_EQ(nopt, PauliTerm<coeff_t>{ "XYZX" });
+}
+
 TEST(PauliTermContainer, init_span_pt2) {
 	std::vector<PauliTerm<coeff_t>> vec{ PauliTerm{ "II" }, PauliTerm{ "XX" } };
 	PauliTermContainer<coeff_t> ptc{ vec };
