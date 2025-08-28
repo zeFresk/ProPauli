@@ -171,12 +171,12 @@ class NonOwningPauliTermPacked {
 	 * @return The coefficient if the term is diagonal in the Z-basis (contains only I/Z), otherwise 0.
 	 */
 	T expectation_value() const {
-		for (std::size_t i = 0; i < ptc.nb_qubits(); ++i) {
+		for (std::size_t i = 0; i < ptc.get().nb_qubits(); ++i) {
 			if (!get_pauli(i).commutes_with(p_z)) {
 				return T{ 0 };
 			}
 		}
-		return ptc.get_coefficient(idx);
+		return ptc.get().get_coefficient(idx);
 	}
 
 	/** @name Accessors and Mutators
