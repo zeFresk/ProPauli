@@ -1,15 +1,49 @@
 #ifndef PP_MERGE_HPP
 #define PP_MERGE_HPP
 
+/**
+ * @file merge.hpp
+ * @brief Provides an algorithm for merging identical Pauli terms.
+ *
+ * This file contains the implementation for merging Pauli terms within a `PauliTermContainer`.
+ * Merging is a crucial simplification step in the simulation, where terms with identical
+ * Pauli strings are combined into a single term by summing their coefficients. This reduces
+ * the total number of terms and, consequently, the computational cost.
+ */
+
 #include "pauli_term_container.hpp"
 
 #include <type_traits>
 #include <tsl/robin_set.h>
 
+/**
+ * @brief Merges identical Pauli terms within a container in-place, without extra allocations for the terms themselves.
+ * @tparam T The numeric type for the coefficients.
+ * @param paulis_ The container of Pauli terms to be merged. This container is modified directly.
+ *
+ * This function implements a high-performance merging algorithm. It iterates through the
+ * `PauliTermContainer` and uses a hash set (`tsl::robin_set`) to keep track of the unique
+ * Pauli strings it has encountered.
+ *
+ * The hash set stores non-owning views (`non_owning_t`) of the terms, which avoids costly
+ * memory allocations. When a term with a duplicate Pauli string is found, its coefficient is
+ * added to the original term (whose view is already in the set), and the duplicate term is
+
+ * removed from the container using an efficient swap-and-pop operation.
+ *
+ * @note This function uses `const_cast` as a targeted optimization. The elements in the
+ * hash set are normally `const`. However, since we only modify the coefficient (which is not
+ * part of the hash), we can safely cast away `const`-ness to update the coefficient in-place,
+ * avoiding the need to remove and re-insert the element.
+ *
+ * @snippet tests/snippets/merge.cpp merge_inplace
+ */
 template <typename T>
 void merge_inplace_noalloc(PauliTermContainer<T>& paulis_) {
 	using nopt_t = std::remove_cvref_t<decltype(paulis_)>::non_owning_t;
-	// optimal reserve + template parameters
+	// Use tsl::robin_set for high-performance hashing.
+	// The boolean template parameter `StoreHash` is set to false for better performance
+	// when the hash is cheap to compute, which is the case here.
 	tsl::robin_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>, std::allocator<nopt_t>,
 		       false>
 		hset;
@@ -19,9 +53,12 @@ void merge_inplace_noalloc(PauliTermContainer<T>& paulis_) {
 		auto nopt = paulis_[i];
 		auto c = nopt.coefficient();
 		auto [it, is_new] = hset.emplace(std::move(nopt));
-		if (!is_new) { // element already exists
-			const_cast<nopt_t*>(&(*it))->add_coeff(c); // updating coeff doesn't change hash
+		if (!is_new) { // A term with this Pauli string already exists in the set.
+			// Add the current coefficient to the existing term.
+			const_cast<nopt_t*>(&(*it))->add_coeff(c);
+			// Remove the current (duplicate) term from the container.
 			paulis_.remove_pauliterm(i);
+			// Decrement index to re-evaluate the new element at the current position.
 			--i;
 		}
 	}
@@ -178,6 +215,5 @@ void merge_inplace_std(PauliTermContainer<T>& paulis_) {
 #endif
 
 */
-
 
 #endif
