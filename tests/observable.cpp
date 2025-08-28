@@ -49,6 +49,13 @@ TEST(Observable, construct_from_iterators) {
 	EXPECT_EQ(obs[1], PauliTerm<coeff_t>("XI", -1));
 }
 
+TEST(Observable, construct_from_std_string_iterators) {
+	const std::vector<std::string> pts({ "IX", "ZZ" });
+	Observable obs{ pts.begin(), pts.end() };
+	EXPECT_EQ(obs[0], PauliTerm<coeff_t>("IX", 1));
+	EXPECT_EQ(obs[1], PauliTerm<coeff_t>("ZZ", 1));
+}
+
 TEST(Observable, apply_pauli) {
 	using enum Pauli_gates;
 	Observable obs{ "IXYZ", "ZXYI" };
