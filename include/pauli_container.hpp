@@ -6,6 +6,7 @@
 #include "non_owning_pauli_term.hpp"
 
 #include <algorithm>
+#include <bit>
 #include <cstddef>
 #include <iostream>
 #include <iterator>
@@ -59,6 +60,26 @@ constexpr std::array<Underlying, OBJS_PER_UNDERLYING> compute_mask_lut() {
 	return ret;
 }
 
+template <std::unsigned_integral T>
+constexpr T create_low_bit_mask() {
+	T mask = 0;
+	for (size_t i = 0; i < sizeof(T) * 8; i += 2) {
+		mask |= (T(1) << i);
+	}
+	return mask;
+}
+
+template <std::unsigned_integral T>
+constexpr int count_nonzero_pairs(T input) {
+	static constexpr T low_bits_mask = create_low_bit_mask<T>();
+	static constexpr T high_bits_mask = low_bits_mask << 1;
+
+	const T low_bits = input & low_bits_mask;
+	const T high_bits_shifted = (input & high_bits_mask) >> 1;
+	const T result_bits = low_bits | high_bits_shifted;
+
+	return std::popcount(result_bits);
+}
 template <typename TOut, typename ItIn>
 class AdapterIt {
 	ItIn it;
@@ -293,6 +314,17 @@ class PauliTermContainer {
 				  raw_bits.begin() + rhs_start);
 	}
 
+	std::size_t fast_pauli_weight(std::size_t index) const noexcept {
+		assert(index < nb_terms());
+		const auto start_idx = index * nb_underlying_per_pt;
+
+		std::size_t ret = 0;
+		for (std::size_t i = 0; i < nb_underlying_per_pt; ++i) {
+			ret += count_nonzero_pairs(raw_bits[start_idx + i]);
+		}
+		return ret;
+	}
+
 	T get_coefficient(std::size_t pt_index) const {
 		assert(pt_index < nb_terms());
 		return raw_coefficients[pt_index];
@@ -367,13 +399,7 @@ class PauliTermContainer {
 
 		T coefficient() const noexcept { return ptc.get().get_coefficient(idx); }
 
-		std::size_t pauli_weight() const {
-			std::size_t ret = 0;
-			for (std::size_t i = 0; i < size(); ++i) {
-				ret += get_pauli(i).weight();
-			}
-			return ret;
-		}
+		std::size_t pauli_weight() const noexcept { return ptc.get().fast_pauli_weight(idx); }
 
 		friend std::ostream& operator<<(std::ostream& os, ReadOnlyNonOwningPauliTermPacked const& pt) {
 			os << std::showpos << pt.coefficient() << " ";
@@ -450,13 +476,7 @@ class PauliTermContainer {
 		void set_coefficient(T coeff) { ptc.get().set_coefficient(idx, coeff); }
 		void add_coeff(T coeff) { set_coefficient(coefficient() + coeff); }
 
-		std::size_t pauli_weight() const {
-			std::size_t ret = 0;
-			for (std::size_t i = 0; i < size(); ++i) {
-				ret += get_pauli(i).weight();
-			}
-			return ret;
-		}
+		std::size_t pauli_weight() const noexcept { return ptc.get().fast_pauli_weight(idx); }
 
 		friend std::ostream& operator<<(std::ostream& os, NonOwningPauliTermPacked const& pt) {
 			os << std::showpos << pt.coefficient() << " ";
