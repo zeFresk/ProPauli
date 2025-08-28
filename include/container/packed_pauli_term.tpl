@@ -1,12 +1,32 @@
+/**
+ * @brief A lightweight, read-only, non-owning view of a single packed Pauli term.
+ *
+ * This class provides a `const` view of a Pauli term stored within a `PauliTermContainer`.
+ * It does not store the Pauli string or coefficient itself, but rather holds a reference
+ * to the container and an index to the term. All operations are delegated to the
+ * parent container, often using highly optimized "fast" methods that operate
+ * directly on the packed bit representation.
+ */
 class ReadOnlyNonOwningPauliTermPacked {
     protected:
+	/// @brief A const reference to the parent container that owns the data.
 	std::reference_wrapper<const PauliTermContainer<T, Underlying>> ptc;
+	/// @brief The index of the term this view refers to within the container.
 	std::size_t idx;
 
     public:
+	/**
+	 * @brief Constructs a read-only view.
+	 * @param ptc_ The parent container.
+	 * @param index The index of the term to view.
+	 */
 	ReadOnlyNonOwningPauliTermPacked(PauliTermContainer<T, Underlying> const& ptc_, std::size_t index)
 		: ptc(ptc_), idx(index) {}
 
+	/**
+	 * @brief Calculates the expectation value of the term.
+	 * @return The coefficient if the term is diagonal in the Z-basis (contains only I/Z), otherwise 0.
+	 */
 	T expectation_value() const {
 		for (std::size_t i = 0; i < size(); ++i) {
 			if (!get_pauli(i).commutes_with(p_z)) {
@@ -16,11 +36,32 @@ class ReadOnlyNonOwningPauliTermPacked {
 		return coefficient();
 	}
 
-	Pauli get_pauli(std::size_t qidx) const { return ptc.get().get_qubit(idx, qidx); }
-	decltype(auto) size() const { return ptc.get().nb_qubits(); }
-	// decltype(auto) begin() const { return PackedPauliIterator{ ptc, idx }; }
-	// decltype(auto) end() const { return PackedPauliIterator{ ptc, idx + 1 }; }
+	/** @name Accessors
+	 * @{
+	 */
 
+	/** @brief Gets the Pauli operator for a specific qubit. */
+	Pauli get_pauli(std::size_t qidx) const { return ptc.get().get_qubit(idx, qidx); }
+
+	/** @brief Gets the number of qubits in the term. */
+	decltype(auto) size() const { return ptc.get().nb_qubits(); }
+
+	/** @brief Gets the coefficient of the term. */
+	T coefficient() const noexcept { return ptc.get().get_coefficient(idx); }
+
+	/**
+	 * @brief Calculates the Pauli weight of the term.
+	 * @note This is a high-performance operation that delegates to the container's `fast_pauli_weight` method.
+	 */
+	std::size_t pauli_weight() const noexcept { return ptc.get().fast_pauli_weight(idx); }
+	/** @} */
+
+	/**
+	 * @brief Creates an owning `PauliTerm` copy from this view.
+	 * @return A new `PauliTerm<T>` object.
+	 * @note This is a potentially expensive operation as it requires unpacking the bit-packed
+	 * Pauli string and allocating a new vector.
+	 */
 	explicit operator PauliTerm<T>() const {
 		std::vector<Pauli> paulis;
 		paulis.reserve(size());
@@ -30,25 +71,55 @@ class ReadOnlyNonOwningPauliTermPacked {
 		return PauliTerm<T>{ paulis.begin(), paulis.end(), coefficient() };
 	}
 
+	/**
+	 * @brief Computes a hash of the Pauli string part of the term.
+	 * @note This is a high-performance operation that delegates to the container's `fast_phash` method.
+	 */
 	std::size_t phash() const noexcept { return ptc.get().fast_phash(idx); }
 
+	/** @name Comparison
+	 * @{
+	 */
+
+	/**
+	 * @brief Checks for deep equality (Pauli string and coefficient) between two views.
+	 */
 	friend bool operator==(ReadOnlyNonOwningPauliTermPacked const& lhs,
 			       ReadOnlyNonOwningPauliTermPacked const& rhs) {
 		return (lhs.size() == rhs.size()) && (lhs.coefficient() == rhs.coefficient()) &&
 		       lhs.equal_bitstring(rhs);
 	}
+
+	/**
+	 * @brief Checks for deep equality between a view and an owning `PauliTerm`.
+	 */
 	friend bool operator==(ReadOnlyNonOwningPauliTermPacked const& lhs, PauliTerm<T> const& rhs) {
 		return static_cast<PauliTerm<T>>(lhs) == rhs;
 	}
+
+	/**
+	 * @brief Checks for deep equality between an owning `PauliTerm` and a view.
+	 */
 	friend bool operator==(PauliTerm<T> const& lhs, ReadOnlyNonOwningPauliTermPacked const& rhs) {
 		return rhs == lhs;
 	}
 
+	/**
+	 * @brief Checks if the Pauli strings of two views are identical.
+	 * @note This method has a fast path. If both views refer to the same parent container,
+	 * it uses a highly optimized bitwise comparison. Otherwise, it performs a slower,
+	 * element-by-element check.
+	 */
 	bool equal_bitstring(ReadOnlyNonOwningPauliTermPacked const& oth) const {
 		return (&ptc.get() == &oth.ptc.get()) ? ptc.get().fast_equal_bitstring(idx, oth.idx) :
 							slow_equal_bitstring(oth);
 	}
 
+	/**
+	 * @brief Performs an element-by-element comparison of the Pauli string.
+	 * @return `true` if the Pauli strings are identical.
+	 * @note This is the fallback method for `equal_bitstring` when views point to different containers.
+	 */
 	bool slow_equal_bitstring(ReadOnlyNonOwningPauliTermPacked const& oth) const {
 		if (oth.size() != size())
 			return false;
@@ -59,11 +130,11 @@ class ReadOnlyNonOwningPauliTermPacked {
 		}
 		return true;
 	}
+	/** @} */
 
-	T coefficient() const noexcept { return ptc.get().get_coefficient(idx); }
-
-	std::size_t pauli_weight() const noexcept { return ptc.get().fast_pauli_weight(idx); }
-
+	/**
+	 * @brief Prints the term to an output stream.
+	 */
 	friend std::ostream& operator<<(std::ostream& os, ReadOnlyNonOwningPauliTermPacked const& pt) {
 		os << std::showpos << pt.coefficient() << " ";
 		for (std::size_t i = 0; i < pt.size(); ++i) {
@@ -73,13 +144,32 @@ class ReadOnlyNonOwningPauliTermPacked {
 	}
 };
 
+/**
+ * @brief A lightweight, mutable, non-owning view of a single packed Pauli term.
+ *
+ * This class provides a mutable view of a Pauli term stored within a `PauliTermContainer`.
+ * It allows for both reading and in-place modification of the term's data. All operations,
+ * including gate applications, are delegated to the parent container, leveraging its
+ * performance-optimized methods that act directly on packed data.
+ */
 class NonOwningPauliTermPacked {
+	/// @brief A reference to the parent container that owns the data.
 	std::reference_wrapper<PauliTermContainer<T, Underlying>> ptc;
+	/// @brief The index of the term this view refers to within the container.
 	std::size_t idx;
 
     public:
+	/**
+	 * @brief Constructs a mutable view.
+	 * @param ptc_ The parent container.
+	 * @param index The index of the term to view.
+	 */
 	NonOwningPauliTermPacked(PauliTermContainer<T, Underlying>& ptc_, std::size_t index) : ptc(ptc_), idx(index) {}
 
+	/**
+	 * @brief Calculates the expectation value of the term.
+	 * @return The coefficient if the term is diagonal in the Z-basis (contains only I/Z), otherwise 0.
+	 */
 	T expectation_value() const {
 		for (std::size_t i = 0; i < ptc.nb_qubits(); ++i) {
 			if (!get_pauli(i).commutes_with(p_z)) {
@@ -89,12 +179,39 @@ class NonOwningPauliTermPacked {
 		return ptc.get_coefficient(idx);
 	}
 
+	/** @name Accessors and Mutators
+	 * @{
+	 */
+	/** @brief Gets the Pauli operator for a specific qubit. */
 	Pauli get_pauli(std::size_t qidx) const { return ptc.get().get_qubit(idx, qidx); }
-	void set_pauli(std::size_t qidx, Pauli p) { ptc.get().set_qubit(idx, qidx, p); }
-	decltype(auto) size() const { return ptc.get().nb_qubits(); }
-	// decltype(auto) begin() const { return PackedPauliIterator{ ptc, idx }; }
-	// decltype(auto) end() const { return PackedPauliIterator{ ptc, idx + 1 }; }
 
+	/** @brief Sets the Pauli operator for a specific qubit. */
+	void set_pauli(std::size_t qidx, Pauli p) { ptc.get().set_qubit(idx, qidx, p); }
+
+	/** @brief Gets the number of qubits in the term. */
+	decltype(auto) size() const { return ptc.get().nb_qubits(); }
+
+	/** @brief Gets the coefficient of the term. */
+	T coefficient() const noexcept { return ptc.get().get_coefficient(idx); }
+
+	/** @brief Sets the coefficient of the term. */
+	void set_coefficient(T coeff) { ptc.get().set_coefficient(idx, coeff); }
+
+	/** @brief Adds a value to the term's coefficient. */
+	void add_coeff(T coeff) { set_coefficient(coefficient() + coeff); }
+
+	/**
+	 * @brief Calculates the Pauli weight of the term.
+	 * @note This is a high-performance operation that delegates to the container's `fast_pauli_weight` method.
+	 */
+	std::size_t pauli_weight() const noexcept { return ptc.get().fast_pauli_weight(idx); }
+	/** @} */
+
+	/**
+	 * @brief Creates an owning `PauliTerm` copy from this view.
+	 * @return A new `PauliTerm<T>` object.
+	 * @note This is a potentially expensive operation.
+	 */
 	explicit operator PauliTerm<T>() const {
 		std::vector<Pauli> paulis;
 		paulis.reserve(size());
@@ -105,8 +222,18 @@ class NonOwningPauliTermPacked {
 		return ret;
 	}
 
+	/** @brief Implicitly converts a mutable view to a read-only view. */
+	operator ReadOnlyNonOwningPauliTermPacked() const { return ReadOnlyNonOwningPauliTermPacked(ptc, idx); }
+
+	/**
+	 * @brief Computes a hash of the Pauli string part of the term.
+	 * @note This is a high-performance operation that delegates to the container's `fast_phash` method.
+	 */
 	std::size_t phash() const noexcept { return ptc.get().fast_phash(idx); }
 
+	/** @name Comparison
+	 * @{
+	 */
 	friend bool operator==(NonOwningPauliTermPacked const& lhs, NonOwningPauliTermPacked const& rhs) {
 		return (lhs.size() == rhs.size()) && (lhs.coefficient() == rhs.coefficient()) &&
 		       lhs.equal_bitstring(rhs);
@@ -115,12 +242,10 @@ class NonOwningPauliTermPacked {
 		return static_cast<PauliTerm<T>>(rhs) == lhs;
 	}
 	friend bool operator==(NonOwningPauliTermPacked const& lhs, PauliTerm<T> const& rhs) { return rhs == lhs; }
-
 	bool equal_bitstring(NonOwningPauliTermPacked const& oth) const {
 		return (&ptc.get() == &oth.ptc.get()) ? ptc.get().fast_equal_bitstring(idx, oth.idx) :
 							slow_equal_bitstring(oth);
 	}
-
 	bool slow_equal_bitstring(NonOwningPauliTermPacked const& oth) const {
 		if (oth.size() != size())
 			return false;
@@ -131,38 +256,30 @@ class NonOwningPauliTermPacked {
 		}
 		return true;
 	}
+	/** @} */
 
-	T coefficient() const noexcept { return ptc.get().get_coefficient(idx); }
-	void set_coefficient(T coeff) { ptc.get().set_coefficient(idx, coeff); }
-	void add_coeff(T coeff) { set_coefficient(coefficient() + coeff); }
+	/** @name Content Copying
+	 * @{
+	 */
 
-	std::size_t pauli_weight() const noexcept { return ptc.get().fast_pauli_weight(idx); }
-
-	friend std::ostream& operator<<(std::ostream& os, NonOwningPauliTermPacked const& pt) {
-		os << std::showpos << pt.coefficient() << " ";
-		for (std::size_t i = 0; i < pt.size(); ++i) {
-			os << pt.get_pauli(i);
-		}
-		return os;
-	}
-
+	/** @brief Copies the full content (Pauli string and coefficient) from another view. */
 	void copy_content(NonOwningPauliTermPacked const& nopt) {
 		copy_paulis(nopt);
 		set_coefficient(nopt.coefficient());
 	}
-
+	/** @brief Copies the full content from a read-only view. */
 	void copy_content(ReadOnlyNonOwningPauliTermPacked const& nopt) {
 		copy_paulis(nopt);
 		set_coefficient(nopt.coefficient());
 	}
-
+	/** @brief Copies just the Pauli string from another view. */
 	void copy_paulis(ReadOnlyNonOwningPauliTermPacked const& ronopt) {
 		assert(ronopt.size() == size());
 		for (std::size_t i = 0; i < size(); ++i) {
 			set_pauli(i, ronopt.get_pauli(i));
 		}
 	}
-
+	/** @brief Copies just the Pauli string from another mutable view. */
 	void copy_paulis(NonOwningPauliTermPacked const& nopt) {
 		assert(nopt.size() == size());
 		for (std::size_t i = 0; i < size(); ++i) {
@@ -170,32 +287,35 @@ class NonOwningPauliTermPacked {
 		}
 	}
 
+	/**
+	 * @brief Copies content from another view using the container's optimized copy routine.
+	 * @pre Both views must belong to the same parent container.
+	 */
 	void fast_copy_content(NonOwningPauliTermPacked const& nopt) {
 		assert(&nopt.ptc.get() == &ptc.get());
 		set_coefficient(nopt.coefficient());
 		ptc.get().copy_fast(nopt.idx, idx);
 	}
+	/** @} */
 
-	operator ReadOnlyNonOwningPauliTermPacked() const { return ReadOnlyNonOwningPauliTermPacked(ptc, idx); }
-
+	/** @name Gate Application
+	 * @{
+	 */
 	void apply_pauli(Pauli_gates g, unsigned qubit) {
 		assert(qubit < size());
 		set_coefficient(coefficient() * get_pauli(qubit).apply_pauli(g));
 	}
-
 	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit) {
 		assert(qubit < size());
 		auto p = get_pauli(qubit);
 		set_coefficient(coefficient() * p.apply_clifford(g));
 		set_pauli(qubit, p);
 	}
-
 	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p) {
 		assert(qubit < size());
 		auto pauli = get_pauli(qubit);
 		set_coefficient(coefficient() * pauli.apply_unital_noise(n, p));
 	}
-
 	void apply_cx(unsigned control, unsigned target) {
 		assert(control != target && "cx can't use same control and target");
 		assert(control < size() && target < size());
@@ -205,7 +325,6 @@ class NonOwningPauliTermPacked {
 		set_pauli(control, pctrl);
 		set_pauli(target, ptarg);
 	}
-
 	void apply_rz(unsigned qubit, T theta, NonOwningPauliTermPacked& output) {
 		assert(qubit < size());
 		assert(get_pauli(qubit) != p_i && get_pauli(qubit) != p_z && "Should not happen");
@@ -215,7 +334,6 @@ class NonOwningPauliTermPacked {
 
 		set_coefficient(coefficient() * cos_teta);
 
-		// use commutators?
 		if (get_pauli(qubit) == p_x) {
 			output.set_pauli(qubit, p_y);
 			output.set_coefficient(output.coefficient() * -sin_theta);
@@ -225,19 +343,25 @@ class NonOwningPauliTermPacked {
 			output.set_coefficient(output.coefficient() * sin_theta);
 		}
 	}
-
 	void apply_amplitude_damping_xy([[maybe_unused]] unsigned qubit, T p) {
 		assert(qubit < size());
 		assert(get_pauli(qubit) != p_z && get_pauli(qubit) != p_i && "Should not happen");
 
 		set_coefficient(coefficient() * sqrt(1 - p));
 	}
-
 	void apply_amplitude_damping_z(unsigned qubit, T p, NonOwningPauliTermPacked& output) {
 		assert(get_pauli(qubit) == p_z && "Should not happen");
 		output.set_coefficient(output.coefficient() * p);
 		output.set_pauli(qubit, p_i);
-
 		set_coefficient(coefficient() * (1 - p));
+	}
+	/** @} */
+
+	/**
+	 * @brief Prints the term to an output stream.
+	 */
+	friend std::ostream& operator<<(std::ostream& os, NonOwningPauliTermPacked const& pt) {
+		os << static_cast<ReadOnlyNonOwningPauliTermPacked>(pt);
+		return os;
 	}
 };
