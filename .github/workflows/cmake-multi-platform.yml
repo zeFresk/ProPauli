@@ -38,7 +38,7 @@ jobs:
       - name: Install latest Clang (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install llvm cmake
+          brew install llvm
           echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
 
 
