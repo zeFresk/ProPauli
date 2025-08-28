@@ -36,7 +36,7 @@ class AdapterIt {
 	 * @brief Constructs an AdapterIt from a given input iterator.
 	 * @param it_in The input iterator to wrap.
 	 */
-	AdapterIt(ItIn&& it_in) : it(it_in), obj(nullptr) {}
+	AdapterIt(ItIn it_in) : it(it_in), obj(nullptr) {}
 
 	/** @name Standard Iterator Traits
 	 * @{
@@ -108,7 +108,7 @@ class AdapterIt {
 	friend bool operator!=(AdapterIt const& lhs, AdapterIt const& rhs) { return !(lhs == rhs); }
 
     private:
-	ItIn it; ///< The underlying input iterator.
+	std::remove_cvref_t<ItIn> it; ///< The underlying input iterator.
 	std::shared_ptr<TOut> obj; ///< A shared pointer to the lazily-initialized, converted object.
 
 	/**

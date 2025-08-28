@@ -155,7 +155,8 @@ class PauliTermContainer {
 	 * @brief Constructs the container from a range of `PauliTerm`-like objects.
 	 * @tparam It An iterator type that dereferences to an object with `size()`, `coefficient()`, and `operator[]`.
 	 */
-	template <typename It>
+	template <typename It,
+		  std::enable_if_t<std::is_convertible_v<decltype(std::declval<It>()->coefficient()), T>, bool> = true>
 	PauliTermContainer(It&& begin, It&& end) {
 		const std::size_t size = std::distance(begin, end);
 		if (size == 0) {
@@ -189,6 +190,12 @@ class PauliTermContainer {
 	PauliTermContainer(std::initializer_list<std::string_view> lst)
 		: PauliTermContainer(AdapterIt<PauliTerm<T>, decltype(lst)::iterator>{ lst.begin() },
 				     AdapterIt<PauliTerm<T>, decltype(lst)::iterator>{ lst.end() }) {}
+
+	template <typename It,
+		  std::enable_if_t<std::is_convertible_v<decltype(*std::declval<It>()), std::string_view>, bool> = true>
+	PauliTermContainer(It&& begin, It&& end)
+		: PauliTermContainer(AdapterIt<PauliTerm<T>, It>{ std::forward<It>(begin) },
+				     AdapterIt<PauliTerm<T>, It>{ std::forward<It>(end) }) {}
 	/** @} */
 
 	PauliTermContainer(PauliTermContainer const& oth) = default;
