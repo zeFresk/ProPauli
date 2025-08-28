@@ -2,8 +2,7 @@
 #define PP_TRUNCATE_HPP
 
 #include "pauli.hpp"
-#include "pauli_container.hpp"
-#include "pauli_term.hpp"
+#include "pauli_term_container.hpp"
 
 #include <cstddef>
 #include <memory>

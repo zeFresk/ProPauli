@@ -1,18 +1,38 @@
 #ifndef PP_MERGE_HPP
 #define PP_MERGE_HPP
 
-#include "pauli_container.hpp"
-#include "pauli_term.hpp"
+#include "pauli_term_container.hpp"
 
-#include <functional>
-#include <iostream>
 #include <type_traits>
-#include <unordered_set>
-#include <vector>
-#include <unordered_map>
-
 #include <tsl/robin_set.h>
 
+template <typename T>
+void merge_inplace_noalloc(PauliTermContainer<T>& paulis_) {
+	using nopt_t = std::remove_cvref_t<decltype(paulis_)>::non_owning_t;
+	// optimal reserve + template parameters
+	tsl::robin_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>, std::allocator<nopt_t>,
+		       false>
+		hset;
+	hset.reserve(paulis_.nb_terms());
+
+	for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
+		auto nopt = paulis_[i];
+		auto c = nopt.coefficient();
+		auto [it, is_new] = hset.emplace(std::move(nopt));
+		if (!is_new) { // element already exists
+			const_cast<nopt_t*>(&(*it))->add_coeff(c); // updating coeff doesn't change hash
+			paulis_.remove_pauliterm(i);
+			--i;
+		}
+	}
+}
+
+/* ** old versions ** */
+
+/*
+
+#include <vector>
+#include "pauli_term.hpp"
 template <typename T>
 void merge_hmap(std::vector<PauliTerm<T>>& paulis_) {
 	// associate pauli string hash with new Pauli Term
@@ -81,6 +101,11 @@ void merge_inplace_vec(std::vector<PauliTerm<T>>& paulis_) {
 	std::erase_if(paulis_, [](auto const& pt) { return pt.coefficient() == T{ 0 }; });
 }
 
+
+#include <functional>
+#include <unordered_set>
+#include <unordered_map>
+
 template <typename T>
 void merge_inplace_move(std::vector<PauliTerm<T>>& paulis_) {
 	// associate pauli string hash with new Pauli Term
@@ -128,27 +153,6 @@ static std::uniform_int_distribution dis;
 #endif
 
 template <typename T>
-void merge_inplace_noalloc(PauliTermContainer<T>& paulis_) {
-	using nopt_t = std::remove_cvref_t<decltype(paulis_)>::non_owning_t;
-	// optimal reserve + template parameters
-	tsl::robin_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>, std::allocator<nopt_t>,
-		       false>
-		hset;
-	hset.reserve(paulis_.nb_terms());
-
-	for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
-		auto nopt = paulis_[i];
-		auto c = nopt.coefficient();
-		auto [it, is_new] = hset.emplace(std::move(nopt));
-		if (!is_new) { // element already exists
-			const_cast<nopt_t*>(&(*it))->add_coeff(c); // updating coeff doesn't change hash
-			paulis_.remove_pauliterm(i);
-			--i;
-		}
-	}
-}
-
-template <typename T>
 void merge_inplace_std(PauliTermContainer<T>& paulis_) {
 	std::unordered_set<NonOwningPauliTerm<T>, std::hash<NonOwningPauliTerm<T>>, PauliStringEqualNonOwning<T>> hset;
 	// hset.reserve(paulis_.nb_terms()); // not needed for tsl, according to benchmarks on SU2_8x8
@@ -163,6 +167,7 @@ void merge_inplace_std(PauliTermContainer<T>& paulis_) {
 			--i;
 		}
 	}
+}
 
 #ifdef PROFILE_MERGE
 	static std::ofstream log{ std::string("/tmp/pp_merge_profile.") + std::to_string(dis(gen)) +
@@ -171,6 +176,8 @@ void merge_inplace_std(PauliTermContainer<T>& paulis_) {
 	auto badness = unordered_set_badness(hset);
 	log << "badness: " << badness << "\n";
 #endif
-}
+
+*/
+
 
 #endif

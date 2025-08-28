@@ -1,8 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "pauli.hpp"
-#include "pauli_container.hpp"
-#include "non_owning_pauli_term.hpp"
+#include "pauli_term_container.hpp"
 #include "pauli_term.hpp"
 
 TEST(PauliTermContainer, init_qubits) {

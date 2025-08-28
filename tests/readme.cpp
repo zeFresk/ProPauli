@@ -1,8 +1,7 @@
 #include "circuit.hpp"
 
 #include "gtest/gtest.h"
-#include "pauli_container.hpp"
-#include "scheduler.hpp"
+#include "pauli_term_container.hpp"
 #include "truncate.hpp"
 #include "observable.hpp"
 #include "pauli.hpp"

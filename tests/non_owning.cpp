@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 
 #include "pauli.hpp"
-#include "pauli_container.hpp"
 #include "non_owning_pauli_term.hpp"
 #include "pauli_term.hpp"
 #include <algorithm>
