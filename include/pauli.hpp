@@ -211,7 +211,7 @@ class Pauli {
 		}
 	}
 
-	Pauli() = delete;
+	Pauli() = default;
 	Pauli(Pauli const&) = default;
 	Pauli(Pauli&&) noexcept = default;
 	Pauli& operator=(Pauli const&) = default;
@@ -301,6 +301,8 @@ class Pauli {
 		return os;
 	}
 };
+
+static_assert(sizeof(Pauli) == sizeof(std::uint8_t));
 
 static constexpr auto p_i = Pauli{ Pauli_enum::I };
 static constexpr auto p_x = Pauli{ Pauli_enum::X };

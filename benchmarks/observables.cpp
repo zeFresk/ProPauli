@@ -5,6 +5,7 @@
 #include "observable.hpp"
 
 #include "helper.hpp"
+#include <chrono>
 
 static constexpr auto buffer_size = 1024 * 1024;
 
@@ -111,6 +112,8 @@ static void Observable_apply_rz_ntimes(benchmark::State& state) {
 
 	for (auto _ : state) {
 		auto rd_obs = rd_obs_copy;
+		auto start = std::chrono::high_resolution_clock::now();
+
 		for (std::size_t j = 0; j < nb_rz; ++j) {
 			auto qubit = random_idx[i];
 			auto theta = random_theta[i];
@@ -119,6 +122,10 @@ static void Observable_apply_rz_ntimes(benchmark::State& state) {
 
 			i = (i + 1) % buffer_size;
 		}
+
+		auto end = std::chrono::high_resolution_clock::now();
+		auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+		state.SetIterationTime(elapsed_seconds.count());
 	}
 }
 
@@ -162,8 +169,14 @@ static void Observable_merge_after_nrz(benchmark::State& state) {
 
 	for (auto _ : state) {
 		auto obs = rd_obs_copy;
+		auto start = std::chrono::high_resolution_clock::now();
+
 		obs.merge();
 		benchmark::DoNotOptimize(obs);
+
+		auto end = std::chrono::high_resolution_clock::now();
+		auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+		state.SetIterationTime(elapsed_seconds.count());
 	}
 }
 
@@ -187,8 +200,14 @@ static void Observable_truncate_coeff_after_nrz(benchmark::State& state) {
 
 	for (auto _ : state) {
 		auto obs = rd_obs_copy;
+		auto start = std::chrono::high_resolution_clock::now();
+
 		auto nb_truncated = obs.truncate(ct);
 		benchmark::DoNotOptimize(nb_truncated);
+
+		auto end = std::chrono::high_resolution_clock::now();
+		auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+		state.SetIterationTime(elapsed_seconds.count());
 	}
 }
 
@@ -212,8 +231,14 @@ static void Observable_truncate_weight10_after_nrz(benchmark::State& state) {
 
 	for (auto _ : state) {
 		auto obs = rd_obs_copy;
+		auto start = std::chrono::high_resolution_clock::now();
+
 		auto nb_truncated = obs.truncate(wt);
 		benchmark::DoNotOptimize(nb_truncated);
+
+		auto end = std::chrono::high_resolution_clock::now();
+		auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+		state.SetIterationTime(elapsed_seconds.count());
 	}
 }
 
@@ -326,11 +351,11 @@ BENCHMARK(Observable_apply_rz_once)->Range(1, 1024);
 BENCHMARK(Observable_apply_rz_ntimes)->Ranges({ { 1, 1024 }, { 1, 16 } });
 BENCHMARK(Observable_ev_after_nrz)->Ranges({ { 1, 1024 }, { 16, 16 } });
 BENCHMARK(Observable_merge_after_nrz)
-	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 16, 2) });
+	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 8, 2) });
 BENCHMARK(Observable_truncate_coeff_after_nrz)
-	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 16, 2) });
+	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 8, 2) });
 BENCHMARK(Observable_truncate_weight10_after_nrz)
-	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 16, 2) });
+	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 8, 2) });
 BENCHMARK(Observable_appy_amplitude_damping_i)->Range(1, 1024);
 BENCHMARK(Observable_appy_amplitude_damping_xy)->Range(1, 1024);
 BENCHMARK(Observable_appy_amplitude_damping_z)->Range(1, 1024);

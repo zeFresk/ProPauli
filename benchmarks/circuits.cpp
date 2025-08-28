@@ -41,11 +41,11 @@ static void Circuit_add_random_string(benchmark::State& state) {
 	std::generate_n(std::back_inserter(random_num), buffer_size, []() { return random_in(9); });
 
 	std::size_t i = 0;
-	auto qc = Circuit{ 1 };
+	auto qc = Circuit{ 2 };
 
 	for (auto _ : state) {
 		if (i >= buffer_size) {
-			qc.reset();
+			qc = Circuit{ 2 };
 			i = 0;
 		}
 		switch (random_num[i]) {
@@ -87,7 +87,7 @@ static void Circuit_run_paulis(benchmark::State& state) {
 	const unsigned nb_gates = state.range(1);
 	std::vector<std::size_t> random_num;
 	random_num.reserve(buffer_size);
-	std::generate_n(std::back_inserter(random_num), buffer_size, [&]() { return random_in(state.range(0)-1); });
+	std::generate_n(std::back_inserter(random_num), buffer_size, [&]() { return random_in(state.range(0) - 1); });
 
 	auto qc = Circuit{ static_cast<unsigned>(state.range(0)) };
 

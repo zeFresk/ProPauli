@@ -6,7 +6,7 @@ set(BENCHMARK OFF CACHE BOOL "Build benchmarks")
 set(TEST OFF CACHE BOOL "Build tests")
 
 project(ProPauli
-	VERSION 1.1.1
+	VERSION 2.0.0
 DESCRIPTION "Fast and efficient C++ library for Pauli Propagation"
 	LANGUAGES CXX)
 
@@ -44,28 +44,37 @@ target_compile_features(propaulib PUBLIC cxx_std_23)
 target_compile_options(propaulib PUBLIC
 	$<$<CXX_COMPILER_ID:MSVC>:/W4>
 	$<$<CXX_COMPILER_ID:Clang,GNU>:-Wall -Wextra -Wpedantic>
-									#$<$<CXX_COMPILER_ID:Clang>:-stdlib=libc++>
+										#$<$<CXX_COMPILER_ID:Clang>:-stdlib=libc++>
 	$<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/O2>
 	$<$<AND:$<CONFIG:Release>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-O3 -march=native -g>
 	$<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:Clang>>:-ffast-math>
 	$<$<CONFIG:Debug>:-g>
-	$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>,$<BOOL:${SANITIZE}>>:-fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize=vptr>
+	$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>,$<BOOL:${SANITIZE}>>:-fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined>
 	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:GNU>>:-ftest-coverage -fprofile-arcs>
 	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:Clang>>:-fprofile-instr-generate -fcoverage-mapping --coverage>
 	)
 
 target_link_options(propaulib INTERFACE
-	$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>,$<BOOL:${SANITIZE}>>:-fsanitize=address -fsanitize=undefined -fno-sanitize=vptr>
+	$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>,$<BOOL:${SANITIZE}>>:-fsanitize=address -fsanitize=undefined>
 	$<$<AND:$<BOOL:${COVERAGE}>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-fprofile-instr-generate --coverage>
-									#$<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>
+										#$<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>
 	)
+
+include(FetchContent)
+FetchContent_Declare(
+	robin-map
+	GIT_REPOSITORY https://github.com/Tessil/robin-map
+	GIT_TAG v1.4.0
+)
+FetchContent_MakeAvailable(robin-map)
+target_link_libraries(propaulib tsl::robin_map)
 
 if (TEST)
 	# Build de GTest
 	include(FetchContent)
 	FetchContent_Declare(
 		googletest
-									# Specify the commit you depend on and update it regularly.
+										# Specify the commit you depend on and update it regularly.
 		URL https://github.com/google/googletest/archive/52eb8108c5bdec04579160ae17225d66034bd723.zip
 		DOWNLOAD_EXTRACT_TIMESTAMP true
 )
@@ -135,7 +144,7 @@ if (COVERAGE)
 	endif()
 endif()
 
-#doc 
+#doc
 if (DOCUMENTATION)
 	add_subdirectory(doc)
 endif()
