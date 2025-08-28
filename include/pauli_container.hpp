@@ -283,6 +283,16 @@ class PauliTermContainer {
 		return ret;
 	}
 
+	bool fast_equal_bitstring(std::size_t index_lhs, std::size_t index_rhs) const noexcept {
+		assert(index_lhs < nb_terms());
+		assert(index_rhs < nb_terms());
+		const std::size_t lhs_start = index_lhs * nb_underlying_per_pt;
+		const std::size_t lhs_end = lhs_start + nb_underlying_per_pt;
+		const std::size_t rhs_start = index_rhs * nb_underlying_per_pt;
+		return std::equal(raw_bits.begin() + lhs_start, raw_bits.begin() + lhs_end,
+				  raw_bits.begin() + rhs_start);
+	}
+
 	T get_coefficient(std::size_t pt_index) const {
 		assert(pt_index < nb_terms());
 		return raw_coefficients[pt_index];
@@ -340,6 +350,11 @@ class PauliTermContainer {
 		}
 
 		bool equal_bitstring(ReadOnlyNonOwningPauliTermPacked const& oth) const {
+			return (&ptc.get() == &oth.ptc.get()) ? ptc.get().fast_equal_bitstring(idx, oth.idx) :
+								slow_equal_bitstring(oth);
+		}
+
+		bool slow_equal_bitstring(ReadOnlyNonOwningPauliTermPacked const& oth) const {
 			if (oth.size() != size())
 				return false;
 			for (std::size_t i = 0; i < size(); ++i) {
@@ -416,6 +431,11 @@ class PauliTermContainer {
 		}
 
 		bool equal_bitstring(NonOwningPauliTermPacked const& oth) const {
+			return (&ptc.get() == &oth.ptc.get()) ? ptc.get().fast_equal_bitstring(idx, oth.idx) :
+								slow_equal_bitstring(oth);
+		}
+
+		bool slow_equal_bitstring(NonOwningPauliTermPacked const& oth) const {
 			if (oth.size() != size())
 				return false;
 			for (std::size_t i = 0; i < size(); ++i) {
@@ -634,7 +654,8 @@ class PauliTermContainer {
 
 		ReadOnlyNonOwningIterator& operator++() {
 			++idx;
-			return *this;;
+			return *this;
+			;
 		}
 
 		ReadOnlyNonOwningIterator operator++(int) {
