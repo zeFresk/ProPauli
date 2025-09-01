@@ -313,8 +313,8 @@ class KeepNTruncator : public Truncator<T> {
 
 		T coeff_threshold =
 			find_nth_smallest_coeff(paulis.get_coefficients().begin(), paulis.get_coefficients().end());
-		CoefficientTruncator<> ct{ coeff_threshold };
-		return ct.truncate(paulis);
+		return std::erase_if(paulis,
+				     [=](auto const& pt) { return std::abs(pt.coefficient()) <= coeff_threshold; });
 	}
 };
 
