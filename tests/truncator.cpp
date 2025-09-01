@@ -38,6 +38,20 @@ TEST(Truncator, WeightTruncator) {
 	EXPECT_EQ(pts[0], ept);
 }
 
+TEST(Truncator, KeepNTruncator) {
+	KeepNTruncator nt{ 2 };
+	std::vector<PauliTerm<coeff_t>> pts_data = {
+		{ "IIII", 0.49 }, { "YYYY", -0.49 }, { "IIIX", 0.02 }, { "ZZZZ", 0.1 }
+	};
+	PauliTermContainer<coeff_t> pts{ pts_data };
+	auto ept = pts[0];
+	auto removed = nt.truncate(pts);
+	EXPECT_EQ(removed, 2);
+	EXPECT_EQ(pts.nb_terms(), 2);
+	EXPECT_EQ(pts[0], ept);
+	EXPECT_EQ(pts[1], PauliTerm("YYYY", -0.49));
+}
+
 TEST(Truncator, MultiTruncator) {
 	WeightTruncator wt{ 4 };
 	CoefficientTruncator<> ct{ 0.1f };
@@ -72,7 +86,7 @@ class DeleteFirstTruncator : public Truncator<T> {
 	DeleteFirstTruncator() {}
 	~DeleteFirstTruncator() override {}
 
-	std::size_t truncate(PauliTermContainer<T>& paulis) const override {
+	std::size_t truncate(PauliTermContainer<T>& paulis) override {
 		if (paulis.nb_terms() >= 1) {
 			paulis.remove_pauliterm(0);
 			return 1;

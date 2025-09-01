@@ -18,6 +18,7 @@
 #include "pauli.hpp"
 #include "pauli_term_container.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <tuple>
@@ -37,7 +38,7 @@ class CoefficientPredicate {
 	 * @brief Constructs the predicate with a given threshold.
 	 * @param threshold Terms with coefficient magnitude smaller than this will be marked for removal.
 	 */
-	CoefficientPredicate(T&& threshold) : threshold_(threshold) {}
+	CoefficientPredicate(T threshold) : threshold_(threshold) {}
 
 	/**
 	 * @brief Evaluates the predicate for a given Pauli term.
@@ -63,7 +64,7 @@ class WeightPredicate {
 	 * @brief Constructs the predicate with a given weight threshold.
 	 * @param weight_threshold Terms with a Pauli weight greater than or equal to this will be removed.
 	 */
-	WeightPredicate(std::size_t&& weight_threshold) : weight_threshold_(weight_threshold) {}
+	WeightPredicate(std::size_t weight_threshold) : weight_threshold_(weight_threshold) {}
 
 	/**
 	 * @brief Evaluates the predicate for a given Pauli term.
@@ -113,7 +114,7 @@ class Truncator {
 	 * @param paulis The container of Pauli terms to truncate.
 	 * @return The number of terms removed.
 	 */
-	virtual std::size_t truncate(PauliTermContainer<T>& paulis) const = 0;
+	virtual std::size_t truncate(PauliTermContainer<T>& paulis) = 0;
 };
 
 /**
@@ -138,7 +139,7 @@ class PredicateTruncator : public Truncator<T> {
 	template <typename... Args, std::enable_if_t<std::is_constructible_v<P, Args...>, bool> = true>
 	PredicateTruncator(Args&&... args) : pred{ P(std::forward<Args>(args)...) } {}
 
-	std::size_t truncate(PauliTermContainer<T>& paulis) const override { return std::erase_if(paulis, pred); }
+	std::size_t truncate(PauliTermContainer<T>& paulis) override { return std::erase_if(paulis, pred); }
 };
 
 /**
@@ -174,7 +175,7 @@ class Truncators : public Truncator<T> {
 	std::tuple<Ts...> truncators;
 
 	template <typename P, std::size_t... Is>
-	std::size_t truncate_impl(P&& paulis, std::index_sequence<Is...>) const {
+	std::size_t truncate_impl(P&& paulis, std::index_sequence<Is...>) {
 		return (std::get<Is>(truncators).truncate(paulis) + ... + 0);
 	}
 
@@ -182,7 +183,7 @@ class Truncators : public Truncator<T> {
 	Truncators(Ts&&... truncs) : truncators(std::forward<Ts>(truncs)...) {}
 	~Truncators() override = default;
 
-	std::size_t truncate(PauliTermContainer<T>& paulis) const override {
+	std::size_t truncate(PauliTermContainer<T>& paulis) override {
 		return truncate_impl(paulis, std::index_sequence_for<Ts...>{});
 	}
 };
@@ -233,12 +234,87 @@ class RuntimeMultiTruncators : public Truncator<T> {
 	RuntimeMultiTruncators(Iter&& begin, Iter&& end) : truncs(begin, end) {}
 	~RuntimeMultiTruncators() override = default;
 
-	std::size_t truncate(PauliTermContainer<T>& paulis) const override {
+	std::size_t truncate(PauliTermContainer<T>& paulis) override {
 		std::size_t ret = 0;
 		for (const auto& trunc : truncs) {
 			ret += trunc->truncate(paulis);
 		}
 		return ret;
+	}
+};
+
+/**
+ * @brief A truncator that keeps only the N Pauli terms with the largest coefficients norm.
+ * @tparam T The numeric type for the coefficient.
+ *
+ * This truncator ensures that after truncation, the observable contains at most `N` terms.
+ * It identifies the `N` terms with the largest coefficients norms and removes all others.
+ *
+ * @note The selection uses an efficient heap-based selection algorithm to find the removal
+ * threshold without performing a full sort of the terms.
+ *
+ */
+template <typename T = coeff_t>
+class KeepNTruncator : public Truncator<T> {
+	std::size_t nb_terms;
+	std::vector<T> heap;
+
+	/**
+	 * @brief Finds the coefficient that will serve as the threshold for removal.
+	 * @return The value of the (total_terms - N)-th smallest coefficient norm.
+	 */
+	template <typename It>
+	T find_nth_smallest_coeff(It begin, It end) {
+		assert(begin != end);
+		assert(std::distance(begin, end) > static_cast<ssize_t>(nb_terms));
+
+		std::size_t to_remove = std::distance(begin, end) - nb_terms;
+		heap.clear();
+		heap.reserve(to_remove);
+
+		for (; heap.size() < to_remove; ++begin) {
+			heap.push_back(std::abs(*begin));
+		}
+		std::make_heap(heap.begin(), heap.end());
+
+		for (; begin != end; ++begin) {
+			if (std::abs(*begin) < heap.front()) {
+				std::pop_heap(heap.begin(), heap.end());
+				heap.pop_back();
+				heap.push_back(std::abs(*begin));
+				std::push_heap(heap.begin(), heap.end());
+			}
+		}
+
+		return heap.front();
+	}
+
+    public:
+	/**
+	 * @brief Constructs the truncator to keep a maximum number of terms.
+	 * @param max_n The maximum number of terms to keep.
+	 * @throws std::invalid_argument if max_n is 0.
+	 */
+	KeepNTruncator(std::size_t max_n) : nb_terms(max_n) {
+		if (nb_terms == 0) {
+			throw std::invalid_argument("Must keep at least one term.");
+		}
+		heap.reserve(64);
+	}
+	~KeepNTruncator() override = default;
+
+	KeepNTruncator(KeepNTruncator const&) = default;
+	KeepNTruncator(KeepNTruncator&&) noexcept = default;
+
+	std::size_t truncate(PauliTermContainer<T>& paulis) override {
+		if (paulis.nb_terms() <= nb_terms) {
+			return 0;
+		}
+
+		T coeff_threshold =
+			find_nth_smallest_coeff(paulis.get_coefficients().begin(), paulis.get_coefficients().end());
+		return std::erase_if(paulis,
+				     [=](auto const& pt) { return std::abs(pt.coefficient()) <= coeff_threshold; });
 	}
 };
 

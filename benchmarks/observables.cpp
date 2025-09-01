@@ -242,6 +242,37 @@ static void Observable_truncate_weight10_after_nrz(benchmark::State& state) {
 	}
 }
 
+static void Observable_truncate_keepn1024_after_nrz(benchmark::State& state) {
+	auto rd_pt = random_pauli_term(state.range(0));
+	for (long i = 0; i < state.range(0); ++i) {
+		if (rd_pt[i] == p_i) {
+			rd_pt[i] = p_x;
+		} else if (rd_pt[i] == p_z) {
+			rd_pt[i] = p_y;
+		}
+	}
+	auto rd_obs_copy = Observable({ rd_pt });
+	// apply rzs
+	std::size_t nb_rz = state.range(1);
+	for (std::size_t j = 0; j < nb_rz; ++j) {
+		rd_obs_copy.apply_rz(random_in(state.range(0) - 1), pi * random_coeff());
+	}
+
+	KeepNTruncator knt{ 1024 };
+
+	for (auto _ : state) {
+		auto obs = rd_obs_copy;
+		auto start = std::chrono::high_resolution_clock::now();
+
+		auto nb_truncated = obs.truncate(knt);
+		benchmark::DoNotOptimize(nb_truncated);
+
+		auto end = std::chrono::high_resolution_clock::now();
+		auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+		state.SetIterationTime(elapsed_seconds.count());
+	}
+}
+
 static void Observable_apply_unital_noise(benchmark::State& state) {
 	std::vector<Pauli> random_paulis;
 	std::vector<UnitalNoise> random_noise;
@@ -356,6 +387,8 @@ BENCHMARK(Observable_truncate_coeff_after_nrz)
 	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 8, 2) });
 BENCHMARK(Observable_truncate_weight10_after_nrz)
 	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 8, 2) });
+BENCHMARK(Observable_truncate_keepn1024_after_nrz)
+	->ArgsProduct({ benchmark::CreateRange(64, 1024, 8), benchmark::CreateRange(4, 8, 2) });
 BENCHMARK(Observable_appy_amplitude_damping_i)->Range(1, 1024);
 BENCHMARK(Observable_appy_amplitude_damping_xy)->Range(1, 1024);
 BENCHMARK(Observable_appy_amplitude_damping_z)->Range(1, 1024);
