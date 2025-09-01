@@ -38,7 +38,7 @@ class CoefficientPredicate {
 	 * @brief Constructs the predicate with a given threshold.
 	 * @param threshold Terms with coefficient magnitude smaller than this will be marked for removal.
 	 */
-	CoefficientPredicate(T&& threshold) : threshold_(threshold) {}
+	CoefficientPredicate(T threshold) : threshold_(threshold) {}
 
 	/**
 	 * @brief Evaluates the predicate for a given Pauli term.
@@ -64,7 +64,7 @@ class WeightPredicate {
 	 * @brief Constructs the predicate with a given weight threshold.
 	 * @param weight_threshold Terms with a Pauli weight greater than or equal to this will be removed.
 	 */
-	WeightPredicate(std::size_t&& weight_threshold) : weight_threshold_(weight_threshold) {}
+	WeightPredicate(std::size_t weight_threshold) : weight_threshold_(weight_threshold) {}
 
 	/**
 	 * @brief Evaluates the predicate for a given Pauli term.
@@ -243,11 +243,26 @@ class RuntimeMultiTruncators : public Truncator<T> {
 	}
 };
 
+/**
+ * @brief A truncator that keeps only the N Pauli terms with the largest coefficients norm.
+ * @tparam T The numeric type for the coefficient.
+ *
+ * This truncator ensures that after truncation, the observable contains at most `N` terms.
+ * It identifies the `N` terms with the largest coefficients norms and removes all others.
+ *
+ * @note The selection uses an efficient heap-based selection algorithm to find the removal
+ * threshold without performing a full sort of the terms.
+ *
+ */
 template <typename T = coeff_t>
 class KeepNTruncator : public Truncator<T> {
 	std::size_t nb_terms;
 	std::vector<T> heap;
 
+	/**
+	 * @brief Finds the coefficient that will serve as the threshold for removal.
+	 * @return The value of the (total_terms - N)-th smallest coefficient norm.
+	 */
 	template <typename It>
 	T find_nth_smallest_coeff(It begin, It end) {
 		assert(begin != end);
@@ -258,15 +273,15 @@ class KeepNTruncator : public Truncator<T> {
 		heap.reserve(to_remove);
 
 		for (; heap.size() < to_remove; ++begin) {
-			heap.push_back(*begin);
+			heap.push_back(std::abs(*begin));
 		}
 		std::make_heap(heap.begin(), heap.end());
 
 		for (; begin != end; ++begin) {
-			if (*begin < heap.front()) {
+			if (std::abs(*begin) < heap.front()) {
 				std::pop_heap(heap.begin(), heap.end());
 				heap.pop_back();
-				heap.push_back(*begin);
+				heap.push_back(std::abs(*begin));
 				std::push_heap(heap.begin(), heap.end());
 			}
 		}
@@ -275,6 +290,11 @@ class KeepNTruncator : public Truncator<T> {
 	}
 
     public:
+	/**
+	 * @brief Constructs the truncator to keep a maximum number of terms.
+	 * @param max_n The maximum number of terms to keep.
+	 * @throws std::invalid_argument if max_n is 0.
+	 */
 	KeepNTruncator(std::size_t max_n) : nb_terms(max_n) {
 		if (nb_terms == 0) {
 			throw std::invalid_argument("Must keep at least one term.");
@@ -293,7 +313,8 @@ class KeepNTruncator : public Truncator<T> {
 
 		T coeff_threshold =
 			find_nth_smallest_coeff(paulis.get_coefficients().begin(), paulis.get_coefficients().end());
-		return std::erase_if(paulis, [=](auto const& pt) { return pt.coefficient() <= coeff_threshold; });
+		CoefficientTruncator<> ct{ coeff_threshold };
+		return ct.truncate(paulis);
 	}
 };
 

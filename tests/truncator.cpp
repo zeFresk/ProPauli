@@ -41,7 +41,7 @@ TEST(Truncator, WeightTruncator) {
 TEST(Truncator, KeepNTruncator) {
 	KeepNTruncator nt{ 2 };
 	std::vector<PauliTerm<coeff_t>> pts_data = {
-		{ "IIII", 0.49 }, { "YYYY", 0.49 }, { "IIIX", 0.02 }, { "ZZZZ", 0.1 }
+		{ "IIII", 0.49 }, { "YYYY", -0.49 }, { "IIIX", 0.02 }, { "ZZZZ", 0.1 }
 	};
 	PauliTermContainer<coeff_t> pts{ pts_data };
 	auto ept = pts[0];
@@ -49,7 +49,7 @@ TEST(Truncator, KeepNTruncator) {
 	EXPECT_EQ(removed, 2);
 	EXPECT_EQ(pts.nb_terms(), 2);
 	EXPECT_EQ(pts[0], ept);
-	EXPECT_EQ(pts[1], PauliTerm("YYYY", 0.49));
+	EXPECT_EQ(pts[1], PauliTerm("YYYY", -0.49));
 }
 
 TEST(Truncator, MultiTruncator) {
