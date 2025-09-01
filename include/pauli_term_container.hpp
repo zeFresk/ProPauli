@@ -235,6 +235,9 @@ class PauliTermContainer {
 		assert(pt_index < nb_terms());
 		raw_coefficients[pt_index] = c;
 	}
+
+	std::vector<T> const& get_coefficients() const { return raw_coefficients; }
+
 	/** @} */
 
 	/** @name Fast Operations on Packed Data

@@ -18,6 +18,7 @@
 #include "pauli.hpp"
 #include "pauli_term_container.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <tuple>
@@ -113,7 +114,7 @@ class Truncator {
 	 * @param paulis The container of Pauli terms to truncate.
 	 * @return The number of terms removed.
 	 */
-	virtual std::size_t truncate(PauliTermContainer<T>& paulis) const = 0;
+	virtual std::size_t truncate(PauliTermContainer<T>& paulis) = 0;
 };
 
 /**
@@ -138,7 +139,7 @@ class PredicateTruncator : public Truncator<T> {
 	template <typename... Args, std::enable_if_t<std::is_constructible_v<P, Args...>, bool> = true>
 	PredicateTruncator(Args&&... args) : pred{ P(std::forward<Args>(args)...) } {}
 
-	std::size_t truncate(PauliTermContainer<T>& paulis) const override { return std::erase_if(paulis, pred); }
+	std::size_t truncate(PauliTermContainer<T>& paulis) override { return std::erase_if(paulis, pred); }
 };
 
 /**
@@ -174,7 +175,7 @@ class Truncators : public Truncator<T> {
 	std::tuple<Ts...> truncators;
 
 	template <typename P, std::size_t... Is>
-	std::size_t truncate_impl(P&& paulis, std::index_sequence<Is...>) const {
+	std::size_t truncate_impl(P&& paulis, std::index_sequence<Is...>) {
 		return (std::get<Is>(truncators).truncate(paulis) + ... + 0);
 	}
 
@@ -182,7 +183,7 @@ class Truncators : public Truncator<T> {
 	Truncators(Ts&&... truncs) : truncators(std::forward<Ts>(truncs)...) {}
 	~Truncators() override = default;
 
-	std::size_t truncate(PauliTermContainer<T>& paulis) const override {
+	std::size_t truncate(PauliTermContainer<T>& paulis) override {
 		return truncate_impl(paulis, std::index_sequence_for<Ts...>{});
 	}
 };
@@ -233,12 +234,66 @@ class RuntimeMultiTruncators : public Truncator<T> {
 	RuntimeMultiTruncators(Iter&& begin, Iter&& end) : truncs(begin, end) {}
 	~RuntimeMultiTruncators() override = default;
 
-	std::size_t truncate(PauliTermContainer<T>& paulis) const override {
+	std::size_t truncate(PauliTermContainer<T>& paulis) override {
 		std::size_t ret = 0;
 		for (const auto& trunc : truncs) {
 			ret += trunc->truncate(paulis);
 		}
 		return ret;
+	}
+};
+
+template <typename T = coeff_t>
+class KeepNTruncator : public Truncator<T> {
+	std::size_t nb_terms;
+	std::vector<T> heap;
+
+	template <typename It>
+	T find_nth_smallest_coeff(It begin, It end) {
+		assert(begin != end);
+		assert(std::distance(begin, end) > static_cast<ssize_t>(nb_terms));
+
+		std::size_t to_remove = std::distance(begin, end) - nb_terms;
+		heap.clear();
+		heap.reserve(to_remove);
+
+		for (; heap.size() < to_remove; ++begin) {
+			heap.push_back(*begin);
+		}
+		std::make_heap(heap.begin(), heap.end());
+
+		for (; begin != end; ++begin) {
+			if (*begin < heap.front()) {
+				std::pop_heap(heap.begin(), heap.end());
+				heap.pop_back();
+				heap.push_back(*begin);
+				std::push_heap(heap.begin(), heap.end());
+			}
+		}
+
+		return heap.front();
+	}
+
+    public:
+	KeepNTruncator(std::size_t max_n) : nb_terms(max_n) {
+		if (nb_terms == 0) {
+			throw std::invalid_argument("Must keep at least one term.");
+		}
+		heap.reserve(64);
+	}
+	~KeepNTruncator() override = default;
+
+	KeepNTruncator(KeepNTruncator const&) = default;
+	KeepNTruncator(KeepNTruncator&&) noexcept = default;
+
+	std::size_t truncate(PauliTermContainer<T>& paulis) override {
+		if (paulis.nb_terms() <= nb_terms) {
+			return 0;
+		}
+
+		T coeff_threshold =
+			find_nth_smallest_coeff(paulis.get_coefficients().begin(), paulis.get_coefficients().end());
+		return std::erase_if(paulis, [=](auto const& pt) { return pt.coefficient() <= coeff_threshold; });
 	}
 };
 
