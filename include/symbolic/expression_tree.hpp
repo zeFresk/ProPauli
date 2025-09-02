@@ -29,7 +29,7 @@ struct BinaryOp {
 };
 
 struct UnaryOp {
-	enum class Op { Cos, Sin };
+	enum class Op { Cos, Sin, Minus };
 	Op operation;
 	NodeId exp;
 };
@@ -103,6 +103,8 @@ class ExpressionTree {
 					return cos(v);
 				case UnaryOp::Op::Sin:
 					return sin(v);
+				case UnaryOp::Op::Minus:
+					return -v;
 				default:
 					throw std::invalid_argument("Invalid UnaryOp.operation");
 				}
@@ -152,11 +154,19 @@ class ExpressionTree {
 						return out_tree.add_node(Constant<T>{ cos(constant->value) });
 					case UnaryOp::Op::Sin:
 						return out_tree.add_node(Constant<T>{ sin(constant->value) });
+					case UnaryOp::Op::Minus:
+						return out_tree.add_node(Constant<T>{ -constant->value });
 					default:
 						throw std::invalid_argument("Invalid UnaryOp.operation");
 					}
 				} else {
-					return out_tree.add_node(UnaryOp{ node.operation, exp_node });
+					auto inside_unaryop = std::get_if<UnaryOp>(out_tree.nodes[exp_node]);
+					if (inside_unaryop && node.operation == UnaryOp::Op::Minus &&
+					    inside_unaryop->operation == UnaryOp::Op::Minus) {
+						return exp_node; // - of - cancel;
+					} else {
+						return out_tree.add_node(UnaryOp{ node.operation, exp_node });
+					}
 				}
 			} else if constexpr (std::is_same_v<VisitedType, BinaryOp>) {
 				auto lhs_id = simplify(node.lhs, out_tree);
@@ -177,6 +187,7 @@ class ExpressionTree {
 						throw std::invalid_argument("Invalid BinaryOp.operation");
 					}
 				} else {
+					// TODO: simplify using arithmetic rules.
 					return out_tree.add_node(BinaryOp{ node.operation, lhs_id, rhs_id });
 				}
 			}
@@ -199,6 +210,8 @@ class ExpressionTree {
 					return "cos(" + v + ")";
 				case UnaryOp::Op::Sin:
 					return "sin(" + v + ")";
+				case UnaryOp::Op::Minus:
+					return "-" + v;
 				default:
 					throw std::invalid_argument("Invalid UnaryOp.operation");
 				}
