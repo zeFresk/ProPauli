@@ -14,6 +14,7 @@
 #include "pauli.hpp"
 #include "pauli_term.hpp"
 #include "pauli_term_container.hpp"
+#include "symbolic/coefficient.hpp"
 #include "merge.hpp"
 
 #include <cstring>
@@ -23,6 +24,7 @@
 #include <stdexcept>
 #include <string_view>
 #include <type_traits>
+#include <unordered_map>
 
 /**
  * @brief Represents a quantum observable as a linear combination of Pauli strings.
@@ -48,7 +50,7 @@ class Observable {
 	 * @snippet tests/snippets/observable.cpp observable_from_string
 	 */
 	Observable(std::string_view pauli_string,
-		   typename std::enable_if_t<std::is_convertible_v<T, coeff_t>, T> coeff = T{ 1 })
+		   typename std::enable_if_t<std::is_constructible_v<T, coeff_t>, T> coeff = T{ 1 })
 		: paulis_{ PauliTerm<T>(pauli_string, coeff) } {
 		check_invariant();
 	}
@@ -288,6 +290,15 @@ class Observable {
 		return lhs.size() == rhs.size() && lhs.paulis_ == rhs.paulis_;
 	}
 
+	bool constexpr is_symbolic() const { return Symbolic<T>; }
+
+	template <typename U = T, std::enable_if_t<std::is_same_v<U, T> && Symbolic<U>, bool> = true>
+	void simplify(std::unordered_map<std::string, typename U::Underlying_t> const& variables = {}) {
+		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
+			paulis_[i].simplify(variables);
+		}
+	}
+
     private:
 	PauliTermContainer<T> paulis_;
 
@@ -318,9 +329,14 @@ std::ostream& operator<<(std::ostream& os, Observable<T> const& obs) {
 	bool first = true;
 	for (std::size_t i = 0; i < obs.size(); ++i) {
 		if (!first) {
-			os << " ";
+			if constexpr (obs.is_symbolic()) {
+				os << " + ";
+			} else {
+				os << " ";
+			}
 		}
 		// copy_term is needed because the stream operator is defined for owning PauliTerm
+
 		os << obs.copy_term(i);
 		first = false;
 	}

@@ -218,7 +218,7 @@ TEST(Observable, truncate_coeff) {
 
 TEST(Observable, truncate_weight) {
 	Observable obs{ PauliTerm{ "IXYZ", coeff_t{ -0.25 } }, PauliTerm{ "IIII", coeff_t{ 0.001 } } };
-	auto nb_removed = obs.truncate(WeightTruncator{ 3 });
+	auto nb_removed = obs.truncate(WeightTruncator<>{ 3 });
 	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
 	EXPECT_EQ(nb_removed, 1);
 	EXPECT_EQ(nb_elems_internal, 1);
@@ -228,7 +228,7 @@ TEST(Observable, truncate_weight) {
 TEST(Observable, truncate_multi) {
 	Observable obs{ PauliTerm{ "IXYZ", coeff_t{ -0.25 } }, PauliTerm{ "IIII", coeff_t{ 0.10 } },
 			PauliTerm{ "IIXI", coeff_t{ 0.0001 } } };
-	auto nb_removed = obs.truncate(combine_truncators_raw(CoefficientTruncator<>(0.01), WeightTruncator(3)));
+	auto nb_removed = obs.truncate(combine_truncators_raw(CoefficientTruncator<>(0.01), WeightTruncator<>(3)));
 	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
 	EXPECT_EQ(nb_removed, 2);
 	EXPECT_EQ(nb_elems_internal, 1);
@@ -237,7 +237,7 @@ TEST(Observable, truncate_multi) {
 
 TEST(Observable, truncate_never) {
 	Observable obs{ PauliTerm{ "IXYZ", coeff_t{ -0.25 } }, PauliTerm{ "IIII", coeff_t{ 0.001 } } };
-	auto nb_removed = obs.truncate(NeverTruncator{});
+	auto nb_removed = obs.truncate(NeverTruncator<>{});
 	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
 	EXPECT_EQ(nb_removed, 0);
 	EXPECT_EQ(nb_elems_internal, 2);

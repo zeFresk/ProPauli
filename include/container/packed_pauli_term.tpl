@@ -364,4 +364,14 @@ class NonOwningPauliTermPacked {
 		os << static_cast<ReadOnlyNonOwningPauliTermPacked>(pt);
 		return os;
 	}
+
+	/**
+	 * @brief If term is symbolic, simplify term using variable dictionnary.
+	 */
+	template <typename U = T, std::enable_if_t<std::is_same_v<U, T> && Symbolic<U>, bool> = true>
+	void simplify(std::unordered_map<std::string, typename U::Underlying_t> const& variables = {}) {
+		auto mapped = coefficient().symbolic_evaluate(variables);
+		auto simplified = mapped.simplified();
+		set_coefficient(std::move(simplified));
+	}
 };

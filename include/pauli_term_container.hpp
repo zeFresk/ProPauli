@@ -19,6 +19,7 @@
 #include "pauli_term.hpp"
 #include "container/bit_operations.hpp"
 #include "adapter.hpp"
+#include "symbolic/coefficient.hpp"
 
 #include <algorithm>
 #include <cstddef>

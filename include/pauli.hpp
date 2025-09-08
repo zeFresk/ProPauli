@@ -262,7 +262,8 @@ class Pauli {
 	 * @param p The noise probability.
 	 * @return The scaling factor to be applied to the PauliTerm's coefficient.
 	 */
-	coeff_t apply_unital_noise(UnitalNoise n, coeff_t p) const {
+	template <typename T>
+	T apply_unital_noise(UnitalNoise n, T const& p) const {
 		return coeff_t{ 1 } - (p * unital_noise_map_coeff[std::to_underlying(p_)][std::to_underlying(n)]);
 	}
 
