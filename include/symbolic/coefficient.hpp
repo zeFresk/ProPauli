@@ -24,6 +24,8 @@ class SymbolicCoefficient {
 	SymbolicCoefficient(SymbolicCoefficient&&) = default;
 	SymbolicCoefficient& operator=(SymbolicCoefficient&&) = default;
 
+	using Underlying_t = T;
+
 	/*SymbolicCoefficient& operator=(T const& new_v) {
 		auto n = et.add_node(Constant<T>(std::forward(new_v)));
 		et.update_root(n);
@@ -76,22 +78,32 @@ class SymbolicCoefficient {
 		return *this;
 	}
 
-	SymbolicCoefficient& operator-() {
-		auto n = et.add_node(UnaryOp{ UnaryOp::Op::Minus, et.get_root() });
-		et.update_root(n);
-		return *this;
+	SymbolicCoefficient operator-() const {
+		auto ret = *this;
+		auto n = ret.et.add_node(UnaryOp{ UnaryOp::Op::Minus, et.get_root() });
+		ret.et.update_root(n);
+		return ret;
 	}
 
-	SymbolicCoefficient& cos() {
-		auto n = et.add_node(UnaryOp{ UnaryOp::Op::Cos, et.get_root() });
-		et.update_root(n);
-		return *this;
+	SymbolicCoefficient cos() const {
+		auto ret = *this;
+		auto n = ret.et.add_node(UnaryOp{ UnaryOp::Op::Cos, et.get_root() });
+		ret.et.update_root(n);
+		return ret;
 	}
 
-	SymbolicCoefficient& sin() {
-		auto n = et.add_node(UnaryOp{ UnaryOp::Op::Sin, et.get_root() });
-		et.update_root(n);
-		return *this;
+	SymbolicCoefficient sin() const {
+		auto ret = *this;
+		auto n = ret.et.add_node(UnaryOp{ UnaryOp::Op::Sin, et.get_root() });
+		ret.et.update_root(n);
+		return ret;
+	}
+
+	SymbolicCoefficient sqrt() const {
+		auto ret = *this;
+		auto n = ret.et.add_node(UnaryOp{ UnaryOp::Op::Sqrt, et.get_root() });
+		ret.et.update_root(n);
+		return ret;
 	}
 
 	friend SymbolicCoefficient operator+(SymbolicCoefficient lhs, SymbolicCoefficient const& rhs) {
@@ -118,6 +130,8 @@ class SymbolicCoefficient {
 
 	friend SymbolicCoefficient sin(SymbolicCoefficient x) { return x.sin(); }
 
+	friend SymbolicCoefficient sqrt(SymbolicCoefficient x) { return x.sqrt(); }
+
 	friend std::ostream& operator<<(std::ostream& os, SymbolicCoefficient const& sc) {
 		os << sc.et;
 		return os;
@@ -128,6 +142,11 @@ class SymbolicCoefficient {
 		auto imported_root = et.import_nodes(other.et);
 		return imported_root;
 	}
+};
+
+template <typename T>
+concept Symbolic = requires(T t) {
+	t.evaluate();
 };
 
 #endif

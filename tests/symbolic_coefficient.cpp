@@ -63,6 +63,19 @@ TEST(SymbolicCoefficient, unary_min_eval) {
 	EXPECT_FLOAT_EQ(x.evaluate(), -1);
 }
 
+TEST(SymbolicCoefficient, unary_sqrt_str) {
+	Sc x{ 1.f };
+	x = sqrt(x);
+	EXPECT_EQ(x.to_string(), "sqrt(1)");
+}
+
+TEST(SymbolicCoefficient, unary_sqrt_eval) {
+	Sc x{ 1.f };
+	x = sqrt(x);
+	EXPECT_FLOAT_EQ(x.evaluate(), 1);
+}
+
+
 TEST(SymbolicCoefficient, binary_mul_eval_cst) {
 	Sc x{ 2.f };
 	x = x * 3.f;

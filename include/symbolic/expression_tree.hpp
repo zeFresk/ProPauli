@@ -33,7 +33,7 @@ struct BinaryOp {
 };
 
 struct UnaryOp {
-	enum class Op { Cos, Sin, Minus };
+	enum class Op { Cos, Sin, Minus, Sqrt };
 	Op operation;
 	NodeId exp;
 };
@@ -132,6 +132,8 @@ class ExpressionTree {
 					return sin(v);
 				case UnaryOp::Op::Minus:
 					return -v;
+				case UnaryOp::Op::Sqrt:
+					return sqrt(v);
 				default:
 					throw std::invalid_argument("Invalid UnaryOp.operation");
 				}
@@ -184,6 +186,8 @@ class ExpressionTree {
 						return out_tree.add_node(Constant<T>{ sin(constant->value) });
 					case UnaryOp::Op::Minus:
 						return out_tree.add_node(Constant<T>{ -constant->value });
+					case UnaryOp::Op::Sqrt:
+						return out_tree.add_node(Constant<T>{ sqrt(constant->value) });
 					default:
 						throw std::invalid_argument("Invalid UnaryOp.operation");
 					}
@@ -261,17 +265,21 @@ class ExpressionTree {
 							// try simplifying based on content of right binop
 							auto right_binop_rhs = std::get_if<Constant<T>>(
 								&out_tree.nodes[right_binop->lhs]);
-							auto rbrr = right_binop->rhs; // may be invalidated
-							if (node.operation == BinaryOp::Op::Add) {
-								auto n = out_tree.add_node(Constant<T>{
-									right_binop_rhs->value + lhs_c->value });
-								return out_tree.add_node(
-									BinaryOp{ node.operation, n, rbrr });
-							} else if (node.operation == BinaryOp::Op::Multiply) {
-								auto n = out_tree.add_node(Constant<T>{
-									right_binop_rhs->value * lhs_c->value });
-								return out_tree.add_node(
-									BinaryOp{ node.operation, n, rbrr });
+							if (right_binop_rhs) {
+								auto rbrr = right_binop->rhs; // may be invalidated
+								if (node.operation == BinaryOp::Op::Add) {
+									auto n = out_tree.add_node(
+										Constant<T>{ right_binop_rhs->value +
+											     lhs_c->value });
+									return out_tree.add_node(
+										BinaryOp{ node.operation, n, rbrr });
+								} else if (node.operation == BinaryOp::Op::Multiply) {
+									auto n = out_tree.add_node(
+										Constant<T>{ right_binop_rhs->value *
+											     lhs_c->value });
+									return out_tree.add_node(
+										BinaryOp{ node.operation, n, rbrr });
+								}
 							}
 						}
 					}
@@ -301,6 +309,8 @@ class ExpressionTree {
 					return need_par ? "sin(" + v + ")" : "sin" + v;
 				case UnaryOp::Op::Minus:
 					return "-" + v;
+				case UnaryOp::Op::Sqrt:
+					return need_par ? "sqrt(" + v + ")" : "sqrt" + v;
 				default:
 					throw std::invalid_argument("Invalid UnaryOp.operation");
 				}

@@ -34,6 +34,14 @@ TEST(ExpressionTree, unop_eval_min) {
 	EXPECT_EQ(et.evaluate(), -1.f);
 }
 
+TEST(ExpressionTree, unop_eval_sqrt) {
+	ExpressionTree<float> et;
+	auto n = et.add_node(Constant<float>{ 1.f });
+	auto eb = et.add_node(UnaryOp{ UnaryOp::Op::Sqrt, n });
+	et.update_root(eb);
+	EXPECT_EQ(et.evaluate(), 1.f);
+}
+
 TEST(ExpressionTree, binop_eval_mul) {
 	ExpressionTree<float> et;
 	auto nl = et.add_node(Constant<float>{ 2.f });
@@ -105,6 +113,14 @@ TEST(ExpressionTree, unop_str_min) {
 	auto eb = et.add_node(UnaryOp{ UnaryOp::Op::Minus, n });
 	et.update_root(eb);
 	EXPECT_EQ(et.to_string(), "-1");
+}
+
+TEST(ExpressionTree, unop_str_sqrt) {
+	ExpressionTree<float> et;
+	auto n = et.add_node(Constant<float>{ 1.f });
+	auto eb = et.add_node(UnaryOp{ UnaryOp::Op::Sqrt, n });
+	et.update_root(eb);
+	EXPECT_EQ(et.to_string(), "sqrt(1)");
 }
 
 TEST(ExpressionTree, binop_str_mul) {
