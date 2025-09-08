@@ -115,6 +115,8 @@ class Truncator {
 	 * @return The number of terms removed.
 	 */
 	virtual std::size_t truncate(PauliTermContainer<T>& paulis) = 0;
+
+	using Coefficient_t = T;
 };
 
 /**
@@ -153,13 +155,15 @@ using CoefficientTruncator = decltype(PredicateTruncator(std::declval<Coefficien
  * @brief A truncator that removes Pauli terms with high Pauli weight.
  * @snippet tests/snippets/truncate.cpp weight_truncator
  */
-using WeightTruncator = decltype(PredicateTruncator(std::declval<WeightPredicate>()));
+template <typename T = coeff_t>
+using WeightTruncator = decltype(PredicateTruncator<WeightPredicate, T>(std::declval<WeightPredicate>()));
 
 /**
  * @brief A truncator that never removes any terms.
  * @snippet tests/snippets/truncate.cpp never_truncator
  */
-using NeverTruncator = decltype(PredicateTruncator(NeverPredicate{}));
+template <typename T = coeff_t>
+using NeverTruncator = decltype(PredicateTruncator<NeverPredicate, T>(NeverPredicate{}));
 
 /**
  * @brief A class that combines multiple truncators into one at **compile time**.
@@ -188,6 +192,16 @@ class Truncators : public Truncator<T> {
 	}
 };
 
+template <typename T>
+constexpr bool are_same_coeff_t() {
+	return true;
+}
+
+template <typename Lhs, typename Rhs, typename... LeftOver>
+constexpr bool are_same_coeff_t() {
+	return std::is_same_v<typename Lhs::Coefficient_t, typename Rhs::Coefficient_t> && are_same_coeff_t<Rhs, LeftOver...>();
+}
+
 /**
  * @brief A helper function to create a compile-time truncator combination.
  * @relates Truncators
@@ -195,7 +209,10 @@ class Truncators : public Truncator<T> {
  */
 template <typename... Truncs>
 auto combine_truncators_raw(Truncs&&... truncs) {
-	return Truncators(std::forward<Truncs>(truncs)...);
+	static_assert(are_same_coeff_t<Truncs...>(), "All underlying PauliTerm coefficients must be of the same type.");
+	using nth_t = typename std::tuple_element_t<0, std::tuple<Truncs...>>;
+	using c_t = typename nth_t::Coefficient_t;
+	return Truncators<c_t, Truncs...>(std::forward<Truncs>(truncs)...);
 }
 
 /**

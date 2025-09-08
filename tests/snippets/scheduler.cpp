@@ -7,7 +7,7 @@ void scheduler_snippets() {
 	//! [scheduling_policy]
 	// Policies are passed to the Circuit constructor to control optimization.
 	// This circuit will merge identical Pauli terms only after a splitting gate is applied.
-	Circuit qc(4, std::make_shared<NeverTruncator>(), {},
+	Circuit qc(4, std::make_shared<NeverTruncator<>>(), {},
 		   std::make_shared<AlwaysAfterSplittingPolicy>(), // Merge policy
 		   std::make_shared<NeverPolicy>() // Truncate policy
 	);

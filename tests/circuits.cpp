@@ -96,7 +96,7 @@ TEST(Circuit, simple_run) {
 
 TEST(Circuit, qc_match_observable_result_1) {
 	Circuit qc{ 4,
-		    std::make_unique<NeverTruncator>(),
+		    std::make_unique<NeverTruncator<>>(),
 		    {},
 		    std::make_unique<AlwaysBeforeSplittingPolicy>(),
 		    std::make_unique<AlwaysAfterSplittingPolicy>() };
@@ -142,7 +142,7 @@ TEST(Circuit, qc_match_observable_result_1) {
 
 TEST(Circuit, qc_merge_works_with_scheduler) {
 	Circuit qc{ 1,
-		    std::make_unique<NeverTruncator>(),
+		    std::make_unique<NeverTruncator<>>(),
 		    {},
 		    std::make_unique<AlwaysAfterSplittingPolicy>(),
 		    std::make_unique<NeverPolicy>() };
@@ -168,7 +168,7 @@ TEST(Circuit, qc_truncate_works_with_scheduler) {
 
 TEST(Circuit, qc_update_truncator) {
 	Circuit qc{ 4,
-		    std::make_unique<NeverTruncator>(),
+		    std::make_unique<NeverTruncator<>>(),
 		    {},
 		    std::make_unique<AlwaysAfterSplittingPolicy>(),
 		    std::make_unique<AlwaysAfterSplittingPolicy>() };

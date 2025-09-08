@@ -236,8 +236,7 @@ BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, withCoefficientTruncation01)(benchmark
 BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, withWeightTruncation4)(benchmark::State& state) {
 	auto obs = Observable{ std::string(state.range(0), 'Z') };
 
-	qc.set_truncator(std::make_shared<WeightTruncator>(4));
-	qc.set_truncator(std::make_shared<WeightTruncator>(4));
+	qc.set_truncator(std::make_shared<WeightTruncator<>>(4));
 
 	for (auto _ : state) {
 		auto res = this->qc.run(obs);
@@ -248,7 +247,7 @@ BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, withWeightTruncation4)(benchmark::Stat
 BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, withMultiTruncation6001)(benchmark::State& state) {
 	auto obs = Observable{ std::string(state.range(0), 'Z') };
 
-	qc.set_truncator(combine_truncators(CoefficientTruncator<>{ 0.001f }, WeightTruncator{ 6 }));
+	qc.set_truncator(combine_truncators(CoefficientTruncator<>{ 0.001f }, WeightTruncator<>{ 6 }));
 
 	for (auto _ : state) {
 		auto res = this->qc.run(obs);

@@ -146,7 +146,7 @@ class Circuit {
 	 * @snippet tests/snippets/scheduler.cpp scheduling_policy
 	 */
 	template <typename TruncatorPtr = std::shared_ptr<Truncator<Coefficient_t>>>
-	Circuit(unsigned nb_qubits, TruncatorPtr truncator = std::make_shared<NeverTruncator>(),
+	Circuit(unsigned nb_qubits, TruncatorPtr truncator = std::make_shared<NeverTruncator<Coefficient_t>>(),
 		NoiseModel<Coefficient_t> const& noise_model = {},
 		std::shared_ptr<SchedulingPolicy> merge_policy = std::make_shared<AlwaysAfterSplittingPolicy>(),
 		std::shared_ptr<SchedulingPolicy> truncate_policy = std::make_shared<AlwaysAfterSplittingPolicy>())

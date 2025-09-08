@@ -22,7 +22,7 @@ class MergeEveryTwoSplitsPolicy : public SchedulingPolicy {
 
 void custom_scheduler_example() {
 	//! [custom_scheduler_usage]
-	Circuit qc(4, std::make_shared<NeverTruncator>(), {},
+	Circuit qc(4, std::make_shared<NeverTruncator<>>(), {},
 		   std::make_shared<MergeEveryTwoSplitsPolicy>(), // Use our custom merge policy
 		   std::make_shared<NeverPolicy>());
 

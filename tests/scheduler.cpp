@@ -90,7 +90,7 @@ class AllGettersPolicy : public SchedulingPolicy {
 
 TEST(Circuit, AllGettersPolicy_TriggersCorrectly) {
 	auto policy = std::make_shared<AllGettersPolicy>();
-	Circuit qc(2, std::make_shared<NeverTruncator>(), {}, policy, std::make_shared<NeverPolicy>());
+	Circuit qc(2, std::make_shared<NeverTruncator<>>(), {}, policy, std::make_shared<NeverPolicy>());
 
 	qc.add_operation("H", 0);
 	qc.add_operation("Rz", 0, 0.1f); // Gate 6 (splitting gate 3)
@@ -112,7 +112,7 @@ TEST(Circuit, AllGettersPolicy_TriggersCorrectly) {
 
 TEST(Circuit, AllGettersPolicy_DoesNotTrigger) {
 	auto policy = std::make_shared<AllGettersPolicy>();
-	Circuit qc(2, std::make_shared<NeverTruncator>(), {}, policy, std::make_shared<NeverPolicy>());
+	Circuit qc(2, std::make_shared<NeverTruncator<>>(), {}, policy, std::make_shared<NeverPolicy>());
 
 	// This circuit is too short to meet the ">= 3 gates applied" condition.
 	qc.add_operation("Rz", 0, 0.1f); // Policy is checked here, but state.get_nb_gates_applied() is 0.
