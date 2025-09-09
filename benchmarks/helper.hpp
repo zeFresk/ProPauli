@@ -17,4 +17,18 @@ unsigned random_in(unsigned max);
 coeff_t random_coeff();
 PauliTerm<coeff_t> random_pauli_term(unsigned length);
 
+template <typename Qc, typename Theta>
+void rzz(Qc& qc, unsigned control, unsigned target, Theta const& theta) {
+	qc.add_operation("cx", control, target);
+	qc.add_operation("rz", target, theta);
+	qc.add_operation("cx", control, target);
+}
+
+template <typename Qc, typename Theta>
+void rx(Qc& qc, unsigned q, Theta const& theta) {
+	qc.add_operation("h", q);
+	qc.add_operation("rz", q, theta);
+	qc.add_operation("h", q);
+}
+
 #endif
