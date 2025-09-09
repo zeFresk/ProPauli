@@ -145,8 +145,11 @@ class SymbolicCoefficient {
 };
 
 template <typename T>
-concept Symbolic = requires(T t) {
+concept Evaluable = requires(T t) {
 	t.evaluate();
 };
+
+template <typename T>
+concept Symbolic = Evaluable<T> || std::is_same_v<Variable, T>;
 
 #endif

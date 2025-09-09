@@ -255,6 +255,55 @@ BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, withMultiTruncation6001)(benchmark::St
 	}
 }
 
+class MaxCutQAOAN4P1 : public benchmark::Fixture {
+    public:
+	Observable<coeff_t> obs{ "ZZII", "ZIZI", "IZZI", "ZIIZ", "IZIZ", "IIZZ" };
+	Circuit<coeff_t> qc{ 4 };
+
+	static constexpr coeff_t rz_theta = 0.616;
+	static constexpr coeff_t rx_theta = -0.786;
+
+	MaxCutQAOAN4P1() {}
+	void SetUp([[maybe_unused]] benchmark::State const& state) override {
+		// QAOA p=1 for N=4 graph of degree 3
+		for (std::size_t i = 0; i < 4; ++i) {
+			qc.add_operation("H", i);
+		}
+
+		rzz(qc, 0, 1, rz_theta);
+		rzz(qc, 0, 3, rz_theta);
+		rzz(qc, 0, 2, rz_theta);
+
+		rx(qc, 0, rx_theta);
+
+		rzz(qc, 1, 2, rz_theta);
+		rzz(qc, 1, 3, rz_theta);
+
+		rx(qc, 1, rx_theta);
+		rzz(qc, 2, 3, rz_theta);
+
+		rx(qc, 2, rx_theta);
+		rx(qc, 3, rx_theta);
+	}
+	void TearDown([[maybe_unused]] benchmark::State const& state) override {}
+	~MaxCutQAOAN4P1() override {}
+};
+
+BENCHMARK_DEFINE_F(MaxCutQAOAN4P1, run)(benchmark::State& state) {
+	for (auto _ : state) {
+		auto res = qc.run(obs);
+		benchmark::DoNotOptimize(res);
+	}
+}
+
+BENCHMARK_DEFINE_F(MaxCutQAOAN4P1, ev)(benchmark::State& state) {
+	auto res = qc.run(obs);
+	for (auto _ : state) {
+		auto ev = res.expectation_value();
+		benchmark::DoNotOptimize(ev);
+	}
+}
+
 BENCHMARK(Circuit_init)->Range(1024, 1024);
 BENCHMARK(Circuit_add_pauli_string);
 BENCHMARK(Circuit_add_random_string);
@@ -265,3 +314,5 @@ BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, GlobalObservable)->RangeMultiplier(2
 BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withCoefficientTruncation01)->RangeMultiplier(2)->Range(2, 8);
 BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withWeightTruncation4)->RangeMultiplier(2)->Range(2, 8);
 BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withMultiTruncation6001)->RangeMultiplier(2)->Range(2, 64);
+BENCHMARK_REGISTER_F(MaxCutQAOAN4P1, run);
+BENCHMARK_REGISTER_F(MaxCutQAOAN4P1, ev);

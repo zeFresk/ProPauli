@@ -15,6 +15,7 @@
 #include "observable.hpp"
 #include "pauli.hpp"
 #include "scheduler.hpp"
+#include "symbolic/coefficient.hpp"
 #include "truncate.hpp"
 
 #include <algorithm>
@@ -382,8 +383,10 @@ class Circuit {
 	 * @throw std::invalid_argument if the gate does not support a real parameter.
 	 * @pre `qubit` must be a valid index.
 	 */
-	template <typename Real, std::enable_if_t<std::is_floating_point_v<Real>, bool> = true>
-	void add_operation_internal(QGate g, unsigned qubit, Real c) {
+	// template <typename Real, std::enable_if_t<std::is_floating_point_v<Real>, bool> = true>
+	template <typename Real>
+	void add_operation_internal(QGate g, unsigned qubit, Real c)
+		requires(std::is_floating_point_v<Real> || Symbolic<Real>) {
 		check_qubit(qubit);
 		switch (g) {
 		case QGate::Rz:

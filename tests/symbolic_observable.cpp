@@ -5,7 +5,6 @@
 #include "observable.hpp"
 #include "truncate.hpp"
 
-#include <iostream>
 #include <sstream>
 #include <string>
 
