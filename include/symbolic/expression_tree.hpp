@@ -48,7 +48,7 @@ using ExpressionNodeType = std::variant<Constant<T>, BinaryOp, UnaryOp, Variable
 template <typename T>
 class ExpressionTree {
 	std::vector<ExpressionNodeType<T>> nodes;
-	NodeId root_id;
+	NodeId root_id = 0;
 
     public:
 	template <typename N>
