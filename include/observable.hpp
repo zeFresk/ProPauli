@@ -329,7 +329,7 @@ std::ostream& operator<<(std::ostream& os, Observable<T> const& obs) {
 	bool first = true;
 	for (std::size_t i = 0; i < obs.size(); ++i) {
 		if (!first) {
-			if constexpr (obs.is_symbolic()) {
+			if constexpr (Symbolic<T>) {
 				os << " + ";
 			} else {
 				os << " ";
