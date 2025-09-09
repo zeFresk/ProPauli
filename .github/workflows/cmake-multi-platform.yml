@@ -41,6 +41,8 @@ jobs:
           brew install llvm
           echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
           echo "LIBCXX_ENABLE_VENDOR_AVAILABILITY_ANNOTATIONS=ON" >> $GITHUB_ENV
+          echo 'LDFLAGS="-L/opt/homebrew/opt/llvm/lib"' >> $GITHUB_ENV
+          echo 'CPPFLAGS="-I/opt/homebrew/opt/llvm/include"' >> $GITHUB_ENV
 
 
       - name: Debug
