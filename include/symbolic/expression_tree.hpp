@@ -1,4 +1,3 @@
-
 #ifndef PP_INCLUDE_EXPRESSION_TREE_HPP
 #define PP_INCLUDE_EXPRESSION_TREE_HPP
 
@@ -66,6 +65,44 @@ struct ExpressionNode {
 	ExpressionNodeType<T> node_type;
 	template <typename NodeType>
 	ExpressionNode(NodeType&& nt) : node_type(std::forward<NodeType>(nt)) {}
+};
+
+template <typename T>
+struct NodePtrHasher {
+    // Combines a seed with a new hash value. Inspired by boost::hash_combine.
+    void hash_combine(std::size_t& seed, std::size_t value) const {
+        seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+
+    std::size_t operator()(const NodePtr<T>& node) const {
+        if (!node) return 0;
+        
+        return std::visit(
+            [&](auto const& n) -> std::size_t {
+                using VT = std::remove_cvref_t<decltype(n)>;
+                size_t seed = typeid(VT).hash_code();
+
+                if constexpr (std::is_same_v<VT, Constant<T>>) {
+                    hash_combine(seed, std::hash<T>{}(n.value));
+                } else if constexpr (std::is_same_v<VT, Variable>) {
+                    hash_combine(seed, std::hash<std::string>{}(n.name));
+                } else if constexpr (std::is_same_v<VT, UnaryOp<T>>) {
+                    hash_combine(seed, static_cast<size_t>(n.operation));
+                    hash_combine(seed, (*this)(n.exp));
+                } else if constexpr (std::is_same_v<VT, BinaryOp<T>>) {
+                    hash_combine(seed, static_cast<size_t>(n.operation));
+                    hash_combine(seed, (*this)(n.lhs));
+                    hash_combine(seed, (*this)(n.rhs));
+                } else if constexpr (std::is_same_v<VT, NaryOp<T>>) {
+                    hash_combine(seed, static_cast<size_t>(n.operation));
+                    for (const auto& op : n.operands) {
+                        hash_combine(seed, (*this)(op));
+                    }
+                }
+                return seed;
+            },
+            node->node_type);
+    }
 };
 
 // --- 2. THE EXPRESSION TREE CLASS ---
@@ -366,6 +403,7 @@ NodePtr<T> ExpressionTree<T>::simplify_node(NodePtr<T> const& node) const {
 			if constexpr (std::is_same_v<VT, Constant<T>> || std::is_same_v<VT, Variable>) {
 				return node;
 			} else if constexpr (std::is_same_v<VT, UnaryOp<T>>) {
+				// This is already bottom-up: simplify child, then process parent.
 				auto s_exp = simplify_node(n.exp);
 				if (auto const* c = std::get_if<Constant<T>>(&s_exp->node_type)) {
 					switch (n.operation) {
@@ -392,37 +430,30 @@ NodePtr<T> ExpressionTree<T>::simplify_node(NodePtr<T> const& node) const {
 					return std::make_shared<const ExpressionNode<T>>(
 						UnaryOp<T>{ n.operation, s_exp });
 			} else if constexpr (std::is_same_v<VT, BinaryOp<T>>) {
-				// --- SUBTRACTION REFACTOR ---
-				// Subtraction is now canonicalized into an Add node and re-routed
-				// through simplify_node to ensure the full pipeline is used.
-				if (n.operation == BinaryOp<T>::Op::Substract) {
-					auto s_lhs = simplify_node(n.lhs);
-					auto s_rhs = simplify_node(n.rhs);
-					auto neg_one = std::make_shared<const ExpressionNode<T>>(Constant<T>{ -1 });
+				// --- RESTRUCTURED to be BOTTOM-UP ---
+				// 1. Simplify children FIRST.
+				auto s_lhs = simplify_node(n.lhs);
+				auto s_rhs = simplify_node(n.rhs);
 
+				// 2. Perform operations on the now-simplified children.
+				if (n.operation == BinaryOp<T>::Op::Substract) {
+					auto neg_one = std::make_shared<const ExpressionNode<T>>(Constant<T>{ -1 });
 					auto neg_rhs = std::make_shared<const ExpressionNode<T>>(
 						BinaryOp<T>{ BinaryOp<T>::Op::Multiply, neg_one, s_rhs });
-
 					auto add_node = std::make_shared<const ExpressionNode<T>>(
 						BinaryOp<T>{ BinaryOp<T>::Op::Add, s_lhs, neg_rhs });
-
 					return simplify_node(add_node);
 				}
 
 				if (n.operation == BinaryOp<T>::Op::Add || n.operation == BinaryOp<T>::Op::Multiply) {
-					std::vector<NodePtr<T>> operands;
+					std::vector<NodePtr<T>> s_operands = { s_lhs, s_rhs };
 					auto op = (n.operation == BinaryOp<T>::Op::Add) ? NaryOp<T>::Op::Add :
 											  NaryOp<T>::Op::Multiply;
-					// Note: flatten_operands is now called inside process_ functions,
-					// but it's still correct to call it here for initial transformation.
-					flatten_operands(node, op, operands);
-					return (op == NaryOp<T>::Op::Add) ? process_addition(operands) :
-									    process_multiplication(operands);
+					return (op == NaryOp<T>::Op::Add) ? process_addition(s_operands) :
+									    process_multiplication(s_operands);
 				}
 
-				// Division logic (unchanged)
-				auto s_lhs = simplify_node(n.lhs);
-				auto s_rhs = simplify_node(n.rhs);
+				// Division logic using simplified children
 				if (auto const* c_lhs = std::get_if<Constant<T>>(&s_lhs->node_type)) {
 					if (c_lhs->value == 0)
 						return std::make_shared<const ExpressionNode<T>>(Constant<T>{ 0 });
@@ -433,11 +464,14 @@ NodePtr<T> ExpressionTree<T>::simplify_node(NodePtr<T> const& node) const {
 				}
 				if (are_trees_identical(s_lhs, s_rhs))
 					return std::make_shared<const ExpressionNode<T>>(Constant<T>{ 1 });
+
+				// 3. Rebuild node only if something changed.
 				if (s_lhs != n.lhs || s_rhs != n.rhs)
 					return std::make_shared<const ExpressionNode<T>>(
 						BinaryOp<T>{ n.operation, s_lhs, s_rhs });
 
 			} else if constexpr (std::is_same_v<VT, NaryOp<T>>) {
+				// This logic is already correctly bottom-up.
 				std::vector<NodePtr<T>> s_operands;
 				s_operands.reserve(n.operands.size());
 				for (const auto& op : n.operands) {
@@ -470,7 +504,9 @@ void ExpressionTree<T>::flatten_operands(NodePtr<T> const& node, typename NaryOp
 			flatten_operands(bin_node->rhs, op, operands);
 		}
 	} else {
-		operands.push_back(simplify_node(node));
+		// The critical optimization: Do not simplify here.
+		// The new bottom-up approach in `simplify_node` ensures that `node` is already simplified.
+		operands.push_back(node);
 	}
 }
 
@@ -511,39 +547,77 @@ std::pair<T, NodePtr<T>> ExpressionTree<T>::extract_coefficient(NodePtr<T> const
 
 template <typename T>
 NodePtr<T> ExpressionTree<T>::process_addition(std::vector<NodePtr<T>>& operands_in) const {
-	// --- ADDITION REFACTOR ---
-	// This function now flattens its own inputs to ensure it always operates on a
-	// clean, flat list of terms, preventing issues from upstream calls.
+	// --- IMPLEMENTATION 1: "SORT AND SWEEP" ---
+
 	std::vector<NodePtr<T>> flat_operands;
 	for (const auto& op : operands_in) {
 		flatten_operands(op, NaryOp<T>::Op::Add, flat_operands);
 	}
 
 	T constant_term = 0;
-	std::map<NodePtr<T>, T, NodePtrComparator> term_coeffs(NodePtrComparator{ this });
+	// Vector to store the non-constant parts of the expression for sorting.
+	std::vector<std::pair<T, NodePtr<T>>> symbolic_terms;
 
 	for (const auto& operand : flat_operands) {
 		auto [coeff, term] = extract_coefficient(operand);
 		if (term == nullptr) {
+			// This is a pure constant term
 			constant_term += coeff;
 		} else {
-			term_coeffs[term] += coeff;
+			symbolic_terms.push_back({coeff, term});
 		}
 	}
+
+	// Sort the symbolic terms based on the expression tree structure.
+	// All identical terms (like 'x' or 'sin(y)') will be grouped together.
+	std::sort(symbolic_terms.begin(), symbolic_terms.end(), 
+		[&](const auto& a, const auto& b) {
+			return compare_nodes(a.second, b.second) < 0;
+		}
+	);
 
 	std::vector<NodePtr<T>> new_operands;
-	for (auto const& [term, coeff] : term_coeffs) {
-		if (coeff == 0)
-			continue;
-		if (coeff == 1) {
-			new_operands.push_back(term);
-		} else {
-			auto coeff_node = std::make_shared<const ExpressionNode<T>>(Constant<T>{ coeff });
-			std::vector<NodePtr<T>> mul_ops = { coeff_node, term };
-			new_operands.push_back(process_multiplication(mul_ops));
+	// Sweep through the sorted terms to merge coefficients.
+	if (!symbolic_terms.empty()) {
+		auto it = symbolic_terms.begin();
+		NodePtr<T> current_term = it->second;
+		T accumulated_coeff = it->first;
+		
+		for (++it; it != symbolic_terms.end(); ++it) {
+			if (are_trees_identical(current_term, it->second)) {
+				// The term is the same as the previous one, accumulate coefficient.
+				accumulated_coeff += it->first;
+			} else {
+				// A new term has been found. Finalize and store the previous one.
+				if (accumulated_coeff != 0) {
+					if (accumulated_coeff == 1) {
+						new_operands.push_back(current_term);
+					} else {
+						auto coeff_node = std::make_shared<const ExpressionNode<T>>(Constant<T>{ accumulated_coeff });
+						std::vector<NodePtr<T>> mul_ops = { coeff_node, current_term };
+						new_operands.push_back(process_multiplication(mul_ops));
+					}
+				}
+				// Start the next group.
+				current_term = it->second;
+				accumulated_coeff = it->first;
+			}
+		}
+		
+		// Don't forget to add the very last accumulated term after the loop finishes.
+		if (accumulated_coeff != 0) {
+			if (accumulated_coeff == 1) {
+				new_operands.push_back(current_term);
+			} else {
+				auto coeff_node = std::make_shared<const ExpressionNode<T>>(Constant<T>{ accumulated_coeff });
+				std::vector<NodePtr<T>> mul_ops = { coeff_node, current_term };
+				new_operands.push_back(process_multiplication(mul_ops));
+			}
 		}
 	}
 
+
+	// Add the constant term back if it's non-zero.
 	if (constant_term != 0) {
 		new_operands.push_back(std::make_shared<const ExpressionNode<T>>(Constant<T>{ constant_term }));
 	}
@@ -553,12 +627,11 @@ NodePtr<T> ExpressionTree<T>::process_addition(std::vector<NodePtr<T>>& operands
 	if (new_operands.size() == 1)
 		return new_operands[0];
 
-	std::sort(new_operands.begin(), new_operands.end(),
-		  [&](const NodePtr<T>& a, const NodePtr<T>& b) { return compare_nodes(a, b) < 0; });
+	// Sort final operands for a canonical representation.
+	std::sort(new_operands.begin(), new_operands.end(), NodePtrComparator{ this });
 
 	return std::make_shared<const ExpressionNode<T>>(NaryOp<T>{ NaryOp<T>::Op::Add, new_operands });
 }
-
 template <typename T>
 NodePtr<T> ExpressionTree<T>::process_multiplication(std::vector<NodePtr<T>>& operands_in, bool expand) const {
 	// --- MULTIPLICATION REFACTOR ---
