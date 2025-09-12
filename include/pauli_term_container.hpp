@@ -311,7 +311,7 @@ class PauliTermContainer {
 /** @} */
 
 // The implementation of the non-owning view classes is injected here.
-#include "container/packed_pauli_term.tpl"
+#include "container/packed_pauli_term.inl"
 
 	using non_owning_t = NonOwningPauliTermPacked;
 	using ro_non_owning_t = ReadOnlyNonOwningPauliTermPacked;
@@ -380,7 +380,7 @@ class PauliTermContainer {
 /** @} */
 
 // The implementation of the custom iterators is injected here.
-#include "container/packed_iterators.tpl"
+#include "container/packed_iterators.inl"
 
 	/** @name Iterators
 	 * @{
