@@ -805,30 +805,32 @@ template <typename T>
 NodePtr<T> ExpressionTree<T>::factor_addition_node(const NaryOp<T>& add_node) const {
 	auto current_operands = add_node.operands;
 
+	std::map<NodePtr<T>, std::vector<NodePtr<T>>, NodePtrComparator> term_to_factors_cache(
+		NodePtrComparator{ this });
+	for (const auto& term : current_operands) {
+		term_to_factors_cache[term] = get_multiplicative_factors(term);
+	}
+
 	while (true) {
 		if (current_operands.size() <= 1) {
-			break; // Nothing to factor
+			break;
 		}
 
 		std::map<NodePtr<T>, std::vector<NodePtr<T>>, NodePtrComparator> factor_to_terms(
 			NodePtrComparator{ this });
-		std::map<NodePtr<T>, std::vector<NodePtr<T>>, NodePtrComparator> term_to_factors_cache(
-			NodePtrComparator{ this });
 
-		// 1. Deconstruct all terms and map factors to the terms they appear in
 		for (const auto& term : current_operands) {
-			auto factors = get_multiplicative_factors(term);
-			term_to_factors_cache[term] = factors;
-			for (const auto& factor : factors) {
+			for (const auto& factor : term_to_factors_cache.at(term)) {
 				factor_to_terms[factor].push_back(term);
 			}
 		}
 
-		// 2. Find the best factor to pull out (most common, and appears in > 1 term)
 		NodePtr<T> best_factor = nullptr;
 		size_t max_count = 1;
 
 		for (const auto& [factor, terms] : factor_to_terms) {
+			// --- FIX ---
+			// The incorrect line preventing numeric factoring has been removed.
 			if (terms.size() > max_count) {
 				max_count = terms.size();
 				best_factor = factor;
@@ -836,36 +838,30 @@ NodePtr<T> ExpressionTree<T>::factor_addition_node(const NaryOp<T>& add_node) co
 		}
 
 		if (!best_factor) {
-			break; // No common factors found, exit loop
+			break;
 		}
 
-		// 3. Partition terms into those with the factor and those without
 		std::vector<NodePtr<T>> terms_with_factor;
 		std::vector<NodePtr<T>> terms_without_factor;
+		terms_with_factor = factor_to_terms.at(best_factor);
+
+		std::sort(terms_with_factor.begin(), terms_with_factor.end());
 		for (const auto& term : current_operands) {
-			bool has_factor = false;
-			for (const auto& factor : term_to_factors_cache.at(term)) {
-				if (are_trees_identical(factor, best_factor)) {
-					has_factor = true;
-					break;
-				}
-			}
-			if (has_factor) {
-				terms_with_factor.push_back(term);
-			} else {
+			if (!std::binary_search(terms_with_factor.begin(), terms_with_factor.end(), term)) {
 				terms_without_factor.push_back(term);
 			}
 		}
 
-		// 4. Build the new factored term: F * (T1/F + T2/F + ...)
 		std::vector<NodePtr<T>> inner_sum_operands;
+		inner_sum_operands.reserve(terms_with_factor.size());
 		for (const auto& term : terms_with_factor) {
 			auto original_factors = term_to_factors_cache.at(term);
 			std::vector<NodePtr<T>> remaining_factors;
+			remaining_factors.reserve(original_factors.size() - 1);
 			bool removed = false;
 			for (const auto& f : original_factors) {
 				if (!removed && are_trees_identical(f, best_factor)) {
-					removed = true; // Remove only one instance of the factor
+					removed = true;
 				} else {
 					remaining_factors.push_back(f);
 				}
@@ -873,26 +869,26 @@ NodePtr<T> ExpressionTree<T>::factor_addition_node(const NaryOp<T>& add_node) co
 			inner_sum_operands.push_back(build_from_factors(remaining_factors));
 		}
 
-		// The inner sum itself needs to be simplified and factored recursively
 		auto inner_sum = process_addition(inner_sum_operands);
 		auto factored_inner_sum = factor_node(inner_sum);
-
-		// Rebuild the outer multiplication: BestFactor * FactoredInnerSum
 		auto new_factored_term = build_from_factors({ best_factor, factored_inner_sum });
 
-		// 5. Update the list of operands for the next iteration
-		current_operands = terms_without_factor;
+		current_operands = std::move(terms_without_factor);
 		current_operands.push_back(new_factored_term);
+
+		for (const auto& term : terms_with_factor) {
+			term_to_factors_cache.erase(term);
+		}
+		term_to_factors_cache[new_factored_term] = get_multiplicative_factors(new_factored_term);
 	}
 
-	// Rebuild and return the final node
 	if (current_operands.empty())
 		return std::make_shared<const ExpressionNode<T>>(Constant<T>{ 0 });
 	if (current_operands.size() == 1)
 		return current_operands[0];
 
 	std::sort(current_operands.begin(), current_operands.end(), NodePtrComparator{ this });
-	return std::make_shared<const ExpressionNode<T>>(NaryOp<T>{ NaryOp<T>::Op::Add, current_operands });
+	return std::make_shared<const ExpressionNode<T>>(NaryOp<T>{ NaryOp<T>::Op::Add, std::move(current_operands) });
 }
 
 template <typename T>
