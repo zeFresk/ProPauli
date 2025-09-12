@@ -144,7 +144,7 @@ class Circuit_ZZ_feature_map : public benchmark::Fixture {
 			qc.add_operation("Cx", i, i + 1);
 		}
 	}
-	void TearDown([[maybe_unused]] benchmark::State const& state) override {}
+	void TearDown([[maybe_unused]] benchmark::State const& state) override { qc = Circuit(nb_qubits); }
 	~Circuit_ZZ_feature_map() override {}
 };
 
@@ -208,7 +208,7 @@ class Circuit_Efficient_SU2 : public benchmark::Fixture {
 		for (unsigned i = 0; i < nb_qubits; ++i)
 			qc.add_operation("Rz", i, static_cast<coeff_t>(random_coeff() * pi));
 	}
-	void TearDown([[maybe_unused]] benchmark::State const& state) override {}
+	void TearDown([[maybe_unused]] benchmark::State const& state) override {qc = Circuit(nb_qubits);}
 	~Circuit_Efficient_SU2() override {}
 };
 
@@ -285,7 +285,7 @@ class MaxCutQAOAN4P1 : public benchmark::Fixture {
 		rx(qc, 2, rx_theta);
 		rx(qc, 3, rx_theta);
 	}
-	void TearDown([[maybe_unused]] benchmark::State const& state) override {}
+	void TearDown([[maybe_unused]] benchmark::State const& state) override {qc = Circuit<coeff_t>(4);}
 	~MaxCutQAOAN4P1() override {}
 };
 

@@ -5,6 +5,8 @@
 #include "observable.hpp"
 
 #include "helper.hpp"
+#include <fstream>
+#include <ios>
 
 class SymbolicMaxCutQAOAN4P1 : public benchmark::Fixture {
     public:
@@ -39,7 +41,7 @@ class SymbolicMaxCutQAOAN4P1 : public benchmark::Fixture {
 		rx(sqc, 2, rx_v);
 		rx(sqc, 3, rx_v);
 	}
-	void TearDown([[maybe_unused]] benchmark::State const& state) override {}
+	void TearDown([[maybe_unused]] benchmark::State const& state) override { sqc = decltype(sqc){ 4 }; }
 	~SymbolicMaxCutQAOAN4P1() override {}
 };
 
@@ -50,12 +52,22 @@ BENCHMARK_DEFINE_F(SymbolicMaxCutQAOAN4P1, run)(benchmark::State& state) {
 	}
 }
 
-BENCHMARK_DEFINE_F(SymbolicMaxCutQAOAN4P1, ev_evaluate)(benchmark::State& state) {
+BENCHMARK_DEFINE_F(SymbolicMaxCutQAOAN4P1, ev)(benchmark::State& state) {
 	auto res = sqc.run(obs);
 
 	for (auto _ : state) {
-		auto ev = res.expectation_value().evaluate(variable_map);
+		auto ev = res.expectation_value();
 		benchmark::DoNotOptimize(ev);
+	}
+}
+
+BENCHMARK_DEFINE_F(SymbolicMaxCutQAOAN4P1, ev_evaluate)(benchmark::State& state) {
+	auto res = sqc.run(obs);
+	auto ev = res.expectation_value();
+
+	for (auto _ : state) {
+		auto eval = ev.evaluate(variable_map);
+		benchmark::DoNotOptimize(eval);
 	}
 }
 
@@ -79,6 +91,7 @@ BENCHMARK_DEFINE_F(SymbolicMaxCutQAOAN4P1, ev_simplified_evaluate)(benchmark::St
 }
 
 BENCHMARK_REGISTER_F(SymbolicMaxCutQAOAN4P1, run);
+BENCHMARK_REGISTER_F(SymbolicMaxCutQAOAN4P1, ev);
 BENCHMARK_REGISTER_F(SymbolicMaxCutQAOAN4P1, ev_evaluate);
 BENCHMARK_REGISTER_F(SymbolicMaxCutQAOAN4P1, ev_simplify);
 BENCHMARK_REGISTER_F(SymbolicMaxCutQAOAN4P1, ev_simplified_evaluate);

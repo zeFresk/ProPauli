@@ -8,10 +8,11 @@ template <typename T>
 class SymbolicCoefficient {
 	ExpressionTree<T> et;
 
-	// Private constructor for internal use
+	// Private constructor for internal use by friends and operators
 	SymbolicCoefficient(ExpressionTree<T> tree) : et(std::move(tree)) {}
 
     public:
+	// --- Constructors ---
 	SymbolicCoefficient(T const v)
 		: et(ExpressionTree<T>(std::make_shared<const ExpressionNode<T>>(Constant<T>{ v }))) {}
 
@@ -25,15 +26,31 @@ class SymbolicCoefficient {
 
 	using Underlying_t = T;
 
-	std::string to_string(std::string_view format_string = "{:.3}") const { return et.to_string(format_string); }
-
+	// --- Public API ---
+	std::string to_string(std::string_view format_string = "{:.3g}") const { return et.to_string(format_string); }
 	T evaluate(std::unordered_map<std::string, T> const& variables = {}) const { return et.evaluate(variables); }
+	[[nodiscard]] SymbolicCoefficient substitute(std::unordered_map<std::string, T> const& variables) const {
+		return SymbolicCoefficient(et.substitute(variables));
+	}
 
+	// FIX: Added the missing symbolic_evaluate method
 	[[nodiscard]] SymbolicCoefficient symbolic_evaluate(std::unordered_map<std::string, T> const& variables) const {
 		return SymbolicCoefficient(et.symbolic_evaluate(variables));
 	}
 
 	[[nodiscard]] SymbolicCoefficient simplified() const { return SymbolicCoefficient(et.simplified()); }
+
+	// --- Operator Overloads ---
+	SymbolicCoefficient& operator*=(T v) {
+		if (v == T{ 1 }) {
+			return *this;
+		} else if (v == T{ -1 }) {
+			*this = -*this;
+			return *this;
+		} else {
+			return *this *= SymbolicCoefficient{ v };
+		}
+	}
 
 	SymbolicCoefficient& operator*=(SymbolicCoefficient const& v) {
 		auto new_root = std::make_shared<const ExpressionNode<T>>(
@@ -88,35 +105,43 @@ class SymbolicCoefficient {
 	}
 
 	friend SymbolicCoefficient operator+(SymbolicCoefficient lhs, SymbolicCoefficient const& rhs) {
-		lhs += rhs;
-		return lhs;
+		return lhs += rhs;
 	}
-
+	friend SymbolicCoefficient operator+(SymbolicCoefficient lhs, T v) {
+		if (v == T{ 0 }) {
+			return lhs;
+		} else {
+			return lhs += v;
+		}
+	}
+	friend SymbolicCoefficient operator+(T v, SymbolicCoefficient const& rhs) {
+		return rhs + v;
+	}
 	friend SymbolicCoefficient operator*(SymbolicCoefficient lhs, SymbolicCoefficient const& rhs) {
-		lhs *= rhs;
-		return lhs;
+		return lhs *= rhs;
 	}
-
+	friend SymbolicCoefficient operator*(SymbolicCoefficient lhs, T v) {
+		if (v == T{ 1 }) {
+			return lhs;
+		} else if (v == T{ -1 }) {
+			return -lhs;
+		} else {
+			return lhs *= v;
+		}
+	}
+	friend SymbolicCoefficient operator*(T v, SymbolicCoefficient const& rhs) { return rhs * v; }
 	friend SymbolicCoefficient operator/(SymbolicCoefficient lhs, SymbolicCoefficient const& rhs) {
-		lhs /= rhs;
-		return lhs;
+		return lhs /= rhs;
 	}
-
 	friend SymbolicCoefficient operator-(SymbolicCoefficient lhs, SymbolicCoefficient const& rhs) {
-		lhs -= rhs;
-		return lhs;
+		return lhs -= rhs;
 	}
 
 	friend SymbolicCoefficient cos(SymbolicCoefficient x) { return x.cos(); }
 	friend SymbolicCoefficient sin(SymbolicCoefficient x) { return x.sin(); }
 	friend SymbolicCoefficient sqrt(SymbolicCoefficient x) { return x.sqrt(); }
 
-	friend std::ostream& operator<<(std::ostream& os, SymbolicCoefficient const& sc) {
-		os << sc.et;
-		return os;
-	}
-
-	// No longer need import_nodes or other private helpers
+	friend std::ostream& operator<<(std::ostream& os, SymbolicCoefficient const& sc) { return os << sc.et; }
 };
 
 template <typename T>
@@ -127,4 +152,4 @@ concept Evaluable = requires(T t) {
 template <typename T>
 concept Symbolic = Evaluable<T> || std::is_same_v<Variable, T>;
 
-#endif
+#endif // PP_INCLUDE_SYMBOLIC_COEFFICIENT_HPP
