@@ -203,7 +203,7 @@ TEST(SymbolicCoefficient, simplify_minus_minus) {
 	Sc x = Variable{ "x" };
 	x = -x;
 	x = -x;
-	EXPECT_EQ(x.to_string(), "--x");
+	EXPECT_EQ(x.to_string(), "-(-x)");
 	auto sx = x.simplified();
 	EXPECT_EQ(sx.to_string(), "x");
 }

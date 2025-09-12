@@ -8,16 +8,15 @@ template <typename T>
 class SymbolicCoefficient {
 	ExpressionTree<T> et;
 
-    public:
-	SymbolicCoefficient(T const v) : et{} {
-		auto n = et.add_node(Constant<T>(v));
-		et.update_root(n);
-	}
+	// Private constructor for internal use
+	SymbolicCoefficient(ExpressionTree<T> tree) : et(std::move(tree)) {}
 
-	SymbolicCoefficient(Variable const& var) : et{} {
-		auto n = et.add_node(var);
-		et.update_root(n);
-	}
+    public:
+	SymbolicCoefficient(T const v)
+		: et(ExpressionTree<T>(std::make_shared<const ExpressionNode<T>>(Constant<T>{ v }))) {}
+
+	SymbolicCoefficient(Variable const& var)
+		: et(ExpressionTree<T>(std::make_shared<const ExpressionNode<T>>(var))) {}
 
 	SymbolicCoefficient(SymbolicCoefficient const&) = default;
 	SymbolicCoefficient& operator=(SymbolicCoefficient const&) = default;
@@ -26,84 +25,66 @@ class SymbolicCoefficient {
 
 	using Underlying_t = T;
 
-	/*SymbolicCoefficient& operator=(T const& new_v) {
-		auto n = et.add_node(Constant<T>(std::forward(new_v)));
-		et.update_root(n);
-		return *this;
-	}*/
-
 	std::string to_string(std::string_view format_string = "{:.3}") const { return et.to_string(format_string); }
 
 	T evaluate(std::unordered_map<std::string, T> const& variables = {}) const { return et.evaluate(variables); }
 
 	[[nodiscard]] SymbolicCoefficient symbolic_evaluate(std::unordered_map<std::string, T> const& variables) const {
-		SymbolicCoefficient ret{ 0.f };
-		auto set = et.symbolic_evaluate(variables);
-		ret.et = set;
-		return ret;
+		return SymbolicCoefficient(et.symbolic_evaluate(variables));
 	}
 
-	[[nodiscard]] SymbolicCoefficient simplified() const {
-		SymbolicCoefficient ret{ 0.f };
-		auto set = et.simplified();
-		ret.et = set;
-		return ret;
-	}
+	[[nodiscard]] SymbolicCoefficient simplified() const { return SymbolicCoefficient(et.simplified()); }
 
 	SymbolicCoefficient& operator*=(SymbolicCoefficient const& v) {
-		auto r = import_nodes(v);
-		auto n = et.add_node(BinaryOp{ BinaryOp::Op::Multiply, et.get_root(), r });
-		et.update_root(n);
+		auto new_root = std::make_shared<const ExpressionNode<T>>(
+			BinaryOp<T>{ BinaryOp<T>::Op::Multiply, et.get_root(), v.et.get_root() });
+		et = ExpressionTree<T>(new_root);
 		return *this;
 	}
 
 	SymbolicCoefficient& operator+=(SymbolicCoefficient const& v) {
-		auto r = import_nodes(v);
-		auto n = et.add_node(BinaryOp{ BinaryOp::Op::Add, et.get_root(), r });
-		et.update_root(n);
+		auto new_root = std::make_shared<const ExpressionNode<T>>(
+			BinaryOp<T>{ BinaryOp<T>::Op::Add, et.get_root(), v.et.get_root() });
+		et = ExpressionTree<T>(new_root);
 		return *this;
 	}
 
 	SymbolicCoefficient& operator/=(SymbolicCoefficient const& v) {
-		auto r = import_nodes(v);
-		auto n = et.add_node(BinaryOp{ BinaryOp::Op::Divide, et.get_root(), r });
-		et.update_root(n);
+		auto new_root = std::make_shared<const ExpressionNode<T>>(
+			BinaryOp<T>{ BinaryOp<T>::Op::Divide, et.get_root(), v.et.get_root() });
+		et = ExpressionTree<T>(new_root);
 		return *this;
 	}
 
 	SymbolicCoefficient& operator-=(SymbolicCoefficient const& v) {
-		auto r = import_nodes(v);
-		auto n = et.add_node(BinaryOp{ BinaryOp::Op::Substract, et.get_root(), r });
-		et.update_root(n);
+		auto new_root = std::make_shared<const ExpressionNode<T>>(
+			BinaryOp<T>{ BinaryOp<T>::Op::Substract, et.get_root(), v.et.get_root() });
+		et = ExpressionTree<T>(new_root);
 		return *this;
 	}
 
 	SymbolicCoefficient operator-() const {
-		auto ret = *this;
-		auto n = ret.et.add_node(UnaryOp{ UnaryOp::Op::Minus, et.get_root() });
-		ret.et.update_root(n);
-		return ret;
+		auto new_root =
+			std::make_shared<const ExpressionNode<T>>(UnaryOp<T>{ UnaryOp<T>::Op::Minus, et.get_root() });
+		return SymbolicCoefficient(ExpressionTree<T>(new_root));
 	}
 
 	SymbolicCoefficient cos() const {
-		auto ret = *this;
-		auto n = ret.et.add_node(UnaryOp{ UnaryOp::Op::Cos, et.get_root() });
-		ret.et.update_root(n);
-		return ret;
+		auto new_root =
+			std::make_shared<const ExpressionNode<T>>(UnaryOp<T>{ UnaryOp<T>::Op::Cos, et.get_root() });
+		return SymbolicCoefficient(ExpressionTree<T>(new_root));
 	}
 
 	SymbolicCoefficient sin() const {
-		auto ret = *this;
-		auto n = ret.et.add_node(UnaryOp{ UnaryOp::Op::Sin, et.get_root() });
-		ret.et.update_root(n);
-		return ret;
+		auto new_root =
+			std::make_shared<const ExpressionNode<T>>(UnaryOp<T>{ UnaryOp<T>::Op::Sin, et.get_root() });
+		return SymbolicCoefficient(ExpressionTree<T>(new_root));
 	}
 
 	SymbolicCoefficient sqrt() const {
-		auto ret = *this;
-		auto n = ret.et.add_node(UnaryOp{ UnaryOp::Op::Sqrt, et.get_root() });
-		ret.et.update_root(n);
-		return ret;
+		auto new_root =
+			std::make_shared<const ExpressionNode<T>>(UnaryOp<T>{ UnaryOp<T>::Op::Sqrt, et.get_root() });
+		return SymbolicCoefficient(ExpressionTree<T>(new_root));
 	}
 
 	friend SymbolicCoefficient operator+(SymbolicCoefficient lhs, SymbolicCoefficient const& rhs) {
@@ -127,9 +108,7 @@ class SymbolicCoefficient {
 	}
 
 	friend SymbolicCoefficient cos(SymbolicCoefficient x) { return x.cos(); }
-
 	friend SymbolicCoefficient sin(SymbolicCoefficient x) { return x.sin(); }
-
 	friend SymbolicCoefficient sqrt(SymbolicCoefficient x) { return x.sqrt(); }
 
 	friend std::ostream& operator<<(std::ostream& os, SymbolicCoefficient const& sc) {
@@ -137,11 +116,7 @@ class SymbolicCoefficient {
 		return os;
 	}
 
-    private:
-	NodeId import_nodes(SymbolicCoefficient const& other) {
-		auto imported_root = et.import_nodes(other.et);
-		return imported_root;
-	}
+	// No longer need import_nodes or other private helpers
 };
 
 template <typename T>
