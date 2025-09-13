@@ -2,25 +2,21 @@ template <typename T>
 void ExpressionTree<T>::flatten_operands(NodePtr<T> const& node, typename NaryOp<T>::Op op,
 					 std::vector<NodePtr<T>>& operands) const {
 	auto const* nary_node = std::get_if<NaryOp<T>>(&node->node_type);
-	auto const* bin_node = std::get_if<BinaryOp<T>>(&node->node_type);
-	auto matches = [&](auto o) { return o == op; };
-	bool is_match =
-		(nary_node && matches(nary_node->operation)) ||
-		(bin_node && ((op == NaryOp<T>::Op::Add && bin_node->operation == BinaryOp<T>::Op::Add) ||
-			      (op == NaryOp<T>::Op::Multiply && bin_node->operation == BinaryOp<T>::Op::Multiply)));
-	if (is_match) {
-		if (nary_node) {
-			for (const auto& child : nary_node->operands)
-				flatten_operands(child, op, operands);
-		} else {
-			flatten_operands(bin_node->lhs, op, operands);
-			flatten_operands(bin_node->rhs, op, operands);
-		}
-	} else {
-		// The critical optimization: Do not simplify here.
-		// The new bottom-up approach in `simplify_node` ensures that `node` is already simplified.
-		operands.push_back(node);
+	if (nary_node && nary_node->operation == op) {
+		for (const auto& child : nary_node->operands)
+			flatten_operands(child, op, operands);
+		return;
 	}
+
+	auto const* bin_node = std::get_if<BinaryOp<T>>(&node->node_type);
+	if (bin_node && ((op == NaryOp<T>::Op::Add && bin_node->operation == BinaryOp<T>::Op::Add) ||
+			 (op == NaryOp<T>::Op::Multiply && bin_node->operation == BinaryOp<T>::Op::Multiply))) {
+		flatten_operands(bin_node->lhs, op, operands);
+		flatten_operands(bin_node->rhs, op, operands);
+		return;
+	}
+
+	operands.push_back(node);
 }
 
 template <typename T>

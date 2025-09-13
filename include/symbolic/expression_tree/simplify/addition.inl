@@ -45,7 +45,7 @@ NodePtr<T> ExpressionTree<T>::process_addition(std::vector<NodePtr<T>>& operands
 					} else {
 						auto coeff_node = std::make_shared<const ExpressionNode<T>>(
 							Constant<T>{ accumulated_coeff });
-						std::vector<NodePtr<T>> mul_ops = { coeff_node, current_term };
+						std::vector<NodePtr<T>> mul_ops = { std::move(coeff_node), current_term };
 						new_operands.push_back(process_multiplication(mul_ops));
 					}
 				}
