@@ -1,6 +1,6 @@
 template <typename T>
 NodePtr<T> ExpressionTree<T>::process_addition(std::vector<NodePtr<T>>& operands_in) const {
-	// --- IMPLEMENTATION 1: "SORT AND SWEEP" ---
+	static constexpr std::size_t PRE_ALLOC = 8;
 
 	std::vector<NodePtr<T>> flat_operands;
 	for (const auto& op : operands_in) {
@@ -10,11 +10,11 @@ NodePtr<T> ExpressionTree<T>::process_addition(std::vector<NodePtr<T>>& operands
 	T constant_term = 0;
 	// Vector to store the non-constant parts of the expression for sorting.
 	std::vector<std::pair<T, NodePtr<T>>> symbolic_terms;
+	symbolic_terms.reserve(PRE_ALLOC);
 
 	for (const auto& operand : flat_operands) {
 		auto [coeff, term] = extract_coefficient(operand);
 		if (term == nullptr) {
-			// This is a pure constant term
 			constant_term += coeff;
 		} else {
 			symbolic_terms.push_back({ coeff, term });
@@ -27,6 +27,7 @@ NodePtr<T> ExpressionTree<T>::process_addition(std::vector<NodePtr<T>>& operands
 		  [&](const auto& a, const auto& b) { return compare_nodes(a.second, b.second) < 0; });
 
 	std::vector<NodePtr<T>> new_operands;
+	new_operands.reserve(PRE_ALLOC);
 	// Sweep through the sorted terms to merge coefficients.
 	if (!symbolic_terms.empty()) {
 		auto it = symbolic_terms.begin();
@@ -35,7 +36,6 @@ NodePtr<T> ExpressionTree<T>::process_addition(std::vector<NodePtr<T>>& operands
 
 		for (++it; it != symbolic_terms.end(); ++it) {
 			if (are_trees_identical(current_term, it->second)) {
-				// The term is the same as the previous one, accumulate coefficient.
 				accumulated_coeff += it->first;
 			} else {
 				// A new term has been found. Finalize and store the previous one.
@@ -62,7 +62,7 @@ NodePtr<T> ExpressionTree<T>::process_addition(std::vector<NodePtr<T>>& operands
 			} else {
 				auto coeff_node =
 					std::make_shared<const ExpressionNode<T>>(Constant<T>{ accumulated_coeff });
-				std::vector<NodePtr<T>> mul_ops = { coeff_node, current_term };
+				std::vector<NodePtr<T>> mul_ops = { std::move(coeff_node), current_term };
 				new_operands.push_back(process_multiplication(mul_ops));
 			}
 		}
@@ -81,5 +81,5 @@ NodePtr<T> ExpressionTree<T>::process_addition(std::vector<NodePtr<T>>& operands
 	// Sort final operands for a canonical representation.
 	std::sort(new_operands.begin(), new_operands.end(), NodePtrComparator{ this });
 
-	return std::make_shared<const ExpressionNode<T>>(NaryOp<T>{ NaryOp<T>::Op::Add, new_operands });
+	return std::make_shared<const ExpressionNode<T>>(NaryOp<T>{ NaryOp<T>::Op::Add, std::move(new_operands) });
 }
