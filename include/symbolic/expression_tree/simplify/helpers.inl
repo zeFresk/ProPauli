@@ -27,14 +27,11 @@ std::pair<T, NodePtr<T>> ExpressionTree<T>::extract_coefficient(NodePtr<T> const
 	if (auto const* uop = std::get_if<UnaryOp<T>>(&node->node_type)) {
 		if (uop->operation == UnaryOp<T>::Op::Minus) {
 			auto [coeff, term] = extract_coefficient(uop->exp);
-			return { -coeff, term };
+			return { -coeff, std::move(term) };
 		}
 	}
 	if (auto const* mop = std::get_if<NaryOp<T>>(&node->node_type)) {
 		if (mop->operation == NaryOp<T>::Op::Multiply && !mop->operands.empty()) {
-			// --- OPTIMIZATION ---
-			// Exploit the canonical form from process_multiplication.
-			// The constant term, if it exists and isn't 1, is always first.
 			if (auto const* c = std::get_if<Constant<T>>(&mop->operands[0]->node_type)) {
 				if (mop->operands.size() == 1) {
 					return { c->value, nullptr };
@@ -46,7 +43,7 @@ std::pair<T, NodePtr<T>> ExpressionTree<T>::extract_coefficient(NodePtr<T> const
 						remaining_terms[0] :
 						std::make_shared<ExpressionNode<T>>(NaryOp<T>{
 							NaryOp<T>::Op::Multiply, std::move(remaining_terms) });
-				return { c->value, term_node };
+				return { c->value, std::move(term_node) };
 			}
 		}
 	}
