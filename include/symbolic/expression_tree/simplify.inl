@@ -69,6 +69,7 @@ NodePtr<T> ExpressionTree<T>::simplify_node(NodePtr<T> const& node) const {
 					return process_multiplication(s_operands);
 				}
 				default:
+					break;
 				}
 
 				// NOTE: + - * already handled, this can only be a division!
