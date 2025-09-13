@@ -12,7 +12,6 @@ class SymbolicCoefficient {
 	SymbolicCoefficient(ExpressionTree<T> tree) : et(std::move(tree)) {}
 
     public:
-	// --- Constructors ---
 	SymbolicCoefficient(T const v)
 		: et(ExpressionTree<T>(std::make_shared<const ExpressionNode<T>>(Constant<T>{ v }))) {}
 
@@ -26,21 +25,18 @@ class SymbolicCoefficient {
 
 	using Underlying_t = T;
 
-	// --- Public API ---
 	std::string to_string(std::string_view format_string = "{:.3g}") const { return et.to_string(format_string); }
 	T evaluate(std::unordered_map<std::string, T> const& variables = {}) const { return et.evaluate(variables); }
 	[[nodiscard]] SymbolicCoefficient substitute(std::unordered_map<std::string, T> const& variables) const {
 		return SymbolicCoefficient(et.substitute(variables));
 	}
 
-	// FIX: Added the missing symbolic_evaluate method
 	[[nodiscard]] SymbolicCoefficient symbolic_evaluate(std::unordered_map<std::string, T> const& variables) const {
 		return SymbolicCoefficient(et.symbolic_evaluate(variables));
 	}
 
 	[[nodiscard]] SymbolicCoefficient simplified() const { return SymbolicCoefficient(et.simplified()); }
 
-	// --- Operator Overloads ---
 	SymbolicCoefficient& operator*=(T v) {
 		if (v == T{ 1 }) {
 			return *this;
@@ -106,13 +102,6 @@ class SymbolicCoefficient {
 
 	friend SymbolicCoefficient operator+(SymbolicCoefficient lhs, SymbolicCoefficient const& rhs) {
 		return lhs += rhs;
-	}
-	friend SymbolicCoefficient operator+(SymbolicCoefficient lhs, T v) {
-		if (v == T{ 0 }) {
-			return lhs;
-		} else {
-			return lhs += v;
-		}
 	}
 	friend SymbolicCoefficient operator+(T v, SymbolicCoefficient const& rhs) {
 		return rhs + v;
