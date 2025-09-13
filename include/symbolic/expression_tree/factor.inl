@@ -16,9 +16,7 @@ NodePtr<T> ExpressionTree<T>::build_from_factors(const std::vector<NodePtr<T>>& 
 	if (factors.size() == 1) {
 		return factors[0];
 	}
-	// The process_multiplication function is perfect for re-combining and re-simplifying factors.
 	auto mutable_factors = factors;
-	// Call process_multiplication with expansion disabled to build the factored term correctly.
 	return process_multiplication(mutable_factors, false);
 }
 
@@ -26,8 +24,6 @@ template <typename T>
 NodePtr<T> ExpressionTree<T>::factor_addition_node(const NaryOp<T>& add_node) const {
 	auto current_operands = add_node.operands;
 
-	// The factor cache is fine, as it prevents re-calculating factors for terms
-	// that survive an iteration.
 	std::map<NodePtr<T>, std::vector<NodePtr<T>>, NodePtrComparator> term_to_factors_cache(NodePtrComparator{ this });
 	for (const auto& term : current_operands) {
 		term_to_factors_cache[term] = get_multiplicative_factors(term);
@@ -46,7 +42,6 @@ NodePtr<T> ExpressionTree<T>::factor_addition_node(const NaryOp<T>& add_node) co
 			}
 		}
 
-		// ==================== SOLUTION 3: POST-DEDUPLICATION START ====================
 		// 2. Clean up the vectors in a single batch pass to remove duplicates.
 		for (auto& pair : factor_to_terms) {
 			auto& terms_vec = pair.second;
@@ -59,7 +54,6 @@ NodePtr<T> ExpressionTree<T>::factor_addition_node(const NaryOp<T>& add_node) co
 					terms_vec.end());
 			}
 		}
-		// ===================== SOLUTION 3: POST-DEDUPLICATION END =====================
 
 		NodePtr<T> best_factor = nullptr;
 		size_t max_count = 1;
@@ -76,10 +70,7 @@ NodePtr<T> ExpressionTree<T>::factor_addition_node(const NaryOp<T>& add_node) co
 		if (!best_factor) {
 			break; // No common factor found
 		}
-
-		// ==================== OPTIMIZATION BLOCK START ====================
-		// The original O(N*logM) partitioning is replaced with this O(N) version.
-
+	
 		// Create a hash set for O(1) average-time lookups.
 		std::unordered_set<NodePtr<T>> terms_with_factor_set(terms_with_best_factor.begin(), terms_with_best_factor.end());
 
@@ -87,12 +78,10 @@ NodePtr<T> ExpressionTree<T>::factor_addition_node(const NaryOp<T>& add_node) co
 		terms_without_factor.reserve(current_operands.size() - terms_with_best_factor.size());
 
 		for (const auto& term : current_operands) {
-			// Check for membership in O(1) instead of O(log M)
 			if (terms_with_factor_set.count(term) == 0) {
 				terms_without_factor.push_back(term);
 			}
 		}
-		// ===================== OPTIMIZATION BLOCK END =====================
 
 		std::vector<NodePtr<T>> inner_sum_operands;
 		inner_sum_operands.reserve(terms_with_best_factor.size());
@@ -101,7 +90,6 @@ NodePtr<T> ExpressionTree<T>::factor_addition_node(const NaryOp<T>& add_node) co
 			std::vector<NodePtr<T>> remaining_factors;
 			remaining_factors.reserve(original_factors.size() > 0 ? original_factors.size() - 1 : 0);
 
-			// Using the original, CORRECT logic with structural comparison
 			bool removed = false;
 			for (const auto& f : original_factors) {
 				if (!removed && are_trees_identical(f, best_factor)) {
