@@ -1,4 +1,11 @@
 template <typename T>
+ExpressionTree<T> ExpressionTree<T>::substitute(std::unordered_map<std::string, T> const& variables) const {
+	if (!root_node)
+		return {};
+	return ExpressionTree(substitute_node(root_node, variables));
+}
+
+template <typename T>
 NodePtr<T> ExpressionTree<T>::substitute_node(NodePtr<T> const& node,
 					      std::unordered_map<std::string, T> const& variables) const {
 	if (!node)

@@ -64,10 +64,3 @@ T ExpressionTree<T>::evaluate_node(NodePtr<T> const& node, std::unordered_map<st
 		},
 		node->node_type);
 }
-
-template <typename T>
-ExpressionTree<T> ExpressionTree<T>::substitute(std::unordered_map<std::string, T> const& variables) const {
-	if (!root_node)
-		return {};
-	return ExpressionTree(substitute_node(root_node, variables));
-}
