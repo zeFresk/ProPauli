@@ -8,7 +8,7 @@ TEST(NoiseModel, amplitude_damping_cx) {
 
 	nm.add_amplitude_damping_on_gate(QGate::Cx, 0.01f);
 
-	Circuit qc(2, std::make_shared<NeverTruncator>(), nm);
+	Circuit qc(2, std::make_shared<NeverTruncator<>>(), nm);
 
 	qc.add_operation("H", 0);
 	qc.add_operation("H", 1);
@@ -26,7 +26,7 @@ TEST(NoiseModel, depolarizing_h) {
 
 	nm.add_unital_noise_on_gate(QGate::H, UnitalNoise::Depolarizing, 0.01f);
 
-	Circuit qc(4, std::make_shared<NeverTruncator>(), nm);
+	Circuit qc(4, std::make_shared<NeverTruncator<>>(), nm);
 
 	for (unsigned i = 0; i < 4; ++i) {
 		qc.add_operation("H", i);
@@ -42,7 +42,7 @@ TEST(NoiseModel, dephasing_rz) {
 
 	nm.add_unital_noise_on_gate(QGate::Rz, UnitalNoise::Dephasing, 0.01f);
 
-	Circuit qc(4, std::make_shared<NeverTruncator>(), nm);
+	Circuit qc(4, std::make_shared<NeverTruncator<>>(), nm);
 
 	for (unsigned i = 0; i < 4; ++i) {
 		qc.add_operation("H", i);

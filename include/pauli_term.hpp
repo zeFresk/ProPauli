@@ -16,6 +16,7 @@
 #include "maths.hpp"
 
 #include <algorithm>
+#include <concepts>
 #include <functional>
 #include <numeric>
 #include <string_view>
@@ -36,11 +37,11 @@
  */
 template <class T = coeff_t>
 class PauliTerm {
-private:
+    private:
 	std::vector<Pauli> paulis_;
 	T coefficient_;
 
-public:
+    public:
 	using coeff_t = T;
 
 	/** @name Constructors
@@ -56,7 +57,9 @@ public:
 	PauliTerm(std::string_view pauli_string,
 		  typename std::enable_if_t<std::is_convertible_v<T, coeff_t>, T> coefficient = T{ 1.f })
 		: paulis_(pauli_string.begin(), pauli_string.end()), coefficient_(coefficient) {
-		assert(coefficient_ >= -1 && coefficient_ <= 1 && "Invalid coefficient");
+		if constexpr (std::totally_ordered_with<T, coeff_t>) {
+			assert(coefficient_ >= -1 && coefficient_ <= 1 && "Invalid coefficient");
+		}
 	}
 
 	/**
@@ -67,7 +70,9 @@ public:
 	 */
 	PauliTerm(std::initializer_list<Pauli> pauli_list, T coefficient = T{ 1. })
 		: paulis_(pauli_list), coefficient_(coefficient) {
-		assert(coefficient_ >= -1 && coefficient_ <= 1 && "Invalid coefficient");
+		if constexpr (std::totally_ordered_with<T, coeff_t>) {
+			assert(coefficient_ >= -1 && coefficient_ <= 1 && "Invalid coefficient");
+		}
 	}
 
 	/**
@@ -77,12 +82,16 @@ public:
 	 * @snippet tests/snippets/pauli_term.cpp pauli_term_from_pauli
 	 */
 	PauliTerm(Pauli pauli, T coefficient = T{ 1 }) : paulis_(1, pauli), coefficient_(coefficient) {
-		assert(coefficient_ >= -1 && coefficient_ <= 1 && "Invalid coefficient");
+		if constexpr (std::totally_ordered_with<T, coeff_t>) {
+			assert(coefficient_ >= -1 && coefficient_ <= 1 && "Invalid coefficient");
+		}
 	}
 
 	template <typename It, std::enable_if_t<!std::is_constructible_v<std::string, It>, bool> = true>
 	PauliTerm(It&& begin, It&& end, T coefficient = T{ 1 }) : paulis_{ begin, end }, coefficient_(coefficient) {
-		assert(coefficient_ >= -1 && coefficient_ <= 1 && "Invalid coefficient");
+		if constexpr (std::totally_ordered_with<T, coeff_t>) {
+			assert(coefficient_ >= -1 && coefficient_ <= 1 && "Invalid coefficient");
+		}
 	}
 	/** @} */
 
@@ -102,7 +111,6 @@ public:
 		return ReadOnlyNonOwningPauliTerm<T>{ paulis_, coefficient_ };
 	}
 	/** @} */
-
 
 	/** @name Gate Application
 	 * @{
@@ -271,7 +279,6 @@ public:
 	}
 	/** @} */
 
-
 	/** @name Coefficient Manipulation
 	 * @{
 	 */
@@ -297,7 +304,6 @@ public:
 	/** @brief Sets the coefficient of the term. */
 	void set_coefficient(T new_c) noexcept { coefficient_ = new_c; }
 	/** @} */
-
 
 	/**
 	 * @brief Calculates the Pauli weight of the term.
@@ -411,7 +417,7 @@ template <typename T>
 concept PauliTermIterator = requires(T t) {
 	*t;
 	++t;
-	PauliTerm<coeff_t>{ *t };
+	PauliTerm{ *t };
 };
 
 #endif

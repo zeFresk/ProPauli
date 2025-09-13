@@ -66,7 +66,7 @@ This example demonstrates a 64-qubit circuit using both `CoefficientTruncator` a
 Circuit qc{ 64,
             combine_truncators(
                 CoefficientTruncator<>{ 0.001f }, // remove terms with coefficient below 0.001
-                WeightTruncator{ 6 } // remove terms with pauli weight > 6
+                WeightTruncator<>{ 6 } // remove terms with pauli weight > 6
             )
 };
 
@@ -130,7 +130,7 @@ This example shows how to apply amplitude damping noise to all CX gates.
 NoiseModel<coeff_t> nm;
 nm.add_amplitude_damping_on_gate(QGate::Cx, 0.01);
 
-Circuit qc{ 4, std::make_shared<NeverTruncator>(), nm };
+Circuit qc{ 4, std::make_shared<NeverTruncator<>>(), nm };
 
 qc.add_operation("H", 0);
 qc.add_operation("Rz", 0, 1.57f);

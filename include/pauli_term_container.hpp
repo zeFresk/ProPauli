@@ -19,6 +19,7 @@
 #include "pauli_term.hpp"
 #include "container/bit_operations.hpp"
 #include "adapter.hpp"
+#include "symbolic/coefficient.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -155,8 +156,7 @@ class PauliTermContainer {
 	 * @brief Constructs the container from a range of `PauliTerm`-like objects.
 	 * @tparam It An iterator type that dereferences to an object with `size()`, `coefficient()`, and `operator[]`.
 	 */
-	template <typename It,
-		  std::enable_if_t<std::is_convertible_v<decltype(std::declval<It>()->coefficient()), T>, bool> = true>
+	template <typename It, std::enable_if_t<std::is_convertible_v<decltype((*std::declval<It>()).coefficient()), T>, bool> = true>
 	PauliTermContainer(It&& begin, It&& end) {
 		const std::size_t size = std::distance(begin, end);
 		if (size == 0) {
@@ -191,8 +191,7 @@ class PauliTermContainer {
 		: PauliTermContainer(AdapterIt<PauliTerm<T>, decltype(lst)::iterator>{ lst.begin() },
 				     AdapterIt<PauliTerm<T>, decltype(lst)::iterator>{ lst.end() }) {}
 
-	template <typename It,
-		  std::enable_if_t<std::is_convertible_v<decltype(*std::declval<It>()), std::string_view>, bool> = true>
+	template <typename It, std::enable_if_t<std::is_convertible_v<decltype(*std::declval<It>()), std::string_view>, bool> = true>
 	PauliTermContainer(It&& begin, It&& end)
 		: PauliTermContainer(AdapterIt<PauliTerm<T>, It>{ std::forward<It>(begin) },
 				     AdapterIt<PauliTerm<T>, It>{ std::forward<It>(end) }) {}
@@ -288,8 +287,7 @@ class PauliTermContainer {
 		const std::size_t lhs_start = index_lhs * nb_underlying_per_pt;
 		const std::size_t lhs_end = lhs_start + nb_underlying_per_pt;
 		const std::size_t rhs_start = index_rhs * nb_underlying_per_pt;
-		return std::equal(raw_bits.begin() + lhs_start, raw_bits.begin() + lhs_end,
-				  raw_bits.begin() + rhs_start);
+		return std::equal(raw_bits.begin() + lhs_start, raw_bits.begin() + lhs_end, raw_bits.begin() + rhs_start);
 	}
 
 	/**
@@ -310,7 +308,7 @@ class PauliTermContainer {
 /** @} */
 
 // The implementation of the non-owning view classes is injected here.
-#include "container/packed_pauli_term.tpl"
+#include "container/packed_pauli_term.inl"
 
 	using non_owning_t = NonOwningPauliTermPacked;
 	using ro_non_owning_t = ReadOnlyNonOwningPauliTermPacked;
@@ -379,7 +377,7 @@ class PauliTermContainer {
 /** @} */
 
 // The implementation of the custom iterators is injected here.
-#include "container/packed_iterators.tpl"
+#include "container/packed_iterators.inl"
 
 	/** @name Iterators
 	 * @{

@@ -21,7 +21,7 @@ TEST(Readme, basic) {
 }
 
 TEST(Readme, large_truncation) {
-	Circuit qc{ 64, combine_truncators(CoefficientTruncator<>{ 0.001f }, WeightTruncator{ 6 }) };
+	Circuit qc{ 64, combine_truncators(CoefficientTruncator<>{ 0.001f }, WeightTruncator<>{ 6 }) };
 
 	// Apply a layer of Hadamard gates
 	for (unsigned i = 0; i < 64; ++i)
@@ -85,7 +85,7 @@ TEST(Readme, noise_model) {
 	NoiseModel<coeff_t> nm;
 	nm.add_amplitude_damping_on_gate(QGate::Cx, 0.01);
 
-	Circuit qc{ 4, std::make_shared<NeverTruncator>(), nm };
+	Circuit qc{ 4, std::make_shared<NeverTruncator<>>(), nm };
 
 	qc.add_operation("H", 0);
 	qc.add_operation("Rz", 0, 1.57f);

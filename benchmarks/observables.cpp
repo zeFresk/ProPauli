@@ -227,7 +227,7 @@ static void Observable_truncate_weight10_after_nrz(benchmark::State& state) {
 		rd_obs_copy.apply_rz(random_in(state.range(0) - 1), pi * random_coeff());
 	}
 
-	WeightTruncator wt{ 10 };
+	WeightTruncator<> wt{ 10 };
 
 	for (auto _ : state) {
 		auto obs = rd_obs_copy;
