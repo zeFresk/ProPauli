@@ -15,6 +15,7 @@ Welcome to ProPauli's documentation!
 
    guides/circuit_guide
    guides/observable_guide
+   guides/symbolic_guide
 
 .. toctree::
    :maxdepth: 2

@@ -1,0 +1,214 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guide: Symbolic Circuit Simulation &mdash; ProPauli  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API Reference" href="../api_reference.html" />
+    <link rel="prev" title="Guide: Using the Observable Primitive" href="observable_guide.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            ProPauli
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="circuit_guide.html">Guide: Building Quantum Circuits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="observable_guide.html">Guide: Using the Observable Primitive</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Guide: Symbolic Circuit Simulation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#creating-a-symbolic-circuit">Creating a Symbolic Circuit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#working-with-symbolic-results">Working with Symbolic Results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#full-evaluation">Full Evaluation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#simplification">Simplification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#partial-evaluation-symbolic-evaluation">Partial Evaluation (Symbolic Evaluation)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Performance</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://zefresk.github.io/ProPauli/dev/bench/">Benchmarks</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ProPauli</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Guide: Symbolic Circuit Simulation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guides/symbolic_guide.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="guide-symbolic-circuit-simulation">
+<span id="symbolic-guide"></span><h1>Guide: Symbolic Circuit Simulation<a class="headerlink" href="#guide-symbolic-circuit-simulation" title="Link to this heading"></a></h1>
+<p>Beyond numeric simulation, the library offers powerful capabilities for symbolic circuit analysis. By using <code class="docutils literal notranslate"><span class="pre">SymbolicCoefficient</span></code> as the underlying data type, you can build circuits with variable parameters (e.g., rotation angles, noise probabilities). This allows you to analyze the circuit’s behavior analytically without needing to re-run the entire simulation for each new parameter value.</p>
+<section id="creating-a-symbolic-circuit">
+<h2>Creating a Symbolic Circuit<a class="headerlink" href="#creating-a-symbolic-circuit" title="Link to this heading"></a></h2>
+<p>To enable symbolic computation, instantiate your <code class="docutils literal notranslate"><span class="pre">Circuit</span></code> and <code class="docutils literal notranslate"><span class="pre">Observable</span></code> with <code class="docutils literal notranslate"><span class="pre">SymbolicCoefficient&lt;T&gt;</span></code>, where <code class="docutils literal notranslate"><span class="pre">T</span></code> is a floating-point type like <code class="docutils literal notranslate"><span class="pre">double</span></code> or <code class="docutils literal notranslate"><span class="pre">float</span></code>.</p>
+<p>Gate parameters that are typically numeric can be replaced with a <code class="docutils literal notranslate"><span class="pre">Variable</span></code> object. The simulation will then propagate these variables through the circuit, resulting in an observable whose coefficients are symbolic expressions.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// Define the symbolic coefficient type</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="n">Symbolic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SymbolicCoefficient</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Create a circuit that works with symbolic coefficients</span>
+<span class="w">    </span><span class="n">Circuit</span><span class="o">&lt;</span><span class="n">Symbolic</span><span class="o">&gt;</span><span class="w"> </span><span class="n">qc</span><span class="p">{</span><span class="mi">1</span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// Add an Rz gate with a symbolic angle &quot;theta&quot;</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;Rz&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">Variable</span><span class="p">(</span><span class="s">&quot;theta&quot;</span><span class="p">));</span>
+<span class="w">    </span><span class="n">qc</span><span class="p">.</span><span class="n">add_operation</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// The initial observable is also symbolic</span>
+<span class="w">    </span><span class="n">Observable</span><span class="o">&lt;</span><span class="n">Symbolic</span><span class="o">&gt;</span><span class="w"> </span><span class="n">initial_obs</span><span class="p">({</span><span class="s">&quot;X&quot;</span><span class="p">});</span>
+
+<span class="w">    </span><span class="c1">// Running the simulation produces an observable with symbolic coefficients</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">final_obs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">qc</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">initial_obs</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// The expectation value is a symbolic expression</span>
+<span class="w">    </span><span class="n">Symbolic</span><span class="w"> </span><span class="n">expectation_value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">final_obs</span><span class="p">.</span><span class="n">expectation_value</span><span class="p">();</span>
+
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Symbolic Expectation Value: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">expectation_value</span><span class="p">.</span><span class="n">to_string</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="working-with-symbolic-results">
+<h2>Working with Symbolic Results<a class="headerlink" href="#working-with-symbolic-results" title="Link to this heading"></a></h2>
+<p>The expectation value of a symbolic observable is not a single number but a <code class="docutils literal notranslate"><span class="pre">SymbolicCoefficient</span></code> itself—an expression containing the variables you defined. You can manipulate this expression in several ways.</p>
+<section id="full-evaluation">
+<h3>Full Evaluation<a class="headerlink" href="#full-evaluation" title="Link to this heading"></a></h3>
+<p>To get a final numeric result, you can perform a full evaluation by providing a value for every variable in the expression.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// Evaluate the expression by providing a value for &quot;theta&quot;</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expectation_value</span><span class="p">.</span><span class="n">evaluate</span><span class="p">({{</span><span class="s">&quot;theta&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">3.14159</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">2.0</span><span class="p">}});</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Evaluated at theta = pi/2: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// This will be sin(theta) -&gt; sin(pi/2) -&gt; 1.0</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Calling <code class="docutils literal notranslate"><span class="pre">.evaluate()</span></code> on an expression with unbound variables will throw a <code class="docutils literal notranslate"><span class="pre">std::invalid_argument</span></code> exception.</p>
+</div>
+</section>
+<section id="simplification">
+<h3>Simplification<a class="headerlink" href="#simplification" title="Link to this heading"></a></h3>
+<p>As operations are applied, symbolic expressions can become unwieldy (e.g., <code class="docutils literal notranslate"><span class="pre">((2</span> <span class="pre">*</span> <span class="pre">x)</span> <span class="pre">+</span> <span class="pre">(3</span> <span class="pre">*</span> <span class="pre">x))</span></code>). The <code class="docutils literal notranslate"><span class="pre">.simplified()</span></code> method performs algebraic simplification to produce a more compact and canonical form (e.g., <code class="docutils literal notranslate"><span class="pre">5</span> <span class="pre">*</span> <span class="pre">x</span></code>). This is useful for both analysis and for speeding up subsequent evaluations.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="n">Symbolic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SymbolicCoefficient</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="n">Variable</span><span class="w"> </span><span class="n">x</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Create a complex expression</span>
+<span class="w">    </span><span class="n">Symbolic</span><span class="w"> </span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">Symbolic</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">2.0</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">3.0</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="n">Symbolic</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Original expression: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">expr</span><span class="p">.</span><span class="n">to_string</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Simplify the expression</span>
+<span class="w">    </span><span class="n">Symbolic</span><span class="w"> </span><span class="n">simplified_expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expr</span><span class="p">.</span><span class="n">simplified</span><span class="p">();</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Simplified expression: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">simplified_expr</span><span class="p">.</span><span class="n">to_string</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="partial-evaluation-symbolic-evaluation">
+<h3>Partial Evaluation (Symbolic Evaluation)<a class="headerlink" href="#partial-evaluation-symbolic-evaluation" title="Link to this heading"></a></h3>
+<p>In some cases, you may know the values of some parameters but want to keep others symbolic. The <code class="docutils literal notranslate"><span class="pre">.symbolic_evaluate()</span></code> method substitutes the known values and simplifies the resulting expression, returning a new, partially evaluated <code class="docutils literal notranslate"><span class="pre">SymbolicCoefficient</span></code>.</p>
+<p>This is particularly useful when you want to pre-calculate parts of a complex expression to optimize repeated evaluations where only a subset of parameters change.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="n">Symbolic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SymbolicCoefficient</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="n">Variable</span><span class="w"> </span><span class="n">x</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">),</span><span class="w"> </span><span class="n">y</span><span class="p">(</span><span class="s">&quot;y&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">Symbolic</span><span class="w"> </span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cos</span><span class="p">(</span><span class="n">Symbolic</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">sin</span><span class="p">(</span><span class="n">Symbolic</span><span class="p">(</span><span class="n">y</span><span class="p">));</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Original expression: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">expr</span><span class="p">.</span><span class="n">to_string</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Partially evaluate by substituting a value for &#39;x&#39;</span>
+<span class="w">    </span><span class="n">Symbolic</span><span class="w"> </span><span class="n">partial_expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expr</span><span class="p">.</span><span class="n">symbolic_evaluate</span><span class="p">({{</span><span class="s">&quot;x&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">}});</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Partially evaluated (x=0): &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">partial_expr</span><span class="p">.</span><span class="n">to_string</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// The new expression can be fully evaluated later</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">final_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">partial_expr</span><span class="p">.</span><span class="n">evaluate</span><span class="p">({{</span><span class="s">&quot;y&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">3.14159</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">2.0</span><span class="p">}});</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Final result (y=pi/2): &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">final_result</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="observable_guide.html" class="btn btn-neutral float-left" title="Guide: Using the Observable Primitive" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../api_reference.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Léo &#34;zeFresk&#34; Chéneau.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

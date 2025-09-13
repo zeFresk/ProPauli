@@ -56,6 +56,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="observable_guide.html">Guide: Using the Observable Primitive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="symbolic_guide.html">Guide: Symbolic Circuit Simulation</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul>
@@ -134,7 +135,7 @@
 <p>They are passed to the <code class="docutils literal notranslate"><span class="pre">Circuit</span></code> constructor.</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">	</span><span class="n">Circuit</span><span class="w"> </span><span class="n">qc</span><span class="p">{</span><span class="w"> </span><span class="mi">64</span><span class="p">,</span>
 <span class="w">		    </span><span class="n">combine_truncators</span><span class="p">(</span><span class="n">CoefficientTruncator</span><span class="o">&lt;&gt;</span><span class="p">{</span><span class="w"> </span><span class="mf">0.001f</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="c1">// remove terms with coefficient below 0.001</span>
-<span class="w">				       </span><span class="n">WeightTruncator</span><span class="p">{</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="c1">// remove terms with pauli weight &gt; 6</span>
+<span class="w">				       </span><span class="n">WeightTruncator</span><span class="o">&lt;&gt;</span><span class="p">{</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="c1">// remove terms with pauli weight &gt; 6</span>
 <span class="w">				       </span><span class="p">)</span><span class="w"> </span><span class="p">};</span>
 
 <span class="w">	</span><span class="c1">// Apply a layer of Hadamard gates</span>
@@ -180,7 +181,7 @@
 <p>Policies are passed to the <code class="docutils literal notranslate"><span class="pre">Circuit</span></code> constructor.</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">	</span><span class="c1">// Policies are passed to the Circuit constructor to control optimization.</span>
 <span class="w">	</span><span class="c1">// This circuit will merge identical Pauli terms only after a splitting gate is applied.</span>
-<span class="w">	</span><span class="n">Circuit</span><span class="w"> </span><span class="nf">qc</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">NeverTruncator</span><span class="o">&gt;</span><span class="p">(),</span><span class="w"> </span><span class="p">{},</span>
+<span class="w">	</span><span class="n">Circuit</span><span class="w"> </span><span class="nf">qc</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">NeverTruncator</span><span class="o">&lt;&gt;&gt;</span><span class="p">(),</span><span class="w"> </span><span class="p">{},</span>
 <span class="w">		   </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">AlwaysAfterSplittingPolicy</span><span class="o">&gt;</span><span class="p">(),</span><span class="w"> </span><span class="c1">// Merge policy</span>
 <span class="w">		   </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">NeverPolicy</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="c1">// Truncate policy</span>
 <span class="w">	</span><span class="p">);</span>
@@ -206,7 +207,7 @@
 </pre></div>
 </div>
 <p>You would then use it in a circuit like this:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">	</span><span class="n">Circuit</span><span class="w"> </span><span class="nf">qc</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">NeverTruncator</span><span class="o">&gt;</span><span class="p">(),</span><span class="w"> </span><span class="p">{},</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">	</span><span class="n">Circuit</span><span class="w"> </span><span class="nf">qc</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">NeverTruncator</span><span class="o">&lt;&gt;&gt;</span><span class="p">(),</span><span class="w"> </span><span class="p">{},</span>
 <span class="w">		   </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">MergeEveryTwoSplitsPolicy</span><span class="o">&gt;</span><span class="p">(),</span><span class="w"> </span><span class="c1">// Use our custom merge policy</span>
 <span class="w">		   </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">NeverPolicy</span><span class="o">&gt;</span><span class="p">());</span>
 
