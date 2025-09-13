@@ -1,9 +1,9 @@
 template <typename T>
 NodePtr<T> ExpressionTree<T>::process_multiplication(std::vector<NodePtr<T>>& operands_in, bool expand) const {
-	// --- MULTIPLICATION REFACTOR ---
-	// This function now flattens its own inputs. This is critical for simplifying
-	// expressions like `a * (3 * x)` into `3 * a * x`.
+	static constexpr std::size_t PRE_ALLOC = 8;
+
 	std::vector<NodePtr<T>> flat_operands;
+	flat_operands.reserve(PRE_ALLOC);
 	for (const auto& op : operands_in) {
 		flatten_operands(op, NaryOp<T>::Op::Multiply, flat_operands);
 	}
@@ -25,9 +25,10 @@ NodePtr<T> ExpressionTree<T>::process_multiplication(std::vector<NodePtr<T>>& op
 	// Conditionally apply the Distributive Law: a * (b + c) -> a*b + a*c
 	if (expand) {
 		for (size_t i = 0; i < flat_operands.size(); ++i) {
-			if (auto add_node = std::get_if<NaryOp<T>>(&flat_operands[i]->node_type);
-			    add_node && add_node->operation == NaryOp<T>::Op::Add) {
+			auto add_node = std::get_if<NaryOp<T>>(&flat_operands[i]->node_type);
+			if (add_node && add_node->operation == NaryOp<T>::Op::Add) {
 				std::vector<NodePtr<T>> other_factors;
+				flat_operands.reserve(flat_operands.size());
 				if (const_prod != 1)
 					other_factors.push_back(
 						std::make_shared<const ExpressionNode<T>>(Constant<T>{ const_prod }));
@@ -44,7 +45,7 @@ NodePtr<T> ExpressionTree<T>::process_multiplication(std::vector<NodePtr<T>>& op
 				new_add_terms.reserve(add_node->operands.size());
 				for (const auto& term : add_node->operands) {
 					std::vector<NodePtr<T>> mul_ops = { a_node, term };
-					new_add_terms.push_back(process_multiplication(mul_ops, expand));
+					new_add_terms.emplace_back(process_multiplication(mul_ops, expand));
 				}
 				return process_addition(new_add_terms);
 			}
@@ -64,5 +65,5 @@ NodePtr<T> ExpressionTree<T>::process_multiplication(std::vector<NodePtr<T>>& op
 	if (flat_operands.size() == 1)
 		return flat_operands[0];
 
-	return std::make_shared<const ExpressionNode<T>>(NaryOp<T>{ NaryOp<T>::Op::Multiply, flat_operands });
+	return std::make_shared<const ExpressionNode<T>>(NaryOp<T>{ NaryOp<T>::Op::Multiply, std::move(flat_operands) });
 }
