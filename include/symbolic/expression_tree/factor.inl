@@ -1,7 +1,8 @@
+#include <unordered_set>
+
 template <typename T>
 std::vector<NodePtr<T>> ExpressionTree<T>::get_multiplicative_factors(NodePtr<T> const& node) const {
-	if (auto const* nary = std::get_if<NaryOp<T>>(&node->node_type);
-	    nary && nary->operation == NaryOp<T>::Op::Multiply) {
+	if (auto const* nary = std::get_if<NaryOp<T>>(&node->node_type); nary && nary->operation == NaryOp<T>::Op::Multiply) {
 		return nary->operands;
 	}
 	return { node };
@@ -25,8 +26,9 @@ template <typename T>
 NodePtr<T> ExpressionTree<T>::factor_addition_node(const NaryOp<T>& add_node) const {
 	auto current_operands = add_node.operands;
 
-	std::map<NodePtr<T>, std::vector<NodePtr<T>>, NodePtrComparator> term_to_factors_cache(
-		NodePtrComparator{ this });
+	// The factor cache is fine, as it prevents re-calculating factors for terms
+	// that survive an iteration.
+	std::map<NodePtr<T>, std::vector<NodePtr<T>>, NodePtrComparator> term_to_factors_cache(NodePtrComparator{ this });
 	for (const auto& term : current_operands) {
 		term_to_factors_cache[term] = get_multiplicative_factors(term);
 	}
@@ -36,48 +38,70 @@ NodePtr<T> ExpressionTree<T>::factor_addition_node(const NaryOp<T>& add_node) co
 			break;
 		}
 
-		std::map<NodePtr<T>, std::vector<NodePtr<T>>, NodePtrComparator> factor_to_terms(
-			NodePtrComparator{ this });
-
+		// 1. Populate the map quickly, allowing duplicate terms in the vectors.
+		std::map<NodePtr<T>, std::vector<NodePtr<T>>, NodePtrComparator> factor_to_terms(NodePtrComparator{ this });
 		for (const auto& term : current_operands) {
 			for (const auto& factor : term_to_factors_cache.at(term)) {
 				factor_to_terms[factor].push_back(term);
 			}
 		}
 
+		// ==================== SOLUTION 3: POST-DEDUPLICATION START ====================
+		// 2. Clean up the vectors in a single batch pass to remove duplicates.
+		for (auto& pair : factor_to_terms) {
+			auto& terms_vec = pair.second;
+			// Optimization: no need to unique a vector of size 0 or 1.
+			if (terms_vec.size() > 1) {
+				std::sort(terms_vec.begin(), terms_vec.end(), NodePtrComparator{ this });
+				terms_vec.erase(
+					std::unique(terms_vec.begin(), terms_vec.end(),
+						    [this](const NodePtr<T>& a, const NodePtr<T>& b) { return are_trees_identical(a, b); }),
+					terms_vec.end());
+			}
+		}
+		// ===================== SOLUTION 3: POST-DEDUPLICATION END =====================
+
 		NodePtr<T> best_factor = nullptr;
 		size_t max_count = 1;
+		std::vector<NodePtr<T>> terms_with_best_factor;
 
 		for (const auto& [factor, terms] : factor_to_terms) {
-			// --- FIX ---
-			// The incorrect line preventing numeric factoring has been removed.
 			if (terms.size() > max_count) {
 				max_count = terms.size();
 				best_factor = factor;
+				terms_with_best_factor = terms; // Keep the vector of terms
 			}
 		}
 
 		if (!best_factor) {
-			break;
+			break; // No common factor found
 		}
 
-		std::vector<NodePtr<T>> terms_with_factor;
-		std::vector<NodePtr<T>> terms_without_factor;
-		terms_with_factor = factor_to_terms.at(best_factor);
+		// ==================== OPTIMIZATION BLOCK START ====================
+		// The original O(N*logM) partitioning is replaced with this O(N) version.
 
-		std::sort(terms_with_factor.begin(), terms_with_factor.end());
+		// Create a hash set for O(1) average-time lookups.
+		std::unordered_set<NodePtr<T>> terms_with_factor_set(terms_with_best_factor.begin(), terms_with_best_factor.end());
+
+		std::vector<NodePtr<T>> terms_without_factor;
+		terms_without_factor.reserve(current_operands.size() - terms_with_best_factor.size());
+
 		for (const auto& term : current_operands) {
-			if (!std::binary_search(terms_with_factor.begin(), terms_with_factor.end(), term)) {
+			// Check for membership in O(1) instead of O(log M)
+			if (terms_with_factor_set.count(term) == 0) {
 				terms_without_factor.push_back(term);
 			}
 		}
+		// ===================== OPTIMIZATION BLOCK END =====================
 
 		std::vector<NodePtr<T>> inner_sum_operands;
-		inner_sum_operands.reserve(terms_with_factor.size());
-		for (const auto& term : terms_with_factor) {
+		inner_sum_operands.reserve(terms_with_best_factor.size());
+		for (const auto& term : terms_with_best_factor) {
 			auto original_factors = term_to_factors_cache.at(term);
 			std::vector<NodePtr<T>> remaining_factors;
-			remaining_factors.reserve(original_factors.size() - 1);
+			remaining_factors.reserve(original_factors.size() > 0 ? original_factors.size() - 1 : 0);
+
+			// Using the original, CORRECT logic with structural comparison
 			bool removed = false;
 			for (const auto& f : original_factors) {
 				if (!removed && are_trees_identical(f, best_factor)) {
@@ -93,10 +117,11 @@ NodePtr<T> ExpressionTree<T>::factor_addition_node(const NaryOp<T>& add_node) co
 		auto factored_inner_sum = factor_node(inner_sum);
 		auto new_factored_term = build_from_factors({ best_factor, factored_inner_sum });
 
+		// Update state for the next iteration
 		current_operands = std::move(terms_without_factor);
 		current_operands.push_back(new_factored_term);
 
-		for (const auto& term : terms_with_factor) {
+		for (const auto& term : terms_with_best_factor) {
 			term_to_factors_cache.erase(term);
 		}
 		term_to_factors_cache[new_factored_term] = get_multiplicative_factors(new_factored_term);
@@ -124,8 +149,7 @@ NodePtr<T> ExpressionTree<T>::factor_node(NodePtr<T> const& node) const {
 			} else if constexpr (std::is_same_v<VT, UnaryOp<T>>) {
 				auto factored_exp = factor_node(n.exp);
 				if (factored_exp != n.exp)
-					return std::make_shared<const ExpressionNode<T>>(
-						UnaryOp<T>{ n.operation, factored_exp });
+					return std::make_shared<const ExpressionNode<T>>(UnaryOp<T>{ n.operation, factored_exp });
 			} else if constexpr (std::is_same_v<VT, BinaryOp<T>>) {
 				auto factored_lhs = factor_node(n.lhs);
 				auto factored_rhs = factor_node(n.rhs);
