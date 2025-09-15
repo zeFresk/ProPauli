@@ -177,7 +177,9 @@ class NonOwningPauliTermPacked {
 
 	bool _is_dirty() const { return ptc.get().is_dirty(idx); }
 
-	void _set_dirty(bool v) { return ptc.get().set_dirty(idx, v); }
+	void _set_dirty(bool v) { ptc.get().set_dirty(idx, v); }
+
+	void _add_dirty(bool v) { _set_dirty(_is_dirty() || v); }
 
 	/** @name Accessors and Mutators
 	 * @{
@@ -309,14 +311,14 @@ class NonOwningPauliTermPacked {
 		auto p = pb;
 		set_coefficient(coefficient() * p.apply_clifford(g));
 		set_pauli(qubit, p);
-		_set_dirty(pb != p);
+		_add_dirty(pb != p);
 	}
 	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p) {
 		assert(qubit < size());
-		const auto bpauli = get_pauli(qubit);
-		auto pauli = bpauli;
+		const auto pauli = get_pauli(qubit);
+		// auto pauli = bpauli;
 		set_coefficient(coefficient() * pauli.apply_unital_noise(n, p));
-		_set_dirty(bpauli != pauli);
+		//_add_dirty(bpauli != pauli);
 	}
 	void apply_cx(unsigned control, unsigned target) {
 		assert(control != target && "cx can't use same control and target");
@@ -328,7 +330,7 @@ class NonOwningPauliTermPacked {
 		set_coefficient(coefficient() * pctrl.apply_cx(ptarg));
 		set_pauli(control, pctrl);
 		set_pauli(target, ptarg);
-		_set_dirty(pctrl != bpctrl || ptarg != bptarg);
+		_add_dirty(pctrl != bpctrl || ptarg != bptarg);
 	}
 	void apply_rz(unsigned qubit, T theta, NonOwningPauliTermPacked& output) {
 		assert(qubit < size());
@@ -347,7 +349,7 @@ class NonOwningPauliTermPacked {
 			output.set_pauli(qubit, p_x);
 			output.set_coefficient(output.coefficient() * sin_theta);
 		}
-		output._set_dirty(true);
+		output._add_dirty(true);
 	}
 	void apply_amplitude_damping_xy([[maybe_unused]] unsigned qubit, T p) {
 		assert(qubit < size());
@@ -360,7 +362,7 @@ class NonOwningPauliTermPacked {
 		output.set_coefficient(output.coefficient() * p);
 		output.set_pauli(qubit, p_i);
 		set_coefficient(coefficient() * (1 - p));
-		output._set_dirty(true);
+		output._add_dirty(true);
 	}
 	/** @} */
 

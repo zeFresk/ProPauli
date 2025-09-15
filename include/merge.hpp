@@ -13,6 +13,8 @@
 
 #include "pauli_term_container.hpp"
 
+#include "container/dirty_set.hpp"
+
 #include <type_traits>
 #include <tsl/robin_set.h>
 #include <unistd.h>
@@ -23,17 +25,24 @@ class Merger {
     private:
 	using PTC_t = PauliTermContainer<T>;
 	using nopt_t = std::remove_cvref_t<PTC_t>::non_owning_t;
+	DirtySet<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>> hset;
 	// std::unordered_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>> hset;
-	tsl::robin_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>, std::allocator<nopt_t>, false> hset;
+	// tsl::robin_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>, std::allocator<nopt_t>, true> hset;
 
     public:
 	Merger() {}
 
 	// copyable and movable
-	Merger(Merger const&) = default;
-	Merger(Merger&&) = default;
-	Merger& operator=(Merger const&) = default;
-	Merger& operator=(Merger&&) = default;
+	Merger(Merger const&) {}
+	Merger(Merger&&) {}
+	Merger& operator=(Merger const&) {
+		hset.clear();
+		return *this;
+	}
+	Merger& operator=(Merger&&) {
+		hset.clear();
+		return *this;
+	}
 
 	void operator()(PTC_t& paulis_) {
 		prepare_merge(paulis_);
@@ -46,7 +55,7 @@ class Merger {
 				auto [it, is_new] = hset.emplace(std::move(nopt));
 				if (!is_new) { // A term with this Pauli string already exists in the set.
 					// Add the current coefficient to the existing term.
-					const_cast<nopt_t*>(&(*it))->add_coeff(c);
+					it->add_coeff(c);
 					// Remove the current (duplicate) term from the container.
 					paulis_.remove_pauliterm(i);
 					// Decrement index to re-evaluate the new element at the current position.
@@ -59,19 +68,42 @@ class Merger {
 	}
 
 	void prepare_merge(PTC_t const& paulis_) {
-		for (auto it = hset.begin(); it != hset.end(); ++it) {
+		debug("before erase: ", paulis_);
+
+		// hset.rehash(hset.size());
+		/*for (auto it = hset.begin(); it != hset.end(); ++it) {
 			if (it->_is_dirty()) {
-				hset.erase_fast(it);
+				auto ex = hset.extract(it);
+				// hset.erase(it);
 			}
-		}
+		}*/
+		hset.erase_if([](auto const& nopt) { return true; });
+		// hset.
+		// hset.clear();
 		//[[maybe_unused]] auto removed = std::erase_if(hset, [](auto const& nopt) { return nopt._is_dirty(); });
 		hset.reserve(paulis_.nb_terms());
+		debug("after erase: ", paulis_);
 	}
 
 	void after_merge(PTC_t& paulis_) {
 		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
 			paulis_[i]._set_dirty(false);
 		}
+		debug("after merge: ", paulis_);
+	}
+
+	void debug(std::string const& str, PTC_t const& paulis_) {
+		/*
+		std::cout << str << "\nhset:\n";
+		for (auto it = hset.begin(); it != hset.end(); ++it) {
+			std::cout << *it << " [dirty=" << (it->_is_dirty() ? "1" : "0") << "]\n";
+		}
+		std::cout << "\npaulis_:\n";
+		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
+			auto nopt = paulis_[i];
+			std::cout << nopt << "[dirty=" << (nopt._is_dirty() ? "1" : "0") << "]\n";
+		}
+		std::cout << "\n";*/
 	}
 };
 

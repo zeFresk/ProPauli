@@ -138,6 +138,7 @@ class PauliTermContainer {
 
 	bool is_dirty(std::size_t idx) const {
 		assert(idx < nb_terms());
+		//return true;
 		return dirty[idx];
 	}
 
