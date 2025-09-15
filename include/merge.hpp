@@ -16,6 +16,46 @@
 #include <type_traits>
 #include <tsl/robin_set.h>
 
+template <typename T>
+class Merger {
+    private:
+	using PTC_t = PauliTermContainer<T>;
+	using nopt_t = std::remove_cvref_t<PTC_t>::non_owning_t;
+	tsl::robin_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>, std::allocator<nopt_t>, false> hset;
+
+    public:
+	Merger() {}
+
+	// copyable and movable
+	Merger(Merger const&) = default;
+	Merger(Merger&&) = default;
+	Merger& operator=(Merger const&) = default;
+	Merger& operator=(Merger&&) = default;
+
+	void operator()(PTC_t& paulis_) {
+		prepare_merge(paulis_);
+
+		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
+			auto nopt = paulis_[i];
+			auto c = nopt.coefficient();
+			auto [it, is_new] = hset.emplace(std::move(nopt));
+			if (!is_new) { // A term with this Pauli string already exists in the set.
+				// Add the current coefficient to the existing term.
+				const_cast<nopt_t*>(&(*it))->add_coeff(c);
+				// Remove the current (duplicate) term from the container.
+				paulis_.remove_pauliterm(i);
+				// Decrement index to re-evaluate the new element at the current position.
+				--i;
+			}
+		}
+	}
+
+	void prepare_merge(PTC_t const& paulis_) {
+		hset.clear();
+		hset.reserve(paulis_.nb_terms());
+	}
+};
+
 /**
  * @brief Merges identical Pauli terms within a container in-place, without extra allocations for the terms themselves.
  * @tparam T The numeric type for the coefficients.
@@ -44,24 +84,9 @@ void merge_inplace_noalloc(PauliTermContainer<T>& paulis_) {
 	// Use tsl::robin_set for high-performance hashing.
 	// The boolean template parameter `StoreHash` is set to false for better performance
 	// when the hash is cheap to compute, which is the case here.
-	tsl::robin_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>, std::allocator<nopt_t>,
-		       false>
-		hset;
-	hset.reserve(paulis_.nb_terms());
+	tsl::robin_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>, std::allocator<nopt_t>, false> hset;
 
-	for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
-		auto nopt = paulis_[i];
-		auto c = nopt.coefficient();
-		auto [it, is_new] = hset.emplace(std::move(nopt));
-		if (!is_new) { // A term with this Pauli string already exists in the set.
-			// Add the current coefficient to the existing term.
-			const_cast<nopt_t*>(&(*it))->add_coeff(c);
-			// Remove the current (duplicate) term from the container.
-			paulis_.remove_pauliterm(i);
-			// Decrement index to re-evaluate the new element at the current position.
-			--i;
-		}
-	}
+	// code was moved to Merger::operator().
 }
 
 /* ** old versions ** */
