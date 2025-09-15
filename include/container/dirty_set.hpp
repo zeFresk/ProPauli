@@ -110,7 +110,9 @@ class DirtySet {
 	DirtySet& operator=(const DirtySet& other) {
 		if (this != &other) {
 			destroy_keys();
-			m_keys.reset();
+			// Operate on the unique_ptr for memory management.
+			m_key_buffer.reset();
+			m_keys = nullptr; // Nullify the raw pointer.
 			m_metadata.reset();
 			copy_from(other);
 		}
@@ -127,7 +129,8 @@ class DirtySet {
 		while (index < m_capacity && m_metadata[index].psl == 0) {
 			index++;
 		}
-		return iterator(m_keys.get(), m_metadata.get(), index, m_capacity);
+		// Pass the raw pointer directly, no .get()
+		return iterator(m_keys, m_metadata.get(), index, m_capacity);
 	}
 
 	const_iterator begin() const noexcept {
@@ -135,14 +138,21 @@ class DirtySet {
 		while (index < m_capacity && m_metadata[index].psl == 0) {
 			index++;
 		}
-		return const_iterator(m_keys.get(), m_metadata.get(), index, m_capacity);
+		// Pass the raw pointer directly, no .get()
+		return const_iterator(m_keys, m_metadata.get(), index, m_capacity);
 	}
 
 	const_iterator cbegin() const noexcept { return begin(); }
 
-	iterator end() noexcept { return iterator(m_keys.get(), m_metadata.get(), m_capacity, m_capacity); }
+	iterator end() noexcept {
+		// Pass the raw pointer directly, no .get()
+		return iterator(m_keys, m_metadata.get(), m_capacity, m_capacity);
+	}
 
-	const_iterator end() const noexcept { return const_iterator(m_keys.get(), m_metadata.get(), m_capacity, m_capacity); }
+	const_iterator end() const noexcept {
+		// Pass the raw pointer directly, no .get()
+		return const_iterator(m_keys, m_metadata.get(), m_capacity, m_capacity);
+	}
 
 	const_iterator cend() const noexcept { return end(); }
 
@@ -199,12 +209,14 @@ class DirtySet {
 		m_key_equal = other.m_key_equal;
 
 		if (m_capacity > 0) {
-			m_keys = std::make_unique<Key[]>(m_capacity);
+			m_key_buffer = std::make_unique<unsigned char[]>(sizeof(Key) * m_capacity);
+			m_keys = reinterpret_cast<Key*>(m_key_buffer.get());
 			m_metadata = std::make_unique<Metadata[]>(m_capacity);
 
 			for (size_type i = 0; i < m_capacity; ++i) {
 				m_metadata[i] = other.m_metadata[i];
 				if (m_metadata[i].psl != 0) {
+					// Use placement new to copy-construct the key into the raw buffer.
 					new (&m_keys[i]) Key(other.m_keys[i]);
 				}
 			}
@@ -224,12 +236,12 @@ class DirtySet {
 				meta.stored_hash = hash;
 				meta.psl = current_psl;
 				m_size++;
-				return { iterator(m_keys.get(), m_metadata.get(), index, m_capacity), true };
+				return { iterator(m_keys, m_metadata.get(), index, m_capacity), true };
 			}
 
 			// Cheap hash comparison first, then expensive key comparison.
 			if (meta.stored_hash == hash && m_key_equal(m_keys[index], key)) {
-				return { iterator(m_keys.get(), m_metadata.get(), index, m_capacity), false };
+				return { iterator(m_keys, m_metadata.get(), index, m_capacity), false };
 			}
 
 			// Robin Hood Hashing: If the element in the current slot is "richer"
@@ -303,13 +315,16 @@ class DirtySet {
 	}
 
 	void rehash(size_type new_capacity) {
-		// Keep old arrays alive until we are done moving from them.
-		auto old_keys = std::move(m_keys);
+		// Keep old data alive until we are done moving from it.
+		Key* old_keys_ptr = m_keys;
+		auto old_key_buffer = std::move(m_key_buffer);
 		auto old_metadata = std::move(m_metadata);
 		size_type old_capacity = m_capacity;
 
 		// Allocate and commit new, empty arrays.
-		m_keys = std::make_unique<Key[]>(new_capacity);
+		m_key_buffer = std::make_unique<unsigned char[]>(sizeof(Key) * new_capacity);
+		m_keys = reinterpret_cast<Key*>(m_key_buffer.get());
+
 		m_metadata = std::make_unique<Metadata[]>(new_capacity);
 		m_capacity = new_capacity;
 		m_size = 0; // Reset size, will be incremented by insert_new.
@@ -317,12 +332,11 @@ class DirtySet {
 		// Iterate old elements and insert them into the new arrays.
 		for (size_type i = 0; i < old_capacity; ++i) {
 			if (old_metadata[i].psl != 0) {
-				// No re-hashing needed! We just use the stored hash.
-				insert_new(std::move(old_keys[i]), old_metadata[i].stored_hash);
-				old_keys[i].~Key(); // Manually destruct the moved-from key.
+				insert_new(std::move(old_keys_ptr[i]), old_metadata[i].stored_hash);
+				old_keys_ptr[i].~Key(); // Manually destruct the moved-from key.
 			}
 		}
-		// old_keys and old_metadata are destructed here, freeing the old memory.
+		// old_key_buffer and old_metadata are destructed here, freeing the old memory.
 	}
 
 	void destroy_keys() noexcept {
@@ -360,7 +374,9 @@ class DirtySet {
 	// This layout is more cache-friendly for probing. The probing loop only needs
 	// to access the small `m_metadata` array. The larger `m_keys` array is only
 	// accessed when a hash match is found.
-	std::unique_ptr<Key[]> m_keys = nullptr;
+	Key* m_keys = nullptr; // Raw, non-owning pointer toi the start of the key buffer.
+	std::unique_ptr<unsigned char[]> m_key_buffer = nullptr; // Owns the raw memory.
+
 	std::unique_ptr<Metadata[]> m_metadata = nullptr;
 
 	size_type m_size = 0;
