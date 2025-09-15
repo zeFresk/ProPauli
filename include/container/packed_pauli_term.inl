@@ -20,8 +20,7 @@ class ReadOnlyNonOwningPauliTermPacked {
 	 * @param ptc_ The parent container.
 	 * @param index The index of the term to view.
 	 */
-	ReadOnlyNonOwningPauliTermPacked(PauliTermContainer<T, Underlying> const& ptc_, std::size_t index)
-		: ptc(ptc_), idx(index) {}
+	ReadOnlyNonOwningPauliTermPacked(PauliTermContainer<T, Underlying> const& ptc_, std::size_t index) : ptc(ptc_), idx(index) {}
 
 	/**
 	 * @brief Calculates the expectation value of the term.
@@ -35,6 +34,8 @@ class ReadOnlyNonOwningPauliTermPacked {
 		}
 		return coefficient();
 	}
+
+	bool _is_dirty() const { return ptc.get().is_dirty(idx); }
 
 	/** @name Accessors
 	 * @{
@@ -84,10 +85,8 @@ class ReadOnlyNonOwningPauliTermPacked {
 	/**
 	 * @brief Checks for deep equality (Pauli string and coefficient) between two views.
 	 */
-	friend bool operator==(ReadOnlyNonOwningPauliTermPacked const& lhs,
-			       ReadOnlyNonOwningPauliTermPacked const& rhs) {
-		return (lhs.size() == rhs.size()) && (lhs.coefficient() == rhs.coefficient()) &&
-		       lhs.equal_bitstring(rhs);
+	friend bool operator==(ReadOnlyNonOwningPauliTermPacked const& lhs, ReadOnlyNonOwningPauliTermPacked const& rhs) {
+		return (lhs.size() == rhs.size()) && (lhs.coefficient() == rhs.coefficient()) && lhs.equal_bitstring(rhs);
 	}
 
 	/**
@@ -100,9 +99,7 @@ class ReadOnlyNonOwningPauliTermPacked {
 	/**
 	 * @brief Checks for deep equality between an owning `PauliTerm` and a view.
 	 */
-	friend bool operator==(PauliTerm<T> const& lhs, ReadOnlyNonOwningPauliTermPacked const& rhs) {
-		return rhs == lhs;
-	}
+	friend bool operator==(PauliTerm<T> const& lhs, ReadOnlyNonOwningPauliTermPacked const& rhs) { return rhs == lhs; }
 
 	/**
 	 * @brief Checks if the Pauli strings of two views are identical.
@@ -111,8 +108,7 @@ class ReadOnlyNonOwningPauliTermPacked {
 	 * element-by-element check.
 	 */
 	bool equal_bitstring(ReadOnlyNonOwningPauliTermPacked const& oth) const {
-		return (&ptc.get() == &oth.ptc.get()) ? ptc.get().fast_equal_bitstring(idx, oth.idx) :
-							slow_equal_bitstring(oth);
+		return (&ptc.get() == &oth.ptc.get()) ? ptc.get().fast_equal_bitstring(idx, oth.idx) : slow_equal_bitstring(oth);
 	}
 
 	/**
@@ -179,6 +175,10 @@ class NonOwningPauliTermPacked {
 		return ptc.get().get_coefficient(idx);
 	}
 
+	bool _is_dirty() const { return ptc.get().is_dirty(idx); }
+
+	void _set_dirty(bool v) { return ptc.get().set_dirty(idx, v); }
+
 	/** @name Accessors and Mutators
 	 * @{
 	 */
@@ -235,16 +235,14 @@ class NonOwningPauliTermPacked {
 	 * @{
 	 */
 	friend bool operator==(NonOwningPauliTermPacked const& lhs, NonOwningPauliTermPacked const& rhs) {
-		return (lhs.size() == rhs.size()) && (lhs.coefficient() == rhs.coefficient()) &&
-		       lhs.equal_bitstring(rhs);
+		return (lhs.size() == rhs.size()) && (lhs.coefficient() == rhs.coefficient()) && lhs.equal_bitstring(rhs);
 	}
 	friend bool operator==(PauliTerm<T> const& lhs, NonOwningPauliTermPacked const& rhs) {
 		return static_cast<PauliTerm<T>>(rhs) == lhs;
 	}
 	friend bool operator==(NonOwningPauliTermPacked const& lhs, PauliTerm<T> const& rhs) { return rhs == lhs; }
 	bool equal_bitstring(NonOwningPauliTermPacked const& oth) const {
-		return (&ptc.get() == &oth.ptc.get()) ? ptc.get().fast_equal_bitstring(idx, oth.idx) :
-							slow_equal_bitstring(oth);
+		return (&ptc.get() == &oth.ptc.get()) ? ptc.get().fast_equal_bitstring(idx, oth.idx) : slow_equal_bitstring(oth);
 	}
 	bool slow_equal_bitstring(NonOwningPauliTermPacked const& oth) const {
 		if (oth.size() != size())
@@ -307,23 +305,30 @@ class NonOwningPauliTermPacked {
 	}
 	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit) {
 		assert(qubit < size());
-		auto p = get_pauli(qubit);
+		auto const pb = get_pauli(qubit);
+		auto p = pb;
 		set_coefficient(coefficient() * p.apply_clifford(g));
 		set_pauli(qubit, p);
+		_set_dirty(pb != p);
 	}
 	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p) {
 		assert(qubit < size());
-		auto pauli = get_pauli(qubit);
+		const auto bpauli = get_pauli(qubit);
+		auto pauli = bpauli;
 		set_coefficient(coefficient() * pauli.apply_unital_noise(n, p));
+		_set_dirty(bpauli != pauli);
 	}
 	void apply_cx(unsigned control, unsigned target) {
 		assert(control != target && "cx can't use same control and target");
 		assert(control < size() && target < size());
-		auto pctrl = get_pauli(control);
-		auto ptarg = get_pauli(target);
+		auto const bpctrl = get_pauli(control);
+		auto const bptarg = get_pauli(target);
+		auto pctrl = bpctrl;
+		auto ptarg = bptarg;
 		set_coefficient(coefficient() * pctrl.apply_cx(ptarg));
 		set_pauli(control, pctrl);
 		set_pauli(target, ptarg);
+		_set_dirty(pctrl != bpctrl || ptarg != bptarg);
 	}
 	void apply_rz(unsigned qubit, T theta, NonOwningPauliTermPacked& output) {
 		assert(qubit < size());
@@ -342,6 +347,7 @@ class NonOwningPauliTermPacked {
 			output.set_pauli(qubit, p_x);
 			output.set_coefficient(output.coefficient() * sin_theta);
 		}
+		output._set_dirty(true);
 	}
 	void apply_amplitude_damping_xy([[maybe_unused]] unsigned qubit, T p) {
 		assert(qubit < size());
@@ -354,6 +360,7 @@ class NonOwningPauliTermPacked {
 		output.set_coefficient(output.coefficient() * p);
 		output.set_pauli(qubit, p_i);
 		set_coefficient(coefficient() * (1 - p));
+		output._set_dirty(true);
 	}
 	/** @} */
 

@@ -15,12 +15,15 @@
 
 #include <type_traits>
 #include <tsl/robin_set.h>
+#include <unistd.h>
+#include <unordered_set>
 
 template <typename T>
 class Merger {
     private:
 	using PTC_t = PauliTermContainer<T>;
 	using nopt_t = std::remove_cvref_t<PTC_t>::non_owning_t;
+	// std::unordered_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>> hset;
 	tsl::robin_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>, std::allocator<nopt_t>, false> hset;
 
     public:
@@ -37,22 +40,38 @@ class Merger {
 
 		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
 			auto nopt = paulis_[i];
-			auto c = nopt.coefficient();
-			auto [it, is_new] = hset.emplace(std::move(nopt));
-			if (!is_new) { // A term with this Pauli string already exists in the set.
-				// Add the current coefficient to the existing term.
-				const_cast<nopt_t*>(&(*it))->add_coeff(c);
-				// Remove the current (duplicate) term from the container.
-				paulis_.remove_pauliterm(i);
-				// Decrement index to re-evaluate the new element at the current position.
-				--i;
+			if (nopt._is_dirty()) {
+				auto c = nopt.coefficient();
+
+				auto [it, is_new] = hset.emplace(std::move(nopt));
+				if (!is_new) { // A term with this Pauli string already exists in the set.
+					// Add the current coefficient to the existing term.
+					const_cast<nopt_t*>(&(*it))->add_coeff(c);
+					// Remove the current (duplicate) term from the container.
+					paulis_.remove_pauliterm(i);
+					// Decrement index to re-evaluate the new element at the current position.
+					--i;
+				}
 			}
 		}
+
+		after_merge(paulis_);
 	}
 
 	void prepare_merge(PTC_t const& paulis_) {
-		hset.clear();
+		for (auto it = hset.begin(); it != hset.end(); ++it) {
+			if (it->_is_dirty()) {
+				hset.erase_fast(it);
+			}
+		}
+		//[[maybe_unused]] auto removed = std::erase_if(hset, [](auto const& nopt) { return nopt._is_dirty(); });
 		hset.reserve(paulis_.nb_terms());
+	}
+
+	void after_merge(PTC_t& paulis_) {
+		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
+			paulis_[i]._set_dirty(false);
+		}
 	}
 };
 
