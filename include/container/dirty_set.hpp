@@ -10,10 +10,15 @@
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
+#include <cassert>
 
 template <typename Key, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>>
 class DirtySet {
     private:
+	// A sentinel value for the psl field to indicate a slot is empty
+	// but was previously occupied (a "tombstone").
+	static constexpr uint32_t K_DELETED = UINT32_MAX;
+
 	// --- Internal Data Structures ---
 
 	struct Metadata {
@@ -119,8 +124,38 @@ class DirtySet {
 		return *this;
 	}
 
-	DirtySet(DirtySet&& other) noexcept = default;
-	DirtySet& operator=(DirtySet&& other) noexcept = default;
+	// --- Move Constructor ---
+	DirtySet(DirtySet&& other) noexcept
+		: m_keys(other.m_keys), m_key_buffer(std::move(other.m_key_buffer)), m_metadata(std::move(other.m_metadata)),
+		  m_size(other.m_size), m_capacity(other.m_capacity), m_hasher(std::move(other.m_hasher)),
+		  m_key_equal(std::move(other.m_key_equal)) {
+		// Leave the moved-from object in a valid, empty state.
+		other.m_keys = nullptr;
+		other.m_size = 0;
+		other.m_capacity = 0;
+	}
+
+	// --- Move Assignment Operator ---
+	DirtySet& operator=(DirtySet&& other) noexcept {
+		if (this != &other) {
+			// Destroy our own elements before overwriting
+			destroy_keys();
+
+			m_keys = other.m_keys;
+			m_key_buffer = std::move(other.m_key_buffer);
+			m_metadata = std::move(other.m_metadata);
+			m_size = other.m_size;
+			m_capacity = other.m_capacity;
+			m_hasher = std::move(other.m_hasher);
+			m_key_equal = std::move(other.m_key_equal);
+
+			// Leave the moved-from object in a valid, empty state.
+			other.m_keys = nullptr;
+			other.m_size = 0;
+			other.m_capacity = 0;
+		}
+		return *this;
+	};
 
 	// --- Iterators ---
 
@@ -174,11 +209,13 @@ class DirtySet {
 
 	void clear() noexcept {
 		destroy_keys();
+		m_size = 0;
+		m_occupied_slots = 0;
 		// Keep allocated memory for reuse.
 	}
 
 	std::pair<iterator, bool> emplace(Key&& key) {
-		if (m_size + 1 > m_capacity * MAX_LOAD_FACTOR) {
+		if (m_occupied_slots + 1 > m_capacity * MAX_LOAD_FACTOR) {
 			rehash(m_capacity > 0 ? m_capacity * 2 : 8);
 		}
 		return find_or_insert_impl(std::move(key));
@@ -188,12 +225,9 @@ class DirtySet {
 	size_type erase_if(Predicate pred) {
 		size_type removed_count = 0;
 		for (size_type i = 0; i < m_capacity; ++i) {
-			if (m_metadata[i].psl != 0 && pred(m_keys[i])) {
+			if (m_metadata[i].psl > 0 && m_metadata[i].psl != K_DELETED && pred(m_keys[i])) {
 				erase_at(i);
 				removed_count++;
-				// After backward-shifting, the element at 'i' is new
-				// and must be re-evaluated.
-				--i;
 			}
 		}
 		return removed_count;
@@ -201,6 +235,35 @@ class DirtySet {
 
     private:
 	// --- Private Helper Functions ---
+	void emplace_at_index(size_type index, Key&& key, size_t hash, uint32_t psl) {
+		Metadata& meta = m_metadata[index];
+
+		// Only increment occupied count if we are filling a never-used slot.
+		if (meta.psl == 0) {
+			m_occupied_slots++;
+		}
+
+		// Check if we are overwriting a tombstone or inserting into a fresh slot.
+		if (meta.psl == K_DELETED) {
+			// Reclaiming a tombstone.
+			if constexpr (std::is_trivially_move_assignable_v<Key>) {
+				// For PODs, we can just move-assign over the garbage data.
+				m_keys[index] = std::move(key);
+			} else {
+				// For complex types, the old object was already destroyed.
+				// We only need to construct the new one in its place.
+				new (&m_keys[index]) Key(std::move(key));
+			}
+		} else {
+			// Inserting into a never-used (psl == 0) slot.
+			// Always use placement new here.
+			new (&m_keys[index]) Key(std::move(key));
+		}
+
+		meta.stored_hash = hash;
+		meta.psl = psl;
+		m_size++;
+	}
 
 	void copy_from(const DirtySet& other) {
 		m_capacity = other.m_capacity;
@@ -228,29 +291,35 @@ class DirtySet {
 		size_type index = hash & (m_capacity - 1);
 		uint32_t current_psl = 1;
 
+		// Use m_capacity as the sentinel value for 'not found'. A valid index is always < m_capacity.
+		size_type first_tombstone_idx = m_capacity;
+
 		while (true) {
 			Metadata& meta = m_metadata[index];
 
-			if (meta.psl == 0) { // Found an empty slot. Insert here.
-				new (&m_keys[index]) Key(std::move(key));
-				meta.stored_hash = hash;
-				meta.psl = current_psl;
-				m_size++;
-				return { iterator(m_keys, m_metadata.get(), index, m_capacity), true };
+			if (meta.psl == 0) { // Found a truly empty slot. The key does not exist.
+				// Decide where to insert: at the first tombstone or this new empty slot.
+				size_type insert_idx = (first_tombstone_idx != m_capacity) ? first_tombstone_idx : index;
+				emplace_at_index(insert_idx, std::move(key), hash, current_psl);
+				return { iterator(m_keys, m_metadata.get(), insert_idx, m_capacity), true };
 			}
 
-			// Cheap hash comparison first, then expensive key comparison.
-			if (meta.stored_hash == hash && m_key_equal(m_keys[index], key)) {
+			if (meta.psl == K_DELETED) {
+				// Record the first tombstone, but keep searching for duplicates.
+				if (first_tombstone_idx == m_capacity) {
+					first_tombstone_idx = index;
+				}
+			} else if (meta.stored_hash == hash && m_key_equal(m_keys[index], key)) {
+				// Found the key. Return iterator to existing element.
 				return { iterator(m_keys, m_metadata.get(), index, m_capacity), false };
-			}
-
-			// Robin Hood Hashing: If the element in the current slot is "richer"
-			// (has a smaller PSL) than the element we are trying to insert,
-			// we swap them and continue trying to find a home for the displaced element.
-			if (meta.psl < current_psl) {
+			} else if (meta.psl < current_psl) {
+				// Robin Hood swap.
 				std::swap(current_psl, meta.psl);
 				std::swap(hash, meta.stored_hash);
 				std::swap(key, m_keys[index]);
+				// After swapping, we are now trying to insert a new key,
+				// so our previous tombstone discovery is invalid for this new key.
+				first_tombstone_idx = m_capacity;
 			}
 
 			current_psl++;
@@ -269,6 +338,7 @@ class DirtySet {
 				new (&m_keys[index]) Key(std::move(key));
 				meta.stored_hash = hash;
 				meta.psl = current_psl;
+				m_occupied_slots++;
 				m_size++;
 				return;
 			}
@@ -287,31 +357,15 @@ class DirtySet {
 	}
 
 	void erase_at(size_type index) {
-		m_keys[index].~Key(); // Manually destruct the key
-		m_size--;
-
-		// Backward-shift deletion:
-		// Move subsequent elements in the probe chain back one slot to fill the gap.
-		while (true) {
-			size_type current_index = index;
-			size_type next_index = (index + 1) & (m_capacity - 1);
-
-			Metadata& next_meta = m_metadata[next_index];
-
-			// If the next slot is empty or is in its ideal location, the chain is broken.
-			if (next_meta.psl <= 1) {
-				m_metadata[current_index].psl = 0; // Mark current slot as empty.
-				return;
-			}
-
-			// Move the next element into the current (now empty) slot.
-			new (&m_keys[current_index]) Key(std::move(m_keys[next_index]));
-			m_keys[next_index].~Key();
-
-			m_metadata[current_index] = { next_meta.stored_hash, next_meta.psl - 1 };
-
-			index = next_index;
+		// For complex types with resources, we must call the destructor.
+		// For trivial types (PODs, ints, etc.), this is a no-op and is compiled out.
+		if constexpr (!std::is_trivially_destructible_v<Key>) {
+			m_keys[index].~Key();
 		}
+
+		// Mark the slot as a tombstone. The old key data is left in place for trivial types.
+		m_metadata[index].psl = K_DELETED;
+		m_size--;
 	}
 
 	void rehash(size_type new_capacity) {
@@ -326,16 +380,22 @@ class DirtySet {
 		m_keys = reinterpret_cast<Key*>(m_key_buffer.get());
 
 		m_metadata = std::make_unique<Metadata[]>(new_capacity);
+		size_type old_size = m_size;
 		m_capacity = new_capacity;
 		m_size = 0; // Reset size, will be incremented by insert_new.
+		m_occupied_slots = 0;
 
 		// Iterate old elements and insert them into the new arrays.
 		for (size_type i = 0; i < old_capacity; ++i) {
-			if (old_metadata[i].psl != 0) {
+			if (old_metadata[i].psl != 0 && old_metadata[i].psl != K_DELETED) {
 				insert_new(std::move(old_keys_ptr[i]), old_metadata[i].stored_hash);
 				old_keys_ptr[i].~Key(); // Manually destruct the moved-from key.
 			}
 		}
+
+		m_occupied_slots = m_size; // This is the simplest way to sync.
+		assert(m_size == old_size); // Good sanity check
+
 		// old_key_buffer and old_metadata are destructed here, freeing the old memory.
 	}
 
@@ -380,6 +440,7 @@ class DirtySet {
 	std::unique_ptr<Metadata[]> m_metadata = nullptr;
 
 	size_type m_size = 0;
+	size_type m_occupied_slots = 0;
 	size_type m_capacity = 0;
 	static constexpr float MAX_LOAD_FACTOR = 0.85f;
 
