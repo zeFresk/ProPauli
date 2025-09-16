@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <functional>
 #include <iterator>
 #include <memory>
@@ -11,6 +12,7 @@
 #include <type_traits>
 #include <utility>
 #include <cassert>
+#include <string>
 
 template <typename Key, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>>
 class DirtySet {
@@ -238,7 +240,7 @@ class DirtySet {
 		// Only trigger a rehash if there is a meaningful number of tombstones.
 		// Heuristic: Rehash if the number of occupied slots is greater than the
 		// number of live elements, indicating at least one tombstone exists.
-		if (m_occupied_slots > m_size && m_capacity > 0) {
+		if (m_occupied_slots > (m_size/4) && m_capacity > 0) {
 			// We could also rehash to a smaller capacity if m_size is very low,
 			// but for simplicity, we'll rehash to the current capacity.
 			rehash(m_capacity);
@@ -401,6 +403,7 @@ class DirtySet {
 		}
 
 		m_capacity = new_capacity;
+		std::memset(m_metadata.get(), 0, sizeof(Metadata) * m_capacity);
 		m_size = 0;
 		m_occupied_slots = 0;
 
