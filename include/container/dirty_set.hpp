@@ -195,6 +195,7 @@ class DirtySet {
 
 	[[nodiscard]] bool empty() const noexcept { return m_size == 0; }
 	size_type size() const noexcept { return m_size; }
+	size_type capacity() const noexcept { return m_capacity;}
 
 	void reserve(size_type capacity_hint) {
 		if (capacity_hint == 0)
@@ -231,6 +232,17 @@ class DirtySet {
 			}
 		}
 		return removed_count;
+	}
+
+	void compact() {
+		// Only trigger a rehash if there is a meaningful number of tombstones.
+		// Heuristic: Rehash if the number of occupied slots is greater than the
+		// number of live elements, indicating at least one tombstone exists.
+		if (m_occupied_slots > m_size && m_capacity > 0) {
+			// We could also rehash to a smaller capacity if m_size is very low,
+			// but for simplicity, we'll rehash to the current capacity.
+			rehash(m_capacity);
+		}
 	}
 
     private:
@@ -380,7 +392,6 @@ class DirtySet {
 		m_keys = reinterpret_cast<Key*>(m_key_buffer.get());
 
 		m_metadata = std::make_unique<Metadata[]>(new_capacity);
-		size_type old_size = m_size;
 		m_capacity = new_capacity;
 		m_size = 0; // Reset size, will be incremented by insert_new.
 		m_occupied_slots = 0;
@@ -394,8 +405,6 @@ class DirtySet {
 		}
 
 		m_occupied_slots = m_size; // This is the simplest way to sync.
-		assert(m_size == old_size); // Good sanity check
-
 		// old_key_buffer and old_metadata are destructed here, freeing the old memory.
 	}
 

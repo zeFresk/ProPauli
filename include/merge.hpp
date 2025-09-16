@@ -81,7 +81,11 @@ class Merger {
 		// hset.
 		// hset.clear();
 		//[[maybe_unused]] auto removed = std::erase_if(hset, [](auto const& nopt) { return nopt._is_dirty(); });
-		hset.reserve(paulis_.nb_terms());
+		if (hset.capacity() < paulis_.nb_terms()) {
+			hset.reserve(paulis_.nb_terms());
+		} else {
+			hset.compact();
+		}
 		debug("after erase: ", paulis_);
 	}
 
