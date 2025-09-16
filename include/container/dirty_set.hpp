@@ -195,7 +195,7 @@ class DirtySet {
 
 	[[nodiscard]] bool empty() const noexcept { return m_size == 0; }
 	size_type size() const noexcept { return m_size; }
-	size_type capacity() const noexcept { return m_capacity;}
+	size_type capacity() const noexcept { return m_capacity; }
 
 	void reserve(size_type capacity_hint) {
 		if (capacity_hint == 0)
@@ -381,31 +381,45 @@ class DirtySet {
 	}
 
 	void rehash(size_type new_capacity) {
-		// Keep old data alive until we are done moving from it.
+		// --- Buffer Management ---
 		Key* old_keys_ptr = m_keys;
 		auto old_key_buffer = std::move(m_key_buffer);
 		auto old_metadata = std::move(m_metadata);
 		size_type old_capacity = m_capacity;
 
-		// Allocate and commit new, empty arrays.
-		m_key_buffer = std::make_unique<unsigned char[]>(sizeof(Key) * new_capacity);
-		m_keys = reinterpret_cast<Key*>(m_key_buffer.get());
+		// Decide which buffers to use as the destination
+		if (m_spare_capacity == new_capacity) {
+			// Path 1: Recycle the spare buffers for compaction
+			m_key_buffer = std::move(m_spare_key_buffer);
+			m_keys = reinterpret_cast<Key*>(m_key_buffer.get());
+			m_metadata = std::move(m_spare_metadata_buffer);
+		} else {
+			// Path 2: Allocate new buffers (standard rehash)
+			m_key_buffer = std::make_unique<unsigned char[]>(sizeof(Key) * new_capacity);
+			m_keys = reinterpret_cast<Key*>(m_key_buffer.get());
+			m_metadata = std::make_unique<Metadata[]>(new_capacity);
+		}
 
-		m_metadata = std::make_unique<Metadata[]>(new_capacity);
 		m_capacity = new_capacity;
-		m_size = 0; // Reset size, will be incremented by insert_new.
+		m_size = 0;
 		m_occupied_slots = 0;
 
-		// Iterate old elements and insert them into the new arrays.
+		// --- Re-insertion Logic (remains the same) ---
 		for (size_type i = 0; i < old_capacity; ++i) {
 			if (old_metadata[i].psl != 0 && old_metadata[i].psl != K_DELETED) {
 				insert_new(std::move(old_keys_ptr[i]), old_metadata[i].stored_hash);
-				old_keys_ptr[i].~Key(); // Manually destruct the moved-from key.
+				if constexpr (!std::is_trivially_destructible_v<Key>) {
+					old_keys_ptr[i].~Key();
+				}
 			}
 		}
+		m_occupied_slots = m_size;
 
-		m_occupied_slots = m_size; // This is the simplest way to sync.
-		// old_key_buffer and old_metadata are destructed here, freeing the old memory.
+		// --- Finalize Buffer Swap ---
+		// The now-unused old buffers become the new spare buffers.
+		m_spare_key_buffer = std::move(old_key_buffer);
+		m_spare_metadata_buffer = std::move(old_metadata);
+		m_spare_capacity = old_capacity;
 	}
 
 	void destroy_keys() noexcept {
@@ -439,14 +453,15 @@ class DirtySet {
 
 	// --- Private Members ---
 
-	// Struct-of-Arrays (SoA) Layout:
-	// This layout is more cache-friendly for probing. The probing loop only needs
-	// to access the small `m_metadata` array. The larger `m_keys` array is only
-	// accessed when a hash match is found.
-	Key* m_keys = nullptr; // Raw, non-owning pointer toi the start of the key buffer.
-	std::unique_ptr<unsigned char[]> m_key_buffer = nullptr; // Owns the raw memory.
-
+	// SoA layout for main buffers
+	Key* m_keys = nullptr;
+	std::unique_ptr<unsigned char[]> m_key_buffer = nullptr;
 	std::unique_ptr<Metadata[]> m_metadata = nullptr;
+
+	// NEW: Spare buffers for allocation-free compaction
+	std::unique_ptr<unsigned char[]> m_spare_key_buffer = nullptr;
+	std::unique_ptr<Metadata[]> m_spare_metadata_buffer = nullptr;
+	size_type m_spare_capacity = 0;
 
 	size_type m_size = 0;
 	size_type m_occupied_slots = 0;
