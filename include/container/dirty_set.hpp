@@ -12,32 +12,28 @@
 #include <type_traits>
 #include <utility>
 #include <cassert>
-#include <string>
+
+// SSE2 Intrinsics Header
+#include <immintrin.h>
+
+#if defined(__GNUC__) || defined(__clang__)
+// Compilers like GCC and Clang provide __builtin_ctz
+#else
+// For MSVC, we need to include <intrin.h> for _BitScanForward
+#include <intrin.h>
+#pragma intrinsic(_BitScanForward)
+#endif
 
 template <typename Key, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>>
 class DirtySet {
-    private:
-	// A sentinel value for the psl field to indicate a slot is empty
-	// but was previously occupied (a "tombstone").
-	static constexpr uint32_t K_DELETED = UINT32_MAX;
-
-	// --- Internal Data Structures ---
-
-	struct Metadata {
-		// Full hash is stored to speed up rehashes and equality checks.
-		// Probing can first compare hashes (a cheap size_t comparison)
-		// before calling the potentially expensive KeyEqual functor.
-		size_t stored_hash;
-
-		// Probe Sequence Length (PSL). A measure of how far this element is
-		// from its ideal location.
-		// A PSL of 0 indicates an empty/never-used slot.
-		// A PSL of 1 means the element is in its ideal location.
-		// A PSL > 1 means the element was displaced due to a collision.
-		uint32_t psl = 0;
-	};
-
     public:
+	// Enforce SSE2 support at compile time.
+#if defined(__SSE2__)
+	// This space is intentionally left blank.
+#else
+	static_assert(false, "DirtySet v3.0 requires SSE2 support. Please compile with appropriate flags (e.g., -msse2).");
+#endif
+
 	// --- Type Aliases (STL-compliant) ---
 	using key_type = Key;
 	using value_type = Key;
@@ -49,6 +45,9 @@ class DirtySet {
 	using const_reference = const value_type&;
 	using pointer = value_type*;
 	using const_pointer = const value_type*;
+
+	// The group size is fixed by the SIMD register width. For SSE2, it's 16 bytes.
+	static constexpr size_type GROUP_SIZE = 16;
 
 	// --- Forward Iterator Implementation ---
 	template <bool IsConst>
@@ -76,8 +75,7 @@ class DirtySet {
 			return old;
 		}
 
-		// Allow conversion from iterator to const_iterator
-		operator BasicIterator<true>() const { return BasicIterator<true>(m_keys, m_metadata, m_index, m_capacity); }
+		operator BasicIterator<true>() const { return BasicIterator<true>(m_keys, m_ctrl, m_index, m_capacity); }
 
 		friend bool operator==(const BasicIterator& lhs, const BasicIterator& rhs) noexcept { return lhs.m_index == rhs.m_index; }
 		friend bool operator!=(const BasicIterator& lhs, const BasicIterator& rhs) noexcept { return !(lhs == rhs); }
@@ -85,20 +83,21 @@ class DirtySet {
 	    private:
 		friend class DirtySet;
 		using KeyPtr = std::conditional_t<IsConst, const Key*, Key*>;
-		using MetaPtr = std::conditional_t<IsConst, const Metadata*, Metadata*>;
+		using CtrlPtr = std::conditional_t<IsConst, const int8_t*, int8_t*>;
 
-		BasicIterator(KeyPtr keys, MetaPtr metadata, size_type index, size_type capacity) noexcept
-			: m_keys(keys), m_metadata(metadata), m_index(index), m_capacity(capacity) {}
+		BasicIterator(KeyPtr keys, CtrlPtr ctrl, size_type index, size_type capacity) noexcept
+			: m_keys(keys), m_ctrl(ctrl), m_index(index), m_capacity(capacity) {}
 
 		void advance_to_next_full() {
 			++m_index;
-			while (m_index < m_capacity && m_metadata[m_index].psl == 0) {
+			// A non-negative control byte denotes a full slot.
+			while (m_index < m_capacity && m_ctrl[m_index] < 0) {
 				++m_index;
 			}
 		}
 
 		KeyPtr m_keys = nullptr;
-		MetaPtr m_metadata = nullptr;
+		CtrlPtr m_ctrl = nullptr;
 		size_type m_index = 0;
 		size_type m_capacity = 0;
 	};
@@ -117,79 +116,73 @@ class DirtySet {
 	DirtySet& operator=(const DirtySet& other) {
 		if (this != &other) {
 			destroy_keys();
-			// Operate on the unique_ptr for memory management.
 			m_key_buffer.reset();
-			m_keys = nullptr; // Nullify the raw pointer.
-			m_metadata.reset();
+			m_keys = nullptr;
+			m_ctrl.reset();
 			copy_from(other);
 		}
 		return *this;
 	}
 
-	// --- Move Constructor ---
 	DirtySet(DirtySet&& other) noexcept
-		: m_keys(other.m_keys), m_key_buffer(std::move(other.m_key_buffer)), m_metadata(std::move(other.m_metadata)),
-		  m_size(other.m_size), m_capacity(other.m_capacity), m_hasher(std::move(other.m_hasher)),
-		  m_key_equal(std::move(other.m_key_equal)) {
-		// Leave the moved-from object in a valid, empty state.
+		: m_keys(other.m_keys), m_key_buffer(std::move(other.m_key_buffer)), m_ctrl(std::move(other.m_ctrl)),
+		  m_spare_key_buffer(std::move(other.m_spare_key_buffer)), m_spare_ctrl_buffer(std::move(other.m_spare_ctrl_buffer)),
+		  m_spare_capacity(other.m_spare_capacity), m_size(other.m_size), m_occupied_slots(other.m_occupied_slots),
+		  m_capacity(other.m_capacity), m_hasher(std::move(other.m_hasher)), m_key_equal(std::move(other.m_key_equal)) {
 		other.m_keys = nullptr;
 		other.m_size = 0;
+		other.m_occupied_slots = 0;
 		other.m_capacity = 0;
+		other.m_spare_capacity = 0;
 	}
 
-	// --- Move Assignment Operator ---
 	DirtySet& operator=(DirtySet&& other) noexcept {
 		if (this != &other) {
-			// Destroy our own elements before overwriting
 			destroy_keys();
-
 			m_keys = other.m_keys;
 			m_key_buffer = std::move(other.m_key_buffer);
-			m_metadata = std::move(other.m_metadata);
+			m_ctrl = std::move(other.m_ctrl);
+			m_spare_key_buffer = std::move(other.m_spare_key_buffer);
+			m_spare_ctrl_buffer = std::move(other.m_spare_ctrl_buffer);
+			m_spare_capacity = other.m_spare_capacity;
 			m_size = other.m_size;
+			m_occupied_slots = other.m_occupied_slots;
 			m_capacity = other.m_capacity;
 			m_hasher = std::move(other.m_hasher);
 			m_key_equal = std::move(other.m_key_equal);
 
-			// Leave the moved-from object in a valid, empty state.
 			other.m_keys = nullptr;
 			other.m_size = 0;
+			other.m_occupied_slots = 0;
 			other.m_capacity = 0;
+			other.m_spare_capacity = 0;
 		}
 		return *this;
-	};
+	}
 
 	// --- Iterators ---
 
 	iterator begin() noexcept {
 		size_type index = 0;
-		while (index < m_capacity && m_metadata[index].psl == 0) {
+		while (index < m_capacity && m_ctrl[index] < 0) {
 			index++;
 		}
-		// Pass the raw pointer directly, no .get()
-		return iterator(m_keys, m_metadata.get(), index, m_capacity);
+		return iterator(m_keys, m_ctrl.get(), index, m_capacity);
 	}
 
 	const_iterator begin() const noexcept {
 		size_type index = 0;
-		while (index < m_capacity && m_metadata[index].psl == 0) {
+		while (index < m_capacity && m_ctrl[index] < 0) {
 			index++;
 		}
-		// Pass the raw pointer directly, no .get()
-		return const_iterator(m_keys, m_metadata.get(), index, m_capacity);
+		return const_iterator(m_keys, m_ctrl.get(), index, m_capacity);
 	}
 
 	const_iterator cbegin() const noexcept { return begin(); }
 
-	iterator end() noexcept {
-		// Pass the raw pointer directly, no .get()
-		return iterator(m_keys, m_metadata.get(), m_capacity, m_capacity);
-	}
+	iterator end() noexcept { return iterator(m_keys, m_ctrl.get(), m_capacity, m_capacity); }
 
-	const_iterator end() const noexcept {
-		// Pass the raw pointer directly, no .get()
-		return const_iterator(m_keys, m_metadata.get(), m_capacity, m_capacity);
-	}
+	const_iterator end() const noexcept { return const_iterator(m_keys, m_ctrl.get(), m_capacity, m_capacity); }
 
 	const_iterator cend() const noexcept { return end(); }
 
@@ -203,21 +196,16 @@ class DirtySet {
 		if (capacity_hint == 0)
 			return;
 		size_type new_capacity = next_power_of_two(capacity_hint);
-		if (new_capacity * MAX_LOAD_FACTOR > m_capacity * MAX_LOAD_FACTOR) {
+		if (new_capacity > m_capacity) {
 			rehash(new_capacity);
 		}
 	}
 
 	// --- Modifiers ---
 
-	void clear() noexcept {
-		destroy_keys();
-		m_size = 0;
-		m_occupied_slots = 0;
-		// Keep allocated memory for reuse.
-	}
+	void clear() noexcept { destroy_keys(); }
 
-	std::pair<iterator, bool> emplace(Key&& key) {
+	std::pair<iterator, bool> emplace(Key key) {
 		if (m_occupied_slots + 1 > m_capacity * MAX_LOAD_FACTOR) {
 			rehash(m_capacity > 0 ? m_capacity * 2 : 8);
 		}
@@ -228,7 +216,7 @@ class DirtySet {
 	size_type erase_if(Predicate pred) {
 		size_type removed_count = 0;
 		for (size_type i = 0; i < m_capacity; ++i) {
-			if (m_metadata[i].psl > 0 && m_metadata[i].psl != K_DELETED && pred(m_keys[i])) {
+			if (m_ctrl[i] >= 0 && pred(m_keys[i])) {
 				erase_at(i);
 				removed_count++;
 			}
@@ -237,191 +225,136 @@ class DirtySet {
 	}
 
 	void compact() {
-		// Only trigger a rehash if there is a meaningful number of tombstones.
-		// Heuristic: Rehash if the number of occupied slots is greater than the
-		// number of live elements, indicating at least one tombstone exists.
-		if (m_occupied_slots > (m_size/4) && m_capacity > 0) {
-			// We could also rehash to a smaller capacity if m_size is very low,
-			// but for simplicity, we'll rehash to the current capacity.
+		if (m_occupied_slots > m_size && m_capacity > 0) {
 			rehash(m_capacity);
 		}
 	}
 
     private:
 	// --- Private Helper Functions ---
-	void emplace_at_index(size_type index, Key&& key, size_t hash, uint32_t psl) {
-		Metadata& meta = m_metadata[index];
 
-		// Only increment occupied count if we are filling a never-used slot.
-		if (meta.psl == 0) {
-			m_occupied_slots++;
-		}
+	struct HashInfo {
+		size_t h1;
+		int8_t h2;
+	};
 
-		// Check if we are overwriting a tombstone or inserting into a fresh slot.
-		if (meta.psl == K_DELETED) {
-			// Reclaiming a tombstone.
-			if constexpr (std::is_trivially_move_assignable_v<Key>) {
-				// For PODs, we can just move-assign over the garbage data.
-				m_keys[index] = std::move(key);
-			} else {
-				// For complex types, the old object was already destroyed.
-				// We only need to construct the new one in its place.
-				new (&m_keys[index]) Key(std::move(key));
-			}
-		} else {
-			// Inserting into a never-used (psl == 0) slot.
-			// Always use placement new here.
-			new (&m_keys[index]) Key(std::move(key));
-		}
+	static HashInfo split_hash(size_t hash) { return { hash >> 7, static_cast<int8_t>(hash & 0x7F) }; }
 
-		meta.stored_hash = hash;
-		meta.psl = psl;
-		m_size++;
+	static inline size_t count_trailing_zeros(uint32_t mask) {
+#if defined(__GNUC__) || defined(__clang__)
+		return __builtin_ctz(mask);
+#else
+		unsigned long index;
+		_BitScanForward(&index, mask);
+		return index;
+#endif
 	}
 
 	void copy_from(const DirtySet& other) {
 		m_capacity = other.m_capacity;
 		m_size = other.m_size;
+		m_occupied_slots = other.m_occupied_slots;
 		m_hasher = other.m_hasher;
 		m_key_equal = other.m_key_equal;
 
 		if (m_capacity > 0) {
 			m_key_buffer = std::make_unique<unsigned char[]>(sizeof(Key) * m_capacity);
 			m_keys = reinterpret_cast<Key*>(m_key_buffer.get());
-			m_metadata = std::make_unique<Metadata[]>(m_capacity);
+			m_ctrl = std::make_unique<int8_t[]>(m_capacity + GROUP_SIZE);
 
+			std::memcpy(m_ctrl.get(), other.m_ctrl.get(), m_capacity + GROUP_SIZE);
 			for (size_type i = 0; i < m_capacity; ++i) {
-				m_metadata[i] = other.m_metadata[i];
-				if (m_metadata[i].psl != 0) {
-					// Use placement new to copy-construct the key into the raw buffer.
+				if (m_ctrl[i] >= 0) {
 					new (&m_keys[i]) Key(other.m_keys[i]);
 				}
 			}
 		}
 	}
 
-	std::pair<iterator, bool> find_or_insert_impl(Key&& key) {
+	std::pair<iterator, bool> find_or_insert_impl(Key key) {
 		size_t hash = m_hasher(key);
-		size_type index = hash & (m_capacity - 1);
-		uint32_t current_psl = 1;
+		HashInfo info = split_hash(hash);
 
-		// Use m_capacity as the sentinel value for 'not found'. A valid index is always < m_capacity.
-		size_type first_tombstone_idx = m_capacity;
+		size_type start_index = info.h1 & (m_capacity - 1);
+		size_type probe_num = 0;
 
 		while (true) {
-			Metadata& meta = m_metadata[index];
+			size_type probe_offset = (probe_num * (probe_num + 1)) / 2;
+			size_type group_index = (start_index + probe_offset) & (m_capacity - 1);
 
-			if (meta.psl == 0) { // Found a truly empty slot. The key does not exist.
-				// Decide where to insert: at the first tombstone or this new empty slot.
-				size_type insert_idx = (first_tombstone_idx != m_capacity) ? first_tombstone_idx : index;
-				emplace_at_index(insert_idx, std::move(key), hash, current_psl);
-				return { iterator(m_keys, m_metadata.get(), insert_idx, m_capacity), true };
-			}
+			__m128i group_ctrl = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&m_ctrl[group_index]));
+			__m128i h2_vector = _mm_set1_epi8(info.h2);
+			uint32_t match_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, h2_vector));
 
-			if (meta.psl == K_DELETED) {
-				// Record the first tombstone, but keep searching for duplicates.
-				if (first_tombstone_idx == m_capacity) {
-					first_tombstone_idx = index;
+			while (match_mask != 0) {
+				size_t bit_pos = count_trailing_zeros(match_mask);
+				size_type index = (group_index + bit_pos) & (m_capacity - 1);
+				if (m_key_equal(m_keys[index], key)) {
+					return { iterator(m_keys, m_ctrl.get(), index, m_capacity), false };
 				}
-			} else if (meta.stored_hash == hash && m_key_equal(m_keys[index], key)) {
-				// Found the key. Return iterator to existing element.
-				return { iterator(m_keys, m_metadata.get(), index, m_capacity), false };
-			} else if (meta.psl < current_psl) {
-				// Robin Hood swap.
-				std::swap(current_psl, meta.psl);
-				std::swap(hash, meta.stored_hash);
-				std::swap(key, m_keys[index]);
-				// After swapping, we are now trying to insert a new key,
-				// so our previous tombstone discovery is invalid for this new key.
-				first_tombstone_idx = m_capacity;
+				match_mask &= ~(1 << bit_pos);
 			}
 
-			current_psl++;
-			index = (index + 1) & (m_capacity - 1);
-		}
-	}
-
-	void insert_new(Key&& key, size_t hash) {
-		size_type index = hash & (m_capacity - 1);
-		uint32_t current_psl = 1;
-
-		while (true) {
-			Metadata& meta = m_metadata[index];
-
-			if (meta.psl == 0) { // Found an empty slot. Insert here.
+			uint32_t empty_mask = _mm_movemask_epi8(group_ctrl);
+			if (empty_mask != 0) {
+				size_t bit_pos = count_trailing_zeros(empty_mask);
+				size_type index = (group_index + bit_pos) & (m_capacity - 1);
+				if (m_ctrl[index] == K_EMPTY) {
+					m_occupied_slots++;
+				}
 				new (&m_keys[index]) Key(std::move(key));
-				meta.stored_hash = hash;
-				meta.psl = current_psl;
-				m_occupied_slots++;
+				m_ctrl[index] = info.h2;
 				m_size++;
-				return;
+				return { iterator(m_keys, m_ctrl.get(), index, m_capacity), true };
 			}
 
-			if (meta.psl < current_psl) {
-				std::swap(current_psl, meta.psl);
-				size_t temp_hash;
-				std::swap(temp_hash, meta.stored_hash);
-				std::swap(hash, temp_hash);
-				std::swap(key, m_keys[index]);
-			}
-
-			current_psl++;
-			index = (index + 1) & (m_capacity - 1);
+			probe_num++;
+			assert(probe_offset < m_capacity && "Hash table is full, but load factor check failed.");
 		}
 	}
 
 	void erase_at(size_type index) {
-		// For complex types with resources, we must call the destructor.
-		// For trivial types (PODs, ints, etc.), this is a no-op and is compiled out.
 		if constexpr (!std::is_trivially_destructible_v<Key>) {
 			m_keys[index].~Key();
 		}
-
-		// Mark the slot as a tombstone. The old key data is left in place for trivial types.
-		m_metadata[index].psl = K_DELETED;
+		m_ctrl[index] = K_DELETED;
 		m_size--;
 	}
 
 	void rehash(size_type new_capacity) {
-		// --- Buffer Management ---
 		Key* old_keys_ptr = m_keys;
 		auto old_key_buffer = std::move(m_key_buffer);
-		auto old_metadata = std::move(m_metadata);
+		auto old_ctrl_buffer = std::move(m_ctrl);
 		size_type old_capacity = m_capacity;
 
-		// Decide which buffers to use as the destination
 		if (m_spare_capacity == new_capacity) {
-			// Path 1: Recycle the spare buffers for compaction
 			m_key_buffer = std::move(m_spare_key_buffer);
 			m_keys = reinterpret_cast<Key*>(m_key_buffer.get());
-			m_metadata = std::move(m_spare_metadata_buffer);
+			m_ctrl = std::move(m_spare_ctrl_buffer);
 		} else {
-			// Path 2: Allocate new buffers (standard rehash)
 			m_key_buffer = std::make_unique<unsigned char[]>(sizeof(Key) * new_capacity);
 			m_keys = reinterpret_cast<Key*>(m_key_buffer.get());
-			m_metadata = std::make_unique<Metadata[]>(new_capacity);
+			m_ctrl = std::make_unique<int8_t[]>(new_capacity + GROUP_SIZE);
 		}
 
 		m_capacity = new_capacity;
-		std::memset(m_metadata.get(), 0, sizeof(Metadata) * m_capacity);
+		std::memset(m_ctrl.get(), K_EMPTY, m_capacity);
+		std::memset(m_ctrl.get() + m_capacity, K_SENTINEL, GROUP_SIZE);
+
 		m_size = 0;
 		m_occupied_slots = 0;
 
-		// --- Re-insertion Logic (remains the same) ---
 		for (size_type i = 0; i < old_capacity; ++i) {
-			if (old_metadata[i].psl != 0 && old_metadata[i].psl != K_DELETED) {
-				insert_new(std::move(old_keys_ptr[i]), old_metadata[i].stored_hash);
+			if (old_ctrl_buffer[i] >= 0) {
+				emplace(std::move(old_keys_ptr[i]));
 				if constexpr (!std::is_trivially_destructible_v<Key>) {
 					old_keys_ptr[i].~Key();
 				}
 			}
 		}
-		m_occupied_slots = m_size;
 
-		// --- Finalize Buffer Swap ---
-		// The now-unused old buffers become the new spare buffers.
 		m_spare_key_buffer = std::move(old_key_buffer);
-		m_spare_metadata_buffer = std::move(old_metadata);
+		m_spare_ctrl_buffer = std::move(old_ctrl_buffer);
 		m_spare_capacity = old_capacity;
 	}
 
@@ -429,19 +362,19 @@ class DirtySet {
 		if (!m_keys)
 			return;
 		for (size_type i = 0; i < m_capacity; ++i) {
-			if (m_metadata[i].psl != 0) {
-				m_keys[i].~Key();
-				m_metadata[i].psl = 0; // Reset metadata
+			if (m_ctrl[i] >= 0) {
+				if constexpr (!std::is_trivially_destructible_v<Key>) {
+					m_keys[i].~Key();
+				}
 			}
 		}
 		m_size = 0;
+		m_occupied_slots = 0;
 	}
 
-	// Finds the smallest power of two that is >= n.
 	static constexpr size_type next_power_of_two(size_type n) {
 		if (n == 0)
 			return 1;
-		// Efficient bit-twiddling algorithm.
 		n--;
 		n |= n >> 1;
 		n |= n >> 2;
@@ -455,25 +388,23 @@ class DirtySet {
 	}
 
 	// --- Private Members ---
+	static constexpr int8_t K_EMPTY = -128;
+	static constexpr int8_t K_DELETED = -127;
+	static constexpr int8_t K_SENTINEL = -1;
 
-	// SoA layout for main buffers
 	Key* m_keys = nullptr;
 	std::unique_ptr<unsigned char[]> m_key_buffer = nullptr;
-	std::unique_ptr<Metadata[]> m_metadata = nullptr;
+	std::unique_ptr<int8_t[]> m_ctrl = nullptr;
 
-	// NEW: Spare buffers for allocation-free compaction
 	std::unique_ptr<unsigned char[]> m_spare_key_buffer = nullptr;
-	std::unique_ptr<Metadata[]> m_spare_metadata_buffer = nullptr;
+	std::unique_ptr<int8_t[]> m_spare_ctrl_buffer = nullptr;
 	size_type m_spare_capacity = 0;
 
 	size_type m_size = 0;
 	size_type m_occupied_slots = 0;
 	size_type m_capacity = 0;
-	static constexpr float MAX_LOAD_FACTOR = 0.85f;
+	static constexpr float MAX_LOAD_FACTOR = 0.875f;
 
-	// Use C++20 [[no_unique_address]] for Empty Base Optimization.
-	// If the Hasher or KeyEqual are empty structs (like std::hash),
-	// they will not take up any space in the DirtySet object.
 #if __has_cpp_attribute(no_unique_address)
 	[[no_unique_address]] hasher m_hasher;
 	[[no_unique_address]] key_equal m_key_equal;
