@@ -294,6 +294,7 @@ class NonOwningPauliTermPacked {
 	void fast_copy_content(NonOwningPauliTermPacked const& nopt) {
 		assert(&nopt.ptc.get() == &ptc.get());
 		set_coefficient(nopt.coefficient());
+		_set_dirty(nopt._is_dirty());
 		ptc.get().copy_fast(nopt.idx, idx);
 	}
 	/** @} */

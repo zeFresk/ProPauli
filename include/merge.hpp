@@ -15,10 +15,42 @@
 
 #include "container/dirty_set.hpp"
 
+#include <algorithm>
 #include <type_traits>
 #include <tsl/robin_set.h>
 #include <unistd.h>
 #include <unordered_set>
+
+template <typename K, typename V, typename E>
+bool no_duplicates(DirtySet<K, V, E> const& hs) {
+	std::unordered_set<K, V, E> uhset;
+
+	for (auto const& obj : hs) {
+		auto [it, is_new] = uhset.emplace(obj);
+		if (!is_new) {
+			assert(false);
+			return false;
+		}
+	}
+	return true;
+}
+
+template <typename T>
+bool no_duplicates(PauliTermContainer<T>& paulis_) {
+	using PTC_t = PauliTermContainer<T>;
+	using nopt_t = std::remove_cvref_t<PTC_t>::non_owning_t;
+	std::unordered_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>> hset;
+
+	for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
+		auto nopt = paulis_[i];
+		auto [it, is_new] = hset.emplace(std::move(nopt));
+		if (!is_new) {
+			assert(false);
+			return false;
+		}
+	}
+	return true;
+}
 
 template <typename T>
 class Merger {
@@ -49,6 +81,7 @@ class Merger {
 
 		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
 			auto nopt = paulis_[i];
+			assert((debug_find(nopt, hset, paulis_), true));
 			if (nopt._is_dirty()) {
 				auto c = nopt.coefficient();
 
@@ -77,16 +110,21 @@ class Merger {
 				// hset.erase(it);
 			}
 		}*/
-		hset.erase_if([](auto const& nopt) { return true; });
+		// hset.erase_if([](auto const& nopt) { return true; });
+		hset.erase_if([](auto const& nopt) { return nopt._is_dirty(); });
+		assert(!std::any_of(hset.begin(), hset.end(), [](auto const& nopt) { return nopt._is_dirty(); }));
 		// hset.
 		// hset.clear();
 		//[[maybe_unused]] auto removed = std::erase_if(hset, [](auto const& nopt) { return nopt._is_dirty(); });
 		if (hset.capacity() < paulis_.nb_terms()) {
 			hset.reserve(paulis_.nb_terms());
 		} else {
-			hset.compact();
+			// hset.compact();
 		}
 		debug("after erase: ", paulis_);
+
+		assert(no_duplicates(hset));
+		assert(!std::any_of(hset.begin(), hset.end(), [](auto const& nopt) { return nopt._is_dirty(); }));
 	}
 
 	void after_merge(PTC_t& paulis_) {
@@ -94,10 +132,24 @@ class Merger {
 			paulis_[i]._set_dirty(false);
 		}
 		debug("after merge: ", paulis_);
+		assert(no_duplicates(paulis_));
+	}
+
+	void debug_find(nopt_t nopt, decltype(hset)& hset, PTC_t const& paulis_) {
+		debug("inside debug_find:", paulis_);
+		auto slow_it = std::find_if(hset.begin(), hset.end(), [=](auto const& obj) { return nopt.equal_bitstring(obj); });
+		bool found = slow_it != hset.end();
+		if (found) {
+			// assert(!slow_it->_is_dirty() && "Existing should not be dirty."); // can be done, inserting a dirty pt
+			auto [it_emp, is_new] = hset.emplace(std::move(nopt));
+			assert(!is_new && "If found via slow find, it should be found via fast find");
+			auto slow_it2 = std::find_if(hset.begin(), hset.end(), [=](auto const& obj) { return nopt.equal_bitstring(obj); });
+			assert(it_emp == slow_it2 && "Slow search should match fast search.");
+		}
 	}
 
 	void debug(std::string const& str, PTC_t const& paulis_) {
-		/*
+		return;
 		std::cout << str << "\nhset:\n";
 		for (auto it = hset.begin(); it != hset.end(); ++it) {
 			std::cout << *it << " [dirty=" << (it->_is_dirty() ? "1" : "0") << "]\n";
@@ -107,7 +159,7 @@ class Merger {
 			auto nopt = paulis_[i];
 			std::cout << nopt << "[dirty=" << (nopt._is_dirty() ? "1" : "0") << "]\n";
 		}
-		std::cout << "\n";*/
+		std::cout << "\n";
 	}
 };
 
