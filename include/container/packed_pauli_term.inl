@@ -7,8 +7,6 @@
  * parent container, often using highly optimized "fast" methods that operate
  * directly on the packed bit representation.
  */
-#include <cstddef>
-#include <unistd.h>
 class ReadOnlyNonOwningPauliTermPacked {
     protected:
 	/// @brief A const reference to the parent container that owns the data.
@@ -79,8 +77,6 @@ class ReadOnlyNonOwningPauliTermPacked {
 	 * @note This is a high-performance operation that delegates to the container's `fast_phash` method.
 	 */
 	std::size_t phash() const noexcept { return ptc.get().fast_phash(idx); }
-	
-	std::size_t xxhash() const noexcept { return ptc.get().fast_phash_xxhash3(idx); }
 
 	/** @name Comparison
 	 * @{
@@ -241,8 +237,6 @@ class NonOwningPauliTermPacked {
 	 * @note This is a high-performance operation that delegates to the container's `fast_phash` method.
 	 */
 	std::size_t phash() const noexcept { return ptc.get().fast_phash(idx); }
-
-	std::size_t xxhash() const noexcept { return ptc.get().fast_phash_xxh3(idx); }
 
 	/** @name Comparison
 	 * @{

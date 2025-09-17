@@ -283,6 +283,8 @@ class PauliTermContainer {
 	std::size_t fast_phash(std::size_t index) const noexcept {
 		assert(index < nb_terms());
 		const auto start_idx = index * nb_underlying_per_pt;
+		return XXH3_64bits(raw_bits.data() + start_idx, sizeof(Underlying) * nb_underlying_per_pt);
+		/*
 		static constexpr std::size_t shift_num = sizeof(Underlying) * 8;
 		static constexpr std::size_t max_shift = sizeof(std::size_t) * 8;
 		std::size_t ret = 0;
@@ -290,13 +292,7 @@ class PauliTermContainer {
 			const std::size_t uv = raw_bits[start_idx + i];
 			ret ^= uv << ((i * shift_num) % max_shift);
 		}
-		return ret;
-	}
-
-	std::size_t fast_phash_xxh3(std::size_t index) const noexcept {
-		assert(index < nb_terms());
-		const auto start_idx = index * nb_underlying_per_pt;
-		return XXH3_64bits(raw_bits.data() + start_idx, sizeof(Underlying) * nb_underlying_per_pt);
+		return ret;*/
 	}
 
 	/**
