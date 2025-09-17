@@ -29,6 +29,8 @@
 #include <string_view>
 #include <vector>
 
+#include <xxhash.h>
+
 /**
  * @brief A specialized container for storing Pauli terms in a memory-packed format.
  * @tparam T The numeric type for the coefficients (e.g., float, double).
@@ -139,7 +141,7 @@ class PauliTermContainer {
 
 	bool is_dirty(std::size_t idx) const {
 		assert(idx < nb_terms());
-		//return true;
+		// return true;
 		return dirty[idx];
 	}
 
@@ -289,6 +291,12 @@ class PauliTermContainer {
 			ret ^= uv << ((i * shift_num) % max_shift);
 		}
 		return ret;
+	}
+
+	std::size_t fast_phash_xxh3(std::size_t index) const noexcept {
+		assert(index < nb_terms());
+		const auto start_idx = index * nb_underlying_per_pt;
+		return XXH3_64bits(raw_bits.data() + start_idx, sizeof(Underlying) * nb_underlying_per_pt);
 	}
 
 	/**

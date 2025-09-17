@@ -67,7 +67,15 @@ FetchContent_Declare(
 	GIT_TAG v1.4.0
 )
 FetchContent_MakeAvailable(robin-map)
-target_link_libraries(propaulib tsl::robin_map)
+
+FetchContent_Declare(
+  xxhash
+  GIT_REPOSITORY https://github.com/Cyan4973/xxHash.git
+  GIT_TAG        v0.8.3
+)
+FetchContent_MakeAvailable(xxhash)
+
+target_link_libraries(propaulib tsl::robin_map xxhash)
 
 if (TEST)
 	# Build de GTest

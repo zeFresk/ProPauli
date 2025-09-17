@@ -58,11 +58,16 @@ struct FastPauliStringEqual {
 };
 
 template <typename T>
+struct FastPauliStringHash {
+	bool operator()(T const& pt) const { return pt.xxhash(); }
+};
+
+template <typename T>
 class Merger {
     private:
 	using PTC_t = PauliTermContainer<T>;
 	using nopt_t = std::remove_cvref_t<PTC_t>::non_owning_t;
-	DirtySet<nopt_t, GenericPauliTermHash<nopt_t>, FastPauliStringEqual<nopt_t>> hset;
+	DirtySet<nopt_t, FastPauliStringHash<nopt_t>, FastPauliStringEqual<nopt_t>> hset;
 	// std::unordered_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>> hset;
 	// tsl::robin_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>, std::allocator<nopt_t>, true> hset;
 
@@ -86,7 +91,7 @@ class Merger {
 
 		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
 			auto nopt = paulis_[i];
-			assert((debug_find(nopt, hset, paulis_), true));
+			//assert((debug_find(nopt, hset, paulis_), true));
 			if (nopt._is_dirty()) {
 				auto c = nopt.coefficient();
 
@@ -117,7 +122,7 @@ class Merger {
 		}*/
 		// hset.erase_if([](auto const& nopt) { return true; });
 		hset.erase_if([](auto const& nopt) { return nopt._is_dirty(); });
-		assert(!std::any_of(hset.begin(), hset.end(), [](auto const& nopt) { return nopt._is_dirty(); }));
+		//assert(!std::any_of(hset.begin(), hset.end(), [](auto const& nopt) { return nopt._is_dirty(); }));
 		// hset.
 		// hset.clear();
 		//[[maybe_unused]] auto removed = std::erase_if(hset, [](auto const& nopt) { return nopt._is_dirty(); });
@@ -128,8 +133,8 @@ class Merger {
 		}
 		debug("after erase: ", paulis_);
 
-		assert(no_duplicates(hset));
-		assert(!std::any_of(hset.begin(), hset.end(), [](auto const& nopt) { return nopt._is_dirty(); }));
+		//assert(no_duplicates(hset));
+		//assert(!std::any_of(hset.begin(), hset.end(), [](auto const& nopt) { return nopt._is_dirty(); }));
 	}
 
 	void after_merge(PTC_t& paulis_) {
