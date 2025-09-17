@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <cstring>
 #include <iterator>
 #include <string_view>
 #include <vector>
@@ -300,9 +301,8 @@ class PauliTermContainer {
 		assert(index_lhs < nb_terms());
 		assert(index_rhs < nb_terms());
 		const std::size_t lhs_start = index_lhs * nb_underlying_per_pt;
-		const std::size_t lhs_end = lhs_start + nb_underlying_per_pt;
 		const std::size_t rhs_start = index_rhs * nb_underlying_per_pt;
-		return std::equal(raw_bits.begin() + lhs_start, raw_bits.begin() + lhs_end, raw_bits.begin() + rhs_start);
+		return std::memcmp(raw_bits.data() + lhs_start, raw_bits.data() + rhs_start, nb_underlying_per_pt) == 0;
 	}
 
 	/**

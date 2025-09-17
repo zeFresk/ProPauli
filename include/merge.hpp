@@ -53,11 +53,16 @@ bool no_duplicates(PauliTermContainer<T>& paulis_) {
 }
 
 template <typename T>
+struct FastPauliStringEqual {
+	bool operator()(T const& lhs, T const& rhs) const { return lhs.fast_equal_bitstring(rhs); }
+};
+
+template <typename T>
 class Merger {
     private:
 	using PTC_t = PauliTermContainer<T>;
 	using nopt_t = std::remove_cvref_t<PTC_t>::non_owning_t;
-	DirtySet<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>> hset;
+	DirtySet<nopt_t, GenericPauliTermHash<nopt_t>, FastPauliStringEqual<nopt_t>> hset;
 	// std::unordered_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>> hset;
 	// tsl::robin_set<nopt_t, GenericPauliTermHash<nopt_t>, GenericPauliStringEqual<nopt_t>, std::allocator<nopt_t>, true> hset;
 

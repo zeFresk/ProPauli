@@ -111,6 +111,11 @@ class ReadOnlyNonOwningPauliTermPacked {
 		return (&ptc.get() == &oth.ptc.get()) ? ptc.get().fast_equal_bitstring(idx, oth.idx) : slow_equal_bitstring(oth);
 	}
 
+	bool fast_equal_bitstring(ReadOnlyNonOwningPauliTermPacked const& oth) const {
+		assert(&ptc.get() == &oth.ptc.get());
+		return ptc.get().fast_equal_bitstring(idx, oth.idx);
+	}
+
 	/**
 	 * @brief Performs an element-by-element comparison of the Pauli string.
 	 * @return `true` if the Pauli strings are identical.
@@ -244,7 +249,7 @@ class NonOwningPauliTermPacked {
 	}
 	friend bool operator==(NonOwningPauliTermPacked const& lhs, PauliTerm<T> const& rhs) { return rhs == lhs; }
 	bool equal_bitstring(NonOwningPauliTermPacked const& oth) const {
-		return (&ptc.get() == &oth.ptc.get()) ? ptc.get().fast_equal_bitstring(idx, oth.idx) : slow_equal_bitstring(oth);
+		return (&ptc.get() == &oth.ptc.get()) ? fast_equal_bitstring(oth) : slow_equal_bitstring(oth);
 	}
 	bool slow_equal_bitstring(NonOwningPauliTermPacked const& oth) const {
 		if (oth.size() != size())
@@ -255,6 +260,11 @@ class NonOwningPauliTermPacked {
 			}
 		}
 		return true;
+	}
+
+	bool fast_equal_bitstring(NonOwningPauliTermPacked const& oth) const {
+		assert(&ptc.get() == &oth.ptc.get());
+		return ptc.get().fast_equal_bitstring(idx, oth.idx);
 	}
 	/** @} */
 
