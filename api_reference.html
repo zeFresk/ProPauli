@@ -78,7 +78,6 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#algorithms-utilities">Algorithms &amp; Utilities</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#_CPPv4I0E21merge_inplace_noallocvR18PauliTermContainerI1TE"><code class="docutils literal notranslate"><span class="pre">merge_inplace_noalloc()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#_CPPv4I0E12compute_mask1T1T"><code class="docutils literal notranslate"><span class="pre">compute_mask()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#_CPPv4I0E12minimum_sizeNSt6size_tENSt6size_tE1T"><code class="docutils literal notranslate"><span class="pre">minimum_size()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#_CPPv4I0E16compute_mask_idx1TNSt6size_tE1T1T1T"><code class="docutils literal notranslate"><span class="pre">compute_mask_idx()</span></code></a></li>
@@ -1862,54 +1861,10 @@ This class provides a mutable view of a Pauli term, allowing for in-place modifi
 <section id="algorithms-utilities">
 <h3>Algorithms &amp; Utilities<a class="headerlink" href="#algorithms-utilities" title="Link to this heading"></a></h3>
 <p>Key algorithms and low-level helper functions used throughout the library.</p>
-<dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4I0E21merge_inplace_noallocvR18PauliTermContainerI1TE">
-<span id="_CPPv3I0E21merge_inplace_noallocR18PauliTermContainerI1TE"></span><span id="_CPPv2I0E21merge_inplace_noallocR18PauliTermContainerI1TE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="merge_8hpp_1a40e918a680d1597fc3cd746aace49826"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">merge_inplace_noalloc</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I00E18PauliTermContainer" title="PauliTermContainer"><span class="n"><span class="pre">PauliTermContainer</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E21merge_inplace_noallocvR18PauliTermContainerI1TE" title="merge_inplace_noalloc::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">paulis_</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0E21merge_inplace_noallocvR18PauliTermContainerI1TE" title="Link to this definition"></a><br /></dt>
-<dd><p>Merges identical Pauli terms within a container in-place, without extra allocations for the terms themselves. </p>
-<p>
-This function implements a high-performance merging algorithm. It iterates through the <code class="docutils literal notranslate"><a class="reference internal" href="#classPauliTermContainer"><span class="std std-ref"><span class="pre">PauliTermContainer</span></span></a></code> and uses a hash set (<code class="docutils literal notranslate"><a class="reference internal" href="#classObservable_1ad659b1e700bb9ac01aaddcb56f2742eb"><span class="std std-ref"><span class="pre">tsl::robin_set</span></span></a></code>) to keep track of the unique Pauli strings it has encountered.</p>
-<p>The hash set stores non-owning views (<code class="docutils literal notranslate"><span class="pre">non_owning_t</span></code>) of the terms, which avoids costly memory allocations. When a term with a duplicate Pauli string is found, its coefficient is added to the original term (whose view is already in the set), and the duplicate term is</p>
-<p>removed from the container using an efficient swap-and-pop operation.</p>
-<p><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="c1">// Create a container with several duplicate Pauli strings.</span>
-<span class="w">    </span><span class="n">PauliTermContainer</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">observable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="s">&quot;+0.5XXI&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s">&quot;-0.2IZY&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s">&quot;+0.1XXI&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s">&quot;+0.8ZZZ&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s">&quot;+0.4IZY&quot;</span>
-<span class="w">    </span><span class="p">};</span>
-
-<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Observable before merging (&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">observable</span><span class="p">.</span><span class="n">nb_terms</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; terms):&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">term</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">observable</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;  &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">term</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-<span class="w">    </span><span class="p">}</span>
-
-<span class="w">    </span><span class="c1">// Merge the terms in-place.</span>
-<span class="w">    </span><span class="n">merge_inplace_noalloc</span><span class="p">(</span><span class="n">observable</span><span class="p">);</span>
-
-<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Observable after merging (&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">observable</span><span class="p">.</span><span class="n">nb_terms</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; terms):&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-<span class="w">    </span><span class="c1">// Note: The order of terms is not guaranteed after merging.</span>
-<span class="w">    </span><span class="c1">// Expected terms: (+0.6 XXI), (+0.2 IZY), (+0.8 ZZZ)</span>
-<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">term</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">observable</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;  &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">term</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-<span class="w">    </span><span class="p">}</span>
-</pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>doxygenfunction: Cannot find function “merge_inplace_noalloc” in doxygen xml output for project “ProPauli” from directory: /home/runner/work/ProPauli/ProPauli/build/doc/doxygen/xml</p>
 </div>
- </p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This function uses <code class="docutils literal notranslate"><span class="pre">const_cast</span></code> as a targeted optimization. The elements in the hash set are normally <code class="docutils literal notranslate"><span class="pre">const</span></code>. However, since we only modify the coefficient (which is not part of the hash), we can safely cast away <code class="docutils literal notranslate"><span class="pre">const</span></code>-ness to update the coefficient in-place, avoiding the need to remove and re-insert the element.</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>T</strong> – The numeric type for the coefficients. </p>
-</dd>
-<dt class="field-even">Parameters<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>paulis_</strong> – The container of Pauli terms to be merged. This container is modified directly.</p>
-</dd>
-</dl>
-</dd></dl>
-
 <p>Provides a collection of constexpr helper functions for low-level bit manipulation. </p>
 <p>This header contains various standalone, compile-time-evaluated functions for creating bitmasks and performing other bitwise operations. These utilities are the fundamental building blocks for the memory-efficient bit-packing scheme used by the <code class="docutils literal notranslate"><a class="reference internal" href="#classPauliTermContainer"><span class="std std-ref"><span class="pre">PauliTermContainer</span></span></a></code> class to store Pauli strings. </p>
 <div class="breathe-sectiondef docutils container">
