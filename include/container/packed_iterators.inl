@@ -34,6 +34,10 @@ class NonOwningIterator {
 	 */
 	explicit NonOwningIterator(PauliTermContainer& pt, std::size_t start_at) : ptc(pt), idx(start_at) {}
 
+	NonOwningIterator(const NonOwningIterator& oth) = default;
+	NonOwningIterator(NonOwningIterator&& oth) noexcept = default;
+	NonOwningIterator& operator=(NonOwningIterator&& oth) noexcept = default;
+
 	NonOwningIterator& operator=(NonOwningIterator const& oth) {
 		assert(&ptc == &oth.ptc);
 		idx = oth.idx;
@@ -124,8 +128,6 @@ class NonOwningIterator {
 
 	friend bool operator<(NonOwningIterator const& lhs, NonOwningIterator const& rhs) { return lhs.idx < rhs.idx; }
 	friend bool operator<=(NonOwningIterator const& lhs, NonOwningIterator const& rhs) { return lhs.idx <= rhs.idx; }
-
-	void iter_swap(NonOwningIterator lhs) noexcept { ptc.swap_fast(idx, lhs.idx); }
 };
 
 /**
@@ -151,8 +153,8 @@ class ReadOnlyNonOwningIterator {
 	using iterator_category = std::forward_iterator_tag;
 	using difference_type = std::ptrdiff_t;
 	using value_type = ReadOnlyNonOwningPauliTermPacked;
-	using pointer = value_type*;
-	using reference = value_type&;
+	using pointer = void;
+	using reference = value_type;
 	/** @} */
 
 	/**

@@ -4,7 +4,6 @@
 #include "observable.hpp"
 
 #include "helper.hpp"
-#include <iostream>
 #include <memory>
 #include <string_view>
 

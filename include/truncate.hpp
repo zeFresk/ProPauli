@@ -271,7 +271,6 @@ class RuntimeMultiTruncators : public Truncator<T> {
 template <typename T = coeff_t>
 class KeepNTruncator : public Truncator<T> {
 	std::size_t nb_terms;
-	// std::vector<T> heap;
 
     public:
 	/**

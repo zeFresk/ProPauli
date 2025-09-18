@@ -410,12 +410,6 @@ class PauliTermContainer {
 	auto end() const { return cend(); }
 	/** @} */
 
-	friend void iter_swap(NonOwningIterator a, NonOwningIterator b) noexcept {
-		// The logic is the same, but the function is now "anchored"
-		// to the Container class for lookup purposes.
-		a.iter_swap(b.idx);
-	}
-
 	/** @name Comparison
 	 * @{
 	 */
