@@ -22,10 +22,14 @@
 #include "symbolic/coefficient.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
+#include <cstring>
 #include <iterator>
 #include <string_view>
 #include <vector>
+
+#include <xxhash.h>
 
 /**
  * @brief A specialized container for storing Pauli terms in a memory-packed format.
@@ -168,6 +172,7 @@ class PauliTermContainer {
 
 		resize_paulis_terms(std::max(DEFAULT_ALLOC, size));
 		raw_coefficients.reserve(size);
+
 		std::size_t i = 0;
 		for (; bcopy != end; ++bcopy, ++i) {
 			raw_coefficients.push_back(bcopy->coefficient());
@@ -265,6 +270,8 @@ class PauliTermContainer {
 	std::size_t fast_phash(std::size_t index) const noexcept {
 		assert(index < nb_terms());
 		const auto start_idx = index * nb_underlying_per_pt;
+		return XXH3_64bits(raw_bits.data() + start_idx, sizeof(Underlying) * nb_underlying_per_pt);
+		/*
 		static constexpr std::size_t shift_num = sizeof(Underlying) * 8;
 		static constexpr std::size_t max_shift = sizeof(std::size_t) * 8;
 		std::size_t ret = 0;
@@ -272,7 +279,7 @@ class PauliTermContainer {
 			const std::size_t uv = raw_bits[start_idx + i];
 			ret ^= uv << ((i * shift_num) % max_shift);
 		}
-		return ret;
+		return ret;*/
 	}
 
 	/**
@@ -285,9 +292,8 @@ class PauliTermContainer {
 		assert(index_lhs < nb_terms());
 		assert(index_rhs < nb_terms());
 		const std::size_t lhs_start = index_lhs * nb_underlying_per_pt;
-		const std::size_t lhs_end = lhs_start + nb_underlying_per_pt;
 		const std::size_t rhs_start = index_rhs * nb_underlying_per_pt;
-		return std::equal(raw_bits.begin() + lhs_start, raw_bits.begin() + lhs_end, raw_bits.begin() + rhs_start);
+		return std::memcmp(raw_bits.data() + lhs_start, raw_bits.data() + rhs_start, nb_underlying_per_pt) == 0;
 	}
 
 	/**

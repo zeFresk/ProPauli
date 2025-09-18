@@ -20,8 +20,7 @@ class ReadOnlyNonOwningPauliTermPacked {
 	 * @param ptc_ The parent container.
 	 * @param index The index of the term to view.
 	 */
-	ReadOnlyNonOwningPauliTermPacked(PauliTermContainer<T, Underlying> const& ptc_, std::size_t index)
-		: ptc(ptc_), idx(index) {}
+	ReadOnlyNonOwningPauliTermPacked(PauliTermContainer<T, Underlying> const& ptc_, std::size_t index) : ptc(ptc_), idx(index) {}
 
 	/**
 	 * @brief Calculates the expectation value of the term.
@@ -84,10 +83,8 @@ class ReadOnlyNonOwningPauliTermPacked {
 	/**
 	 * @brief Checks for deep equality (Pauli string and coefficient) between two views.
 	 */
-	friend bool operator==(ReadOnlyNonOwningPauliTermPacked const& lhs,
-			       ReadOnlyNonOwningPauliTermPacked const& rhs) {
-		return (lhs.size() == rhs.size()) && (lhs.coefficient() == rhs.coefficient()) &&
-		       lhs.equal_bitstring(rhs);
+	friend bool operator==(ReadOnlyNonOwningPauliTermPacked const& lhs, ReadOnlyNonOwningPauliTermPacked const& rhs) {
+		return (lhs.size() == rhs.size()) && (lhs.coefficient() == rhs.coefficient()) && lhs.equal_bitstring(rhs);
 	}
 
 	/**
@@ -100,9 +97,7 @@ class ReadOnlyNonOwningPauliTermPacked {
 	/**
 	 * @brief Checks for deep equality between an owning `PauliTerm` and a view.
 	 */
-	friend bool operator==(PauliTerm<T> const& lhs, ReadOnlyNonOwningPauliTermPacked const& rhs) {
-		return rhs == lhs;
-	}
+	friend bool operator==(PauliTerm<T> const& lhs, ReadOnlyNonOwningPauliTermPacked const& rhs) { return rhs == lhs; }
 
 	/**
 	 * @brief Checks if the Pauli strings of two views are identical.
@@ -111,8 +106,12 @@ class ReadOnlyNonOwningPauliTermPacked {
 	 * element-by-element check.
 	 */
 	bool equal_bitstring(ReadOnlyNonOwningPauliTermPacked const& oth) const {
-		return (&ptc.get() == &oth.ptc.get()) ? ptc.get().fast_equal_bitstring(idx, oth.idx) :
-							slow_equal_bitstring(oth);
+		return (&ptc.get() == &oth.ptc.get()) ? ptc.get().fast_equal_bitstring(idx, oth.idx) : slow_equal_bitstring(oth);
+	}
+
+	bool fast_equal_bitstring(ReadOnlyNonOwningPauliTermPacked const& oth) const {
+		assert(&ptc.get() == &oth.ptc.get());
+		return ptc.get().fast_equal_bitstring(idx, oth.idx);
 	}
 
 	/**
@@ -235,16 +234,14 @@ class NonOwningPauliTermPacked {
 	 * @{
 	 */
 	friend bool operator==(NonOwningPauliTermPacked const& lhs, NonOwningPauliTermPacked const& rhs) {
-		return (lhs.size() == rhs.size()) && (lhs.coefficient() == rhs.coefficient()) &&
-		       lhs.equal_bitstring(rhs);
+		return (lhs.size() == rhs.size()) && (lhs.coefficient() == rhs.coefficient()) && lhs.equal_bitstring(rhs);
 	}
 	friend bool operator==(PauliTerm<T> const& lhs, NonOwningPauliTermPacked const& rhs) {
 		return static_cast<PauliTerm<T>>(rhs) == lhs;
 	}
 	friend bool operator==(NonOwningPauliTermPacked const& lhs, PauliTerm<T> const& rhs) { return rhs == lhs; }
 	bool equal_bitstring(NonOwningPauliTermPacked const& oth) const {
-		return (&ptc.get() == &oth.ptc.get()) ? ptc.get().fast_equal_bitstring(idx, oth.idx) :
-							slow_equal_bitstring(oth);
+		return (&ptc.get() == &oth.ptc.get()) ? fast_equal_bitstring(oth) : slow_equal_bitstring(oth);
 	}
 	bool slow_equal_bitstring(NonOwningPauliTermPacked const& oth) const {
 		if (oth.size() != size())
@@ -255,6 +252,11 @@ class NonOwningPauliTermPacked {
 			}
 		}
 		return true;
+	}
+
+	bool fast_equal_bitstring(NonOwningPauliTermPacked const& oth) const {
+		assert(&ptc.get() == &oth.ptc.get());
+		return ptc.get().fast_equal_bitstring(idx, oth.idx);
 	}
 	/** @} */
 
@@ -313,7 +315,7 @@ class NonOwningPauliTermPacked {
 	}
 	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p) {
 		assert(qubit < size());
-		auto pauli = get_pauli(qubit);
+		const auto pauli = get_pauli(qubit);
 		set_coefficient(coefficient() * pauli.apply_unital_noise(n, p));
 	}
 	void apply_cx(unsigned control, unsigned target) {

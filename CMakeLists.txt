@@ -6,7 +6,7 @@ set(BENCHMARK OFF CACHE BOOL "Build benchmarks")
 set(TEST OFF CACHE BOOL "Build tests")
 
 project(ProPauli
-	VERSION 3.0.1
+	VERSION 3.1.0
 DESCRIPTION "Fast and efficient C++ library for Pauli Propagation"
 	LANGUAGES CXX)
 
@@ -61,13 +61,16 @@ target_link_options(propaulib INTERFACE
 	)
 
 include(FetchContent)
+
 FetchContent_Declare(
-	robin-map
-	GIT_REPOSITORY https://github.com/Tessil/robin-map
-	GIT_TAG v1.4.0
+  xxhash
+  GIT_REPOSITORY https://github.com/Cyan4973/xxHash.git
+  GIT_TAG        v0.8.3
+  SOURCE_SUBDIR  cmake_unofficial
 )
-FetchContent_MakeAvailable(robin-map)
-target_link_libraries(propaulib tsl::robin_map)
+FetchContent_MakeAvailable(xxhash)
+
+target_link_libraries(propaulib PUBLIC xxhash)
 
 if (TEST)
 	# Build de GTest

@@ -49,8 +49,7 @@ class Observable {
 	 * @param coeff The coefficient of this Pauli term.
 	 * @snippet tests/snippets/observable.cpp observable_from_string
 	 */
-	Observable(std::string_view pauli_string,
-		   typename std::enable_if_t<std::is_constructible_v<T, coeff_t>, T> coeff = T{ 1 })
+	Observable(std::string_view pauli_string, typename std::enable_if_t<std::is_constructible_v<T, coeff_t>, T> coeff = T{ 1 })
 		: paulis_{ PauliTerm<T>(pauli_string, coeff) } {
 		check_invariant();
 	}
@@ -60,9 +59,7 @@ class Observable {
 	 * @param pauli_string_list An initializer list of Pauli strings. Each will have a coefficient of 1.
 	 * @snippet tests/snippets/observable.cpp observable_from_string_list
 	 */
-	Observable(std::initializer_list<std::string_view> pauli_string_list) : paulis_{ pauli_string_list } {
-		check_invariant();
-	}
+	Observable(std::initializer_list<std::string_view> pauli_string_list) : paulis_{ pauli_string_list } { check_invariant(); }
 
 	/**
 	 * @brief Constructs an observable from a list of PauliTerm objects.
@@ -261,7 +258,7 @@ class Observable {
 	 * It calls a high-performance, in-place merging algorithm.
 	 */
 	std::size_t merge() {
-		merge_inplace_noalloc(paulis_);
+		merger_(paulis_);
 		return paulis_.nb_terms();
 	}
 
@@ -301,6 +298,7 @@ class Observable {
 
     private:
 	PauliTermContainer<T> paulis_;
+	Merger<T> merger_;
 
 	void check_invariant() const {
 		if (paulis_.nb_terms() == 0) {
