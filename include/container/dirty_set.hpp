@@ -276,18 +276,23 @@ class DirtySet {
 		HashInfo info = split_hash(hash);
 
 		size_type start_index = info.h1 & (m_capacity - 1);
-		size_type probe_num = 0;
+
+		// --- ITERATIVE QUADRATIC PROBING STATE ---
+		size_type probe_offset = 0; // The current offset from the start_index
+		size_type probe_step = 1; // The amount to add to the offset on the next iteration
 
 		size_type first_tombstone_idx = m_capacity;
 
 		while (true) {
-			size_type probe_offset = (probe_num * (probe_num + 1)) / 2;
+			// This calculation is now just a single addition.
 			size_type group_index = (start_index + probe_offset) & (m_capacity - 1);
 
 			__m128i group_ctrl = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&m_ctrl[group_index]));
 
 			// --- 1. Find all potential matches ---
-			uint32_t match_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, _mm_set1_epi8(info.h2)));
+			__m128i h2_vector = _mm_set1_epi8(info.h2);
+			uint32_t match_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, h2_vector));
+
 			uint32_t current_match_mask = match_mask;
 			while (current_match_mask != 0) {
 				size_t bit_pos = count_trailing_zeros(current_match_mask);
@@ -300,11 +305,10 @@ class DirtySet {
 			}
 
 			// --- 2. Find all empty slots (to terminate the search) ---
-			uint32_t empty_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, _mm_set1_epi8(K_EMPTY)));
+			__m128i empty_vector = _mm_set1_epi8(K_EMPTY);
+			uint32_t empty_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, empty_vector));
 
 			if (empty_mask != 0) {
-				// An empty slot was found, guaranteeing the key does not exist.
-				// Now, decide where to insert. If we've seen a tombstone, use it.
 				size_type insert_idx;
 				if (first_tombstone_idx != m_capacity) {
 					insert_idx = first_tombstone_idx;
@@ -313,7 +317,6 @@ class DirtySet {
 					insert_idx = (group_index + bit_pos) & (m_capacity - 1);
 				}
 
-				// We are about to write to insert_idx. Prefetch it to avoid a stall.
 				_mm_prefetch(reinterpret_cast<const char*>(&m_keys[insert_idx]), _MM_HINT_T0);
 
 				if (m_ctrl[insert_idx] == K_EMPTY) {
@@ -325,19 +328,26 @@ class DirtySet {
 				return { iterator(m_keys, m_ctrl.get(), insert_idx, m_capacity), true };
 			}
 
-			// --- 3. Optimization: Only search for tombstones if we haven't found one yet ---
+			// --- 3. Only search for tombstones if we haven't found one yet ---
 			if (first_tombstone_idx == m_capacity) {
-				uint32_t deleted_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, _mm_set1_epi8(K_DELETED)));
+				__m128i deleted_vector = _mm_set1_epi8(K_DELETED);
+				uint32_t deleted_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, deleted_vector));
 				if (deleted_mask != 0) {
 					size_t bit_pos = count_trailing_zeros(deleted_mask);
 					first_tombstone_idx = (group_index + bit_pos) & (m_capacity - 1);
 				}
 			}
 
-			probe_num++;
+			// --- THE CORE FIX ---
+			// Advance the quadratic probe sequence iteratively.
+			// This is faster than imul/shr but guarantees a full probe.
+			probe_offset += probe_step;
+			probe_step++;
+
 			//assert(probe_offset < m_capacity && "Hash table is full, but load factor check failed.");
 		}
 	}
+
 	void erase_at(size_type index) {
 		if constexpr (!std::is_trivially_destructible_v<Key>) {
 			m_keys[index].~Key();
