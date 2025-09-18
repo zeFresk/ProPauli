@@ -17,9 +17,6 @@
 
 #include <algorithm>
 #include <type_traits>
-#include <tsl/robin_set.h>
-#include <unistd.h>
-#include <unordered_set>
 
 template <typename T>
 struct FastPauliStringEqual {

@@ -61,12 +61,6 @@ target_link_options(propaulib INTERFACE
 	)
 
 include(FetchContent)
-FetchContent_Declare(
-	robin-map
-	GIT_REPOSITORY https://github.com/Tessil/robin-map
-	GIT_TAG v1.4.0
-)
-FetchContent_MakeAvailable(robin-map)
 
 FetchContent_Declare(
   xxhash
@@ -76,7 +70,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(xxhash)
 
-target_link_libraries(propaulib PUBLIC tsl::robin_map xxhash)
+target_link_libraries(propaulib PUBLIC xxhash)
 
 if (TEST)
 	# Build de GTest
