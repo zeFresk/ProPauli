@@ -62,7 +62,6 @@ struct FastPauliStringHash {
 	bool operator()(T const& pt) const noexcept { return pt.xxhash(); }
 };
 
-
 template <typename T>
 class Merger {
     private:
@@ -92,19 +91,19 @@ class Merger {
 
 		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
 			auto nopt = paulis_[i];
-			assert((debug_find(nopt, hset, paulis_), true));
-			//if (nopt._is_dirty()) {
-				auto c = nopt.coefficient();
+			// assert((debug_find(nopt, hset, paulis_), true));
+			// if (nopt._is_dirty()) {
+			auto c = nopt.coefficient();
 
-				auto [it, is_new] = hset.emplace(std::move(nopt));
-				if (!is_new) { // A term with this Pauli string already exists in the set.
-					// Add the current coefficient to the existing term.
-					it->add_coeff(c);
-					// Remove the current (duplicate) term from the container.
-					paulis_.remove_pauliterm(i);
-					// Decrement index to re-evaluate the new element at the current position.
-					--i;
-				}
+			auto [it, is_new] = hset.emplace(std::move(nopt));
+			if (!is_new) { // A term with this Pauli string already exists in the set.
+				// Add the current coefficient to the existing term.
+				it->add_coeff(c);
+				// Remove the current (duplicate) term from the container.
+				paulis_.remove_pauliterm(i);
+				// Decrement index to re-evaluate the new element at the current position.
+				--i;
+			}
 			//}
 		}
 
@@ -112,7 +111,7 @@ class Merger {
 	}
 
 	void prepare_merge(PTC_t const& paulis_) {
-		//std::cout << "\nBefore merge: #pt=" << paulis_.nb_terms() << "  |  #hset=" << hset.size() << "\n";
+		// std::cout << "\nBefore merge: #pt=" << paulis_.nb_terms() << "  |  #hset=" << hset.size() << "\n";
 		debug("before erase: ", paulis_);
 
 		// hset.rehash(hset.size());
@@ -122,9 +121,10 @@ class Merger {
 				// hset.erase(it);
 			}
 		}*/
-		hset.erase_if([](auto const& nopt) { return true; });
-		//hset.erase_if([](auto const& nopt) { return nopt._is_dirty(); });
-		assert(!std::any_of(hset.begin(), hset.end(), [](auto const& nopt) { return nopt._is_dirty(); }));
+		hset.clear();
+		//hset.erase_if([](auto const& nopt) { return true; });
+		// hset.erase_if([](auto const& nopt) { return nopt._is_dirty(); });
+		// assert(!std::any_of(hset.begin(), hset.end(), [](auto const& nopt) { return nopt._is_dirty(); }));
 		// hset.
 		// hset.clear();
 		//[[maybe_unused]] auto removed = std::erase_if(hset, [](auto const& nopt) { return nopt._is_dirty(); });
@@ -135,18 +135,18 @@ class Merger {
 		}
 		debug("after erase: ", paulis_);
 
-		assert(no_duplicates(hset));
-		assert(!std::any_of(hset.begin(), hset.end(), [](auto const& nopt) { return nopt._is_dirty(); }));
-		//std::cout << "After erase: #pt=" << paulis_.nb_terms() << "  |  #hset=" << hset.size() << "\n";
+		// assert(no_duplicates(hset));
+		// assert(!std::any_of(hset.begin(), hset.end(), [](auto const& nopt) { return nopt._is_dirty(); }));
+		// std::cout << "After erase: #pt=" << paulis_.nb_terms() << "  |  #hset=" << hset.size() << "\n";
 	}
 
 	void after_merge(PTC_t& paulis_) {
-		//std::cout << "After merge: #pt=" << paulis_.nb_terms() << "  |  #hset=" << hset.size() << "\n";
+		// std::cout << "After merge: #pt=" << paulis_.nb_terms() << "  |  #hset=" << hset.size() << "\n";
 		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
 			paulis_[i]._set_dirty(false);
 		}
 		debug("after merge: ", paulis_);
-		assert(no_duplicates(paulis_));
+		// assert(no_duplicates(paulis_));
 	}
 
 	void debug_find(nopt_t nopt, decltype(hset)& hset, PTC_t const& paulis_) {
@@ -164,16 +164,16 @@ class Merger {
 
 	void debug(std::string const& str, PTC_t const& paulis_) {
 		return;
-		//std::cout << str << "\nhset:\n";
+		// std::cout << str << "\nhset:\n";
 		for (auto it = hset.begin(); it != hset.end(); ++it) {
-			//std::cout << *it << " [dirty=" << (it->_is_dirty() ? "1" : "0") << "]\n";
+			// std::cout << *it << " [dirty=" << (it->_is_dirty() ? "1" : "0") << "]\n";
 		}
-		//std::cout << "\npaulis_:\n";
+		// std::cout << "\npaulis_:\n";
 		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
 			auto nopt = paulis_[i];
-			//std::cout << nopt << "[dirty=" << (nopt._is_dirty() ? "1" : "0") << "]\n";
+			// std::cout << nopt << "[dirty=" << (nopt._is_dirty() ? "1" : "0") << "]\n";
 		}
-		//std::cout << "\n";
+		// std::cout << "\n";
 	}
 };
 

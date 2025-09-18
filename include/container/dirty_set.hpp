@@ -338,7 +338,7 @@ class DirtySet {
 			}
 
 			probe_num++;
-			//assert(probe_offset < m_capacity && "Hash table is full, but load factor check failed.");
+			// assert(probe_offset < m_capacity && "Hash table is full, but load factor check failed.");
 		}
 	}
 
@@ -389,14 +389,29 @@ class DirtySet {
 
 	void destroy_keys() noexcept {
 		if (!m_keys)
-			return;
-		for (size_type i = 0; i < m_capacity; ++i) {
-			if (m_ctrl[i] >= 0) {
-				if constexpr (!std::is_trivially_destructible_v<Key>) {
+			return; // Nothing to do if we have no capacity.
+
+		if constexpr (std::is_trivially_destructible_v<Key>) {
+			// --- FAST PATH ---
+			// If the Key is a POD or other trivial type, there are no destructors to call.
+			// The only work required is to mark all slots as empty.
+			// std::memset is the fastest possible way to do this.
+			// We do not need to loop at all.
+		} else {
+			// --- SLOW PATH (for complex types like std::string) ---
+			// We must iterate through the table and call the destructor for each live element.
+			for (size_type i = 0; i < m_capacity; ++i) {
+				// A non-negative control byte means an occupied slot.
+				if (m_ctrl[i] >= 0) {
 					m_keys[i].~Key();
 				}
 			}
 		}
+
+		// After handling destruction, reset all control bytes and counters.
+		// This is done for both paths.
+		std::memset(m_ctrl.get(), K_EMPTY, m_capacity);
+		std::memset(m_ctrl.get() + m_capacity, K_SENTINEL, GROUP_SIZE);
 		m_size = 0;
 		m_occupied_slots = 0;
 	}
