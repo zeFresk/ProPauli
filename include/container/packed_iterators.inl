@@ -128,6 +128,7 @@ class NonOwningIterator {
 
 	friend bool operator<(NonOwningIterator const& lhs, NonOwningIterator const& rhs) { return lhs.idx < rhs.idx; }
 	friend bool operator<=(NonOwningIterator const& lhs, NonOwningIterator const& rhs) { return lhs.idx <= rhs.idx; }
+	friend bool operator>=(NonOwningIterator const& lhs, NonOwningIterator const& rhs) { return lhs.idx >= rhs.idx; }
 };
 
 /**
