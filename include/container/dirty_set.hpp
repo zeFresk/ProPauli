@@ -13,28 +13,25 @@
 #include <utility>
 #include <cassert>
 
-// SSE2 Intrinsics Header
-#include <immintrin.h>
-
-#if defined(__GNUC__) || defined(__clang__)
-// Compilers like GCC and Clang provide __builtin_ctz
-#else
-// For MSVC, we need to include <intrin.h> for _BitScanForward
-#include <intrin.h>
-#pragma intrinsic(_BitScanForward)
-#endif
+#include "dirty_set_internal.hpp"
 
 template <typename Key, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>>
 class DirtySet {
-    public:
-	// Enforce SSE2 support at compile time.
+    private:
+// --- Compile-Time Policy Selection ---
+// Select the best available probing policy. To add AVX2, you would add
+// a new policy and an #elif defined(__AVX2__) here.
 #if defined(__SSE2__)
-	// This space is intentionally left blank.
+	using Policy = DirtySetDetail::ProbePolicySSE2;
 #else
-	static_assert(false, "DirtySet v3.0 requires SSE2 support. Please compile with appropriate flags (e.g., -msse2).");
+	using Policy = DirtySetDetail::ProbePolicyScalar;
 #endif
 
-	// --- Type Aliases (STL-compliant) ---
+	using Group = typename Policy::Group;
+	using BitMask = DirtySetDetail::BitMask; // BitMask is policy-agnostic for now
+
+    public:
+	// --- Type Aliases ---
 	using key_type = Key;
 	using value_type = Key;
 	using size_type = size_t;
@@ -46,10 +43,9 @@ class DirtySet {
 	using pointer = value_type*;
 	using const_pointer = const value_type*;
 
-	// The group size is fixed by the SIMD register width. For SSE2, it's 16 bytes.
 	static constexpr size_type GROUP_SIZE = 16;
 
-	// --- Forward Iterator Implementation ---
+	// --- Iterator ---
 	template <bool IsConst>
 	class BasicIterator {
 	    public:
@@ -60,23 +56,18 @@ class DirtySet {
 		using reference = std::conditional_t<IsConst, const Key&, Key&>;
 
 		BasicIterator() noexcept = default;
-
 		reference operator*() const { return m_keys[m_index]; }
 		pointer operator->() const { return &m_keys[m_index]; }
-
 		BasicIterator& operator++() {
 			advance_to_next_full();
 			return *this;
 		}
-
 		BasicIterator operator++(int) {
 			BasicIterator old = *this;
 			++(*this);
 			return old;
 		}
-
 		operator BasicIterator<true>() const { return BasicIterator<true>(m_keys, m_ctrl, m_index, m_capacity); }
-
 		friend bool operator==(const BasicIterator& lhs, const BasicIterator& rhs) noexcept { return lhs.m_index == rhs.m_index; }
 		friend bool operator!=(const BasicIterator& lhs, const BasicIterator& rhs) noexcept { return !(lhs == rhs); }
 
@@ -90,8 +81,7 @@ class DirtySet {
 
 		void advance_to_next_full() {
 			++m_index;
-			// A non-negative control byte denotes a full slot.
-			while (m_index < m_capacity && m_ctrl[m_index] < 0) {
+			while (m_index < m_capacity && m_ctrl[m_index] < 0) { // A non-negative ctrl byte is a full slot
 				++m_index;
 			}
 		}
@@ -106,11 +96,8 @@ class DirtySet {
 	using const_iterator = BasicIterator<true>;
 
 	// --- Constructors, Destructor, Assignment ---
-
 	constexpr DirtySet() noexcept = default;
-
 	~DirtySet() { destroy_keys(); }
-
 	DirtySet(const DirtySet& other) { copy_from(other); }
 
 	DirtySet& operator=(const DirtySet& other) {
@@ -119,6 +106,9 @@ class DirtySet {
 			m_key_buffer.reset();
 			m_keys = nullptr;
 			m_ctrl.reset();
+			m_spare_key_buffer.reset();
+			m_spare_ctrl_buffer.reset();
+			m_spare_capacity = 0;
 			copy_from(other);
 		}
 		return *this;
@@ -150,7 +140,6 @@ class DirtySet {
 			m_capacity = other.m_capacity;
 			m_hasher = std::move(other.m_hasher);
 			m_key_equal = std::move(other.m_key_equal);
-
 			other.m_keys = nullptr;
 			other.m_size = 0;
 			other.m_occupied_slots = 0;
@@ -161,7 +150,6 @@ class DirtySet {
 	}
 
 	// --- Iterators ---
-
 	iterator begin() noexcept {
 		size_type index = 0;
 		while (index < m_capacity && m_ctrl[index] < 0) {
@@ -169,7 +157,6 @@ class DirtySet {
 		}
 		return iterator(m_keys, m_ctrl.get(), index, m_capacity);
 	}
-
 	const_iterator begin() const noexcept {
 		size_type index = 0;
 		while (index < m_capacity && m_ctrl[index] < 0) {
@@ -177,32 +164,23 @@ class DirtySet {
 		}
 		return const_iterator(m_keys, m_ctrl.get(), index, m_capacity);
 	}
-
 	const_iterator cbegin() const noexcept { return begin(); }
-
 	iterator end() noexcept { return iterator(m_keys, m_ctrl.get(), m_capacity, m_capacity); }
-
 	const_iterator end() const noexcept { return const_iterator(m_keys, m_ctrl.get(), m_capacity, m_capacity); }
-
 	const_iterator cend() const noexcept { return end(); }
 
 	// --- Capacity ---
-
 	[[nodiscard]] bool empty() const noexcept { return m_size == 0; }
 	size_type size() const noexcept { return m_size; }
 	size_type capacity() const noexcept { return m_capacity; }
 
 	void reserve(size_type capacity_hint) {
-		if (capacity_hint == 0)
-			return;
-		size_type new_capacity = next_power_of_two(capacity_hint);
-		if (new_capacity > m_capacity) {
-			rehash(new_capacity);
+		if (capacity_hint > m_capacity) {
+			rehash(next_power_of_two(capacity_hint));
 		}
 	}
 
 	// --- Modifiers ---
-
 	void clear() noexcept { destroy_keys(); }
 
 	std::pair<iterator, bool> emplace(Key key) {
@@ -232,92 +210,40 @@ class DirtySet {
 
     private:
 	// --- Private Helper Functions ---
-
 	struct HashInfo {
 		size_t h1;
 		int8_t h2;
 	};
-
 	static HashInfo split_hash(size_t hash) { return { hash >> 7, static_cast<int8_t>(hash & 0x7F) }; }
-
-	static inline size_t count_trailing_zeros(uint32_t mask) {
-#if defined(__GNUC__) || defined(__clang__)
-		return __builtin_ctz(mask);
-#else
-		unsigned long index;
-		_BitScanForward(&index, mask);
-		return index;
-#endif
-	}
-
-	void copy_from(const DirtySet& other) {
-		m_capacity = other.m_capacity;
-		m_size = other.m_size;
-		m_occupied_slots = other.m_occupied_slots;
-		m_hasher = other.m_hasher;
-		m_key_equal = other.m_key_equal;
-
-		if (m_capacity > 0) {
-			m_key_buffer = std::make_unique<unsigned char[]>(sizeof(Key) * m_capacity);
-			m_keys = reinterpret_cast<Key*>(m_key_buffer.get());
-			m_ctrl = std::make_unique<int8_t[]>(m_capacity + GROUP_SIZE);
-
-			std::memcpy(m_ctrl.get(), other.m_ctrl.get(), m_capacity + GROUP_SIZE);
-			for (size_type i = 0; i < m_capacity; ++i) {
-				if (m_ctrl[i] >= 0) {
-					new (&m_keys[i]) Key(other.m_keys[i]);
-				}
-			}
-		}
-	}
 
 	std::pair<iterator, bool> find_or_insert_impl(Key key) {
 		size_t hash = m_hasher(key);
 		HashInfo info = split_hash(hash);
-
 		size_type start_index = info.h1 & (m_capacity - 1);
-
-		// --- ITERATIVE QUADRATIC PROBING STATE ---
-		size_type probe_offset = 0; // The current offset from the start_index
-		size_type probe_step = 1; // The amount to add to the offset on the next iteration
-
+		size_type probe_offset = 0;
+		size_type probe_step = 1;
 		size_type first_tombstone_idx = m_capacity;
 
 		while (true) {
-			// This calculation is now just a single addition.
 			size_type group_index = (start_index + probe_offset) & (m_capacity - 1);
+			Group group(&m_ctrl[group_index]);
 
-			__m128i group_ctrl = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&m_ctrl[group_index]));
-
-			// --- 1. Find all potential matches ---
-			__m128i h2_vector = _mm_set1_epi8(info.h2);
-			uint32_t match_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, h2_vector));
-
-			uint32_t current_match_mask = match_mask;
-			while (current_match_mask != 0) {
-				size_t bit_pos = count_trailing_zeros(current_match_mask);
+			BitMask matches = group.match(info.h2);
+			while (matches.any()) {
+				size_type bit_pos = matches.lowest_set_bit_idx();
 				size_type index = (group_index + bit_pos) & (m_capacity - 1);
-				_mm_prefetch(reinterpret_cast<const char*>(&m_keys[index]), _MM_HINT_T0);
+				DIRTY_SET_PREFETCH(&m_keys[index]);
 				if (m_key_equal(m_keys[index], key)) {
 					return { iterator(m_keys, m_ctrl.get(), index, m_capacity), false };
 				}
-				current_match_mask &= ~(1 << bit_pos);
+				matches.clear_lowest_bit();
 			}
 
-			// --- 2. Find all empty slots (to terminate the search) ---
-			__m128i empty_vector = _mm_set1_epi8(K_EMPTY);
-			uint32_t empty_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, empty_vector));
-
-			if (empty_mask != 0) {
-				size_type insert_idx;
-				if (first_tombstone_idx != m_capacity) {
-					insert_idx = first_tombstone_idx;
-				} else {
-					size_t bit_pos = count_trailing_zeros(empty_mask);
-					insert_idx = (group_index + bit_pos) & (m_capacity - 1);
-				}
-
-				_mm_prefetch(reinterpret_cast<const char*>(&m_keys[insert_idx]), _MM_HINT_T0);
+			BitMask empty_slots = group.match_empty();
+			if (empty_slots.any()) {
+				size_type insert_idx = (first_tombstone_idx != m_capacity) ?
+							       first_tombstone_idx :
+							       (group_index + empty_slots.lowest_set_bit_idx()) & (m_capacity - 1);
 
 				if (m_ctrl[insert_idx] == K_EMPTY) {
 					m_occupied_slots++;
@@ -328,23 +254,15 @@ class DirtySet {
 				return { iterator(m_keys, m_ctrl.get(), insert_idx, m_capacity), true };
 			}
 
-			// --- 3. Only search for tombstones if we haven't found one yet ---
 			if (first_tombstone_idx == m_capacity) {
-				__m128i deleted_vector = _mm_set1_epi8(K_DELETED);
-				uint32_t deleted_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, deleted_vector));
-				if (deleted_mask != 0) {
-					size_t bit_pos = count_trailing_zeros(deleted_mask);
-					first_tombstone_idx = (group_index + bit_pos) & (m_capacity - 1);
+				BitMask deleted_slots = group.match_deleted();
+				if (deleted_slots.any()) {
+					first_tombstone_idx = (group_index + deleted_slots.lowest_set_bit_idx()) & (m_capacity - 1);
 				}
 			}
 
-			// --- THE CORE FIX ---
-			// Advance the quadratic probe sequence iteratively.
-			// This is faster than imul/shr but guarantees a full probe.
-			probe_offset += probe_step;
-			probe_step++;
-
-			//assert(probe_offset < m_capacity && "Hash table is full, but load factor check failed.");
+			probe_offset += probe_step++;
+			assert(probe_offset < m_capacity && "Hash table is full, but load factor check failed.");
 		}
 	}
 
@@ -357,10 +275,20 @@ class DirtySet {
 	}
 
 	void rehash(size_type new_capacity) {
-		Key* old_keys_ptr = m_keys;
-		auto old_key_buffer = std::move(m_key_buffer);
-		auto old_ctrl_buffer = std::move(m_ctrl);
-		size_type old_capacity = m_capacity;
+		auto old_buffers = setup_rehash_buffers(new_capacity);
+		reinsert_elements_from(old_buffers);
+		finalize_rehash_buffers(std::move(old_buffers));
+	}
+
+	struct BufferSet {
+		Key* keys_ptr;
+		std::unique_ptr<unsigned char[]> key_buffer;
+		std::unique_ptr<int8_t[]> ctrl_buffer;
+		size_type capacity;
+	};
+
+	BufferSet setup_rehash_buffers(size_type new_capacity) {
+		BufferSet old_buffers = { m_keys, std::move(m_key_buffer), std::move(m_ctrl), m_capacity };
 
 		if (m_spare_capacity == new_capacity) {
 			m_key_buffer = std::move(m_spare_key_buffer);
@@ -379,47 +307,60 @@ class DirtySet {
 		m_size = 0;
 		m_occupied_slots = 0;
 
-		for (size_type i = 0; i < old_capacity; ++i) {
-			if (old_ctrl_buffer[i] >= 0) {
-				emplace(std::move(old_keys_ptr[i]));
+		return old_buffers;
+	}
+
+	void reinsert_elements_from(const BufferSet& old_buffers) {
+		for (size_type i = 0; i < old_buffers.capacity; ++i) {
+			if (old_buffers.ctrl_buffer[i] >= 0) {
+				emplace(std::move(old_buffers.keys_ptr[i]));
 				if constexpr (!std::is_trivially_destructible_v<Key>) {
-					old_keys_ptr[i].~Key();
+					old_buffers.keys_ptr[i].~Key();
 				}
 			}
 		}
+	}
 
-		m_spare_key_buffer = std::move(old_key_buffer);
-		m_spare_ctrl_buffer = std::move(old_ctrl_buffer);
-		m_spare_capacity = old_capacity;
+	void finalize_rehash_buffers(BufferSet&& old_buffers) {
+		m_spare_key_buffer = std::move(old_buffers.key_buffer);
+		m_spare_ctrl_buffer = std::move(old_buffers.ctrl_buffer);
+		m_spare_capacity = old_buffers.capacity;
 	}
 
 	void destroy_keys() noexcept {
 		if (!m_keys)
-			return; // Nothing to do if we have no capacity.
-
-		if constexpr (std::is_trivially_destructible_v<Key>) {
-			// --- FAST PATH ---
-			// If the Key is a POD or other trivial type, there are no destructors to call.
-			// The only work required is to mark all slots as empty.
-			// std::memset is the fastest possible way to do this.
-			// We do not need to loop at all.
-		} else {
-			// --- SLOW PATH (for complex types like std::string) ---
-			// We must iterate through the table and call the destructor for each live element.
+			return;
+		if constexpr (!std::is_trivially_destructible_v<Key>) {
 			for (size_type i = 0; i < m_capacity; ++i) {
-				// A non-negative control byte means an occupied slot.
 				if (m_ctrl[i] >= 0) {
 					m_keys[i].~Key();
 				}
 			}
 		}
-
-		// After handling destruction, reset all control bytes and counters.
-		// This is done for both paths.
 		std::memset(m_ctrl.get(), K_EMPTY, m_capacity);
 		std::memset(m_ctrl.get() + m_capacity, K_SENTINEL, GROUP_SIZE);
 		m_size = 0;
 		m_occupied_slots = 0;
+	}
+
+	void copy_from(const DirtySet& other) {
+		m_capacity = other.m_capacity;
+		m_size = other.m_size;
+		m_occupied_slots = other.m_occupied_slots;
+		m_hasher = other.m_hasher;
+		m_key_equal = other.m_key_equal;
+
+		if (m_capacity > 0) {
+			m_key_buffer = std::make_unique<unsigned char[]>(sizeof(Key) * m_capacity);
+			m_keys = reinterpret_cast<Key*>(m_key_buffer.get());
+			m_ctrl = std::make_unique<int8_t[]>(m_capacity + GROUP_SIZE);
+			std::memcpy(m_ctrl.get(), other.m_ctrl.get(), m_capacity + GROUP_SIZE);
+			for (size_type i = 0; i < m_capacity; ++i) {
+				if (m_ctrl[i] >= 0) {
+					new (&m_keys[i]) Key(other.m_keys[i]);
+				}
+			}
+		}
 	}
 
 	static constexpr size_type next_power_of_two(size_type n) {
@@ -433,8 +374,7 @@ class DirtySet {
 		n |= n >> 16;
 		if constexpr (sizeof(size_type) > 4)
 			n |= n >> 32;
-		n++;
-		return n;
+		return ++n;
 	}
 
 	// --- Private Members ---
