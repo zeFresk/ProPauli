@@ -289,6 +289,13 @@ class NonOwningPauliTermPacked {
 		}
 	}
 
+	void fast_swap_content(NonOwningPauliTermPacked const& oth) {
+		assert(&ptc.get() == &oth.ptc.get());
+		ptc.get().swap_fast(idx, oth.idx);
+	}
+
+	friend void swap(NonOwningPauliTermPacked lhs, NonOwningPauliTermPacked rhs) noexcept { lhs.fast_swap_content(rhs); }
+
 	/**
 	 * @brief Copies content from another view using the container's optimized copy routine.
 	 * @pre Both views must belong to the same parent container.

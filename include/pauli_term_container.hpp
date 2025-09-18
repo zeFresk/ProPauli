@@ -262,6 +262,15 @@ class PauliTermContainer {
 			  raw_bits.begin() + (index_output * nb_underlying_per_pt));
 	}
 
+	void swap_fast(std::size_t lhs_index, std::size_t rhs_index) {
+		assert(lhs_index < nb_terms());
+		assert(rhs_index < nb_terms());
+		std::swap_ranges(raw_bits.begin() + (lhs_index * nb_underlying_per_pt),
+				 raw_bits.begin() + ((lhs_index + 1) * nb_underlying_per_pt),
+				 raw_bits.begin() + (rhs_index * nb_underlying_per_pt));
+		std::swap(raw_coefficients[lhs_index], raw_coefficients[rhs_index]);
+	}
+
 	/**
 	 * @brief Computes a hash of a Pauli string directly from the packed data.
 	 * @param index The index of the term to hash.
@@ -380,7 +389,12 @@ class PauliTermContainer {
 		to_del.fast_copy_content(last);
 		raw_coefficients.pop_back();
 	}
-/** @} */
+
+	void erase_to_end(std::size_t idx) {
+		assert(idx < nb_terms());
+		raw_coefficients.resize(idx);
+	}
+	/** @} */
 
 // The implementation of the custom iterators is injected here.
 #include "container/packed_iterators.inl"
@@ -395,6 +409,12 @@ class PauliTermContainer {
 	auto begin() const { return cbegin(); }
 	auto end() const { return cend(); }
 	/** @} */
+
+	friend void iter_swap(NonOwningIterator a, NonOwningIterator b) noexcept {
+		// The logic is the same, but the function is now "anchored"
+		// to the Container class for lookup purposes.
+		a.iter_swap(b.idx);
+	}
 
 	/** @name Comparison
 	 * @{

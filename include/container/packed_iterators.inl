@@ -23,8 +23,8 @@ class NonOwningIterator {
 	using iterator_category = std::forward_iterator_tag;
 	using difference_type = std::ptrdiff_t;
 	using value_type = NonOwningPauliTermPacked;
-	using pointer = value_type*;
-	using reference = value_type&;
+	using pointer = void;
+	using reference = value_type;
 	/** @} */
 
 	/**
@@ -33,6 +33,12 @@ class NonOwningIterator {
 	 * @param start_at The starting index for the iterator.
 	 */
 	explicit NonOwningIterator(PauliTermContainer& pt, std::size_t start_at) : ptc(pt), idx(start_at) {}
+
+	NonOwningIterator& operator=(NonOwningIterator const& oth) {
+		assert(&ptc == &oth.ptc);
+		idx = oth.idx;
+		return *this;
+	}
 
 	/**
 	 * @brief Dereferences the iterator to access the current term.
@@ -65,6 +71,43 @@ class NonOwningIterator {
 		return ret;
 	}
 
+	NonOwningIterator& operator--() {
+		--idx;
+		return *this;
+	}
+
+	/**
+	 * @brief Advances the iterator to the next element (postfix increment).
+	 * @return A copy of the iterator before it was incremented.
+	 */
+	NonOwningIterator operator--(int) {
+		NonOwningIterator ret = *this;
+		--(*this);
+		return ret;
+	}
+
+	NonOwningIterator& operator+=(std::size_t x) {
+		idx += x;
+		return *this;
+	}
+
+	NonOwningIterator operator+(std::size_t x) {
+		auto ret = *this;
+		ret += x;
+		return ret;
+	}
+
+	NonOwningIterator& operator-=(std::size_t x) {
+		idx -= x;
+		return *this;
+	}
+
+	NonOwningIterator operator-(std::size_t x) {
+		auto ret = *this;
+		ret -= x;
+		return ret;
+	}
+
 	/**
 	 * @brief Compares two iterators for equality.
 	 * @return `true` if they belong to the same container and point to the same index.
@@ -76,6 +119,13 @@ class NonOwningIterator {
 	 * @brief Compares two iterators for inequality.
 	 */
 	friend bool operator!=(NonOwningIterator const& lhs, NonOwningIterator const& rhs) { return !(lhs == rhs); }
+
+	friend std::ptrdiff_t operator-(NonOwningIterator const& lhs, NonOwningIterator const& rhs) { return lhs.idx - rhs.idx; }
+
+	friend bool operator<(NonOwningIterator const& lhs, NonOwningIterator const& rhs) { return lhs.idx < rhs.idx; }
+	friend bool operator<=(NonOwningIterator const& lhs, NonOwningIterator const& rhs) { return lhs.idx <= rhs.idx; }
+
+	void iter_swap(NonOwningIterator lhs) noexcept { ptc.swap_fast(idx, lhs.idx); }
 };
 
 /**
@@ -110,8 +160,7 @@ class ReadOnlyNonOwningIterator {
 	 * @param pt The const container to iterate over.
 	 * @param start_at The starting index for the iterator.
 	 */
-	explicit ReadOnlyNonOwningIterator(PauliTermContainer const& pt, std::size_t start_at)
-		: ptc(pt), idx(start_at) {}
+	explicit ReadOnlyNonOwningIterator(PauliTermContainer const& pt, std::size_t start_at) : ptc(pt), idx(start_at) {}
 
 	/**
 	 * @brief Dereferences the iterator to access the current term.
@@ -154,7 +203,5 @@ class ReadOnlyNonOwningIterator {
 	/**
 	 * @brief Compares two iterators for inequality.
 	 */
-	friend bool operator!=(ReadOnlyNonOwningIterator const& lhs, ReadOnlyNonOwningIterator const& rhs) {
-		return !(lhs == rhs);
-	}
+	friend bool operator!=(ReadOnlyNonOwningIterator const& lhs, ReadOnlyNonOwningIterator const& rhs) { return !(lhs == rhs); }
 };
