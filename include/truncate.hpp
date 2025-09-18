@@ -297,7 +297,7 @@ class KeepNTruncator : public Truncator<T> {
 
 		// The goal is to find the N-th largest element.
 		// std::nth_element will place this element at the specified iterator position.
-		auto nth_it = paulis.begin() + nb_terms;
+		auto nth_it = paulis.begin() + (nb_terms-1);
 
 		// Partition the container. We use a custom comparator on the absolute value
 		// of the coefficients. Note the '>' to find the N-th *largest*.
