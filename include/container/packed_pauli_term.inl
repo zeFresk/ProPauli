@@ -35,8 +35,6 @@ class ReadOnlyNonOwningPauliTermPacked {
 		return coefficient();
 	}
 
-	bool _is_dirty() const { return ptc.get().is_dirty(idx); }
-
 	/** @name Accessors
 	 * @{
 	 */
@@ -180,12 +178,6 @@ class NonOwningPauliTermPacked {
 		return ptc.get().get_coefficient(idx);
 	}
 
-	bool _is_dirty() const { return ptc.get().is_dirty(idx); }
-
-	void _set_dirty(bool v) { ptc.get().set_dirty(idx, v); }
-
-	void _add_dirty(bool v) { _set_dirty(_is_dirty() || v); }
-
 	/** @name Accessors and Mutators
 	 * @{
 	 */
@@ -304,7 +296,6 @@ class NonOwningPauliTermPacked {
 	void fast_copy_content(NonOwningPauliTermPacked const& nopt) {
 		assert(&nopt.ptc.get() == &ptc.get());
 		set_coefficient(nopt.coefficient());
-		_set_dirty(nopt._is_dirty());
 		ptc.get().copy_fast(nopt.idx, idx);
 	}
 	/** @} */
@@ -318,30 +309,23 @@ class NonOwningPauliTermPacked {
 	}
 	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit) {
 		assert(qubit < size());
-		auto const pb = get_pauli(qubit);
-		auto p = pb;
+		auto p = get_pauli(qubit);
 		set_coefficient(coefficient() * p.apply_clifford(g));
 		set_pauli(qubit, p);
-		_add_dirty(pb != p);
 	}
 	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p) {
 		assert(qubit < size());
 		const auto pauli = get_pauli(qubit);
-		// auto pauli = bpauli;
 		set_coefficient(coefficient() * pauli.apply_unital_noise(n, p));
-		//_add_dirty(bpauli != pauli);
 	}
 	void apply_cx(unsigned control, unsigned target) {
 		assert(control != target && "cx can't use same control and target");
 		assert(control < size() && target < size());
-		auto const bpctrl = get_pauli(control);
-		auto const bptarg = get_pauli(target);
-		auto pctrl = bpctrl;
-		auto ptarg = bptarg;
+		auto pctrl = get_pauli(control);
+		auto ptarg = get_pauli(target);
 		set_coefficient(coefficient() * pctrl.apply_cx(ptarg));
 		set_pauli(control, pctrl);
 		set_pauli(target, ptarg);
-		_add_dirty(pctrl != bpctrl || ptarg != bptarg);
 	}
 	void apply_rz(unsigned qubit, T theta, NonOwningPauliTermPacked& output) {
 		assert(qubit < size());
@@ -360,7 +344,6 @@ class NonOwningPauliTermPacked {
 			output.set_pauli(qubit, p_x);
 			output.set_coefficient(output.coefficient() * sin_theta);
 		}
-		output._add_dirty(true);
 	}
 	void apply_amplitude_damping_xy([[maybe_unused]] unsigned qubit, T p) {
 		assert(qubit < size());
@@ -373,7 +356,6 @@ class NonOwningPauliTermPacked {
 		output.set_coefficient(output.coefficient() * p);
 		output.set_pauli(qubit, p_i);
 		set_coefficient(coefficient() * (1 - p));
-		output._add_dirty(true);
 	}
 	/** @} */
 

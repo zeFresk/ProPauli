@@ -50,7 +50,6 @@ class PauliTermContainer {
 	 */
 	std::vector<Underlying> raw_bits; ///< Contiguous memory for the bit-packed Pauli strings.
 	std::vector<T> raw_coefficients; ///< Vector of coefficients, one for each Pauli term.
-	std::vector<bool> dirty;
 	std::size_t qubits; ///< The number of qubits for all terms in the container.
 	/** @} */
 
@@ -139,17 +138,6 @@ class PauliTermContainer {
 		set_opti();
 	}
 
-	bool is_dirty(std::size_t idx) const {
-		assert(idx < nb_terms());
-		// return true;
-		return dirty[idx];
-	}
-
-	void set_dirty(std::size_t idx, bool v) {
-		assert(idx < nb_terms());
-		dirty[idx] = v;
-	}
-
     public:
 	/** @name Constructors
 	 * @{
@@ -166,7 +154,6 @@ class PauliTermContainer {
 		set_qubits(nb_qubits);
 		resize_paulis_terms(DEFAULT_ALLOC);
 		raw_coefficients.reserve(DEFAULT_ALLOC);
-		dirty.reserve(DEFAULT_ALLOC);
 	}
 
 	/**
@@ -185,7 +172,7 @@ class PauliTermContainer {
 
 		resize_paulis_terms(std::max(DEFAULT_ALLOC, size));
 		raw_coefficients.reserve(size);
-		dirty.resize(size, true);
+
 		std::size_t i = 0;
 		for (; bcopy != end; ++bcopy, ++i) {
 			raw_coefficients.push_back(bcopy->coefficient());
@@ -364,7 +351,6 @@ class PauliTermContainer {
 	[[nodiscard]] NonOwningPauliTermPacked create_pauliterm() {
 		resize_paulis_terms(nb_terms() + 1);
 		raw_coefficients.push_back(T{ 0 });
-		dirty.push_back(true);
 		return { *this, nb_terms() - 1 };
 	}
 
@@ -377,7 +363,6 @@ class PauliTermContainer {
 		assert(idx < nb_terms());
 		auto np = create_pauliterm();
 		np.fast_copy_content((*this)[idx]);
-		np._set_dirty(true);
 		return np;
 	}
 
@@ -390,12 +375,10 @@ class PauliTermContainer {
 	void remove_pauliterm(std::size_t idx) {
 		assert(idx < nb_terms());
 		raw_coefficients[idx] = raw_coefficients.back();
-		dirty[idx] = dirty.back();
 		auto last = (*this)[nb_terms() - 1];
 		auto to_del = (*this)[idx];
 		to_del.fast_copy_content(last);
 		raw_coefficients.pop_back();
-		dirty.pop_back();
 	}
 /** @} */
 
