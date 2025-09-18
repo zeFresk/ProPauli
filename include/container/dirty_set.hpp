@@ -18,14 +18,14 @@
 template <typename Key, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>>
 class DirtySet {
     private:
-// --- Compile-Time Policy Selection ---
-// Select the best available probing policy. To add AVX2, you would add
-// a new policy and an #elif defined(__AVX2__) here.
-#if defined(__SSE2__)
-	using Policy = DirtySetDetail::ProbePolicySSE2;
-#else
-	using Policy = DirtySetDetail::ProbePolicyScalar;
-#endif
+	// --- Compile-Time Policy Selection ---
+	// Select the best available probing policy. To add AVX2, you would add
+	// a new policy and an #elif defined(__AVX2__) here.
+	#if defined(__SSE2__)
+		using Policy = DirtySetDetail::ProbePolicySSE2;
+	#else
+		using Policy = DirtySetDetail::ProbePolicyScalar;
+	#endif
 
 	using Group = typename Policy::Group;
 	using BitMask = DirtySetDetail::BitMask; // BitMask is policy-agnostic for now
@@ -262,7 +262,6 @@ class DirtySet {
 			}
 
 			probe_offset += probe_step++;
-			assert(probe_offset < m_capacity && "Hash table is full, but load factor check failed.");
 		}
 	}
 
