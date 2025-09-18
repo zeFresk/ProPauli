@@ -278,8 +278,7 @@ class DirtySet {
 		size_type start_index = info.h1 & (m_capacity - 1);
 		size_type probe_num = 0;
 
-		// Keep track of the first tombstone we find. This is our preferred insertion spot.
-		size_type first_tombstone_idx = m_capacity; // Use capacity as sentinel for 'not found'
+		size_type first_tombstone_idx = m_capacity;
 
 		while (true) {
 			size_type probe_offset = (probe_num * (probe_num + 1)) / 2;
@@ -287,46 +286,35 @@ class DirtySet {
 
 			__m128i group_ctrl = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&m_ctrl[group_index]));
 
-			// --- 1. Search for Matching H2 (for finding duplicates) ---
-			__m128i h2_vector = _mm_set1_epi8(info.h2);
-			uint32_t match_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, h2_vector));
-
-			while (match_mask != 0) {
-				size_t bit_pos = count_trailing_zeros(match_mask);
+			// --- 1. Find all potential matches ---
+			uint32_t match_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, _mm_set1_epi8(info.h2)));
+			uint32_t current_match_mask = match_mask;
+			while (current_match_mask != 0) {
+				size_t bit_pos = count_trailing_zeros(current_match_mask);
 				size_type index = (group_index + bit_pos) & (m_capacity - 1);
+				_mm_prefetch(reinterpret_cast<const char*>(&m_keys[index]), _MM_HINT_T0);
 				if (m_key_equal(m_keys[index], key)) {
 					return { iterator(m_keys, m_ctrl.get(), index, m_capacity), false };
 				}
-				match_mask &= ~(1 << bit_pos);
+				current_match_mask &= ~(1 << bit_pos);
 			}
 
-			// --- 2. Search for an Empty Slot (to terminate the search) ---
-			// Only K_EMPTY (-128) terminates the search. Tombstones (K_DELETED) do not.
-			__m128i empty_vector = _mm_set1_epi8(K_EMPTY);
-			uint32_t empty_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, empty_vector));
-
-			// While we are here, also find tombstones to decide where to insert.
-			if (first_tombstone_idx == m_capacity) {
-				__m128i deleted_vector = _mm_set1_epi8(K_DELETED);
-				uint32_t deleted_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, deleted_vector));
-				if (deleted_mask != 0) {
-					size_t bit_pos = count_trailing_zeros(deleted_mask);
-					first_tombstone_idx = (group_index + bit_pos) & (m_capacity - 1);
-				}
-			}
+			// --- 2. Find all empty slots (to terminate the search) ---
+			uint32_t empty_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, _mm_set1_epi8(K_EMPTY)));
 
 			if (empty_mask != 0) {
-				// A truly empty slot was found, guaranteeing the key does not exist.
-				// Now, we decide where to insert.
+				// An empty slot was found, guaranteeing the key does not exist.
+				// Now, decide where to insert. If we've seen a tombstone, use it.
 				size_type insert_idx;
 				if (first_tombstone_idx != m_capacity) {
-					// We found a tombstone on our search path, so we reuse it.
 					insert_idx = first_tombstone_idx;
 				} else {
-					// No tombstones found, so insert at the empty slot we just found.
 					size_t bit_pos = count_trailing_zeros(empty_mask);
 					insert_idx = (group_index + bit_pos) & (m_capacity - 1);
 				}
+
+				// We are about to write to insert_idx. Prefetch it to avoid a stall.
+				_mm_prefetch(reinterpret_cast<const char*>(&m_keys[insert_idx]), _MM_HINT_T0);
 
 				if (m_ctrl[insert_idx] == K_EMPTY) {
 					m_occupied_slots++;
@@ -337,11 +325,19 @@ class DirtySet {
 				return { iterator(m_keys, m_ctrl.get(), insert_idx, m_capacity), true };
 			}
 
+			// --- 3. Optimization: Only search for tombstones if we haven't found one yet ---
+			if (first_tombstone_idx == m_capacity) {
+				uint32_t deleted_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(group_ctrl, _mm_set1_epi8(K_DELETED)));
+				if (deleted_mask != 0) {
+					size_t bit_pos = count_trailing_zeros(deleted_mask);
+					first_tombstone_idx = (group_index + bit_pos) & (m_capacity - 1);
+				}
+			}
+
 			probe_num++;
-			// assert(probe_offset < m_capacity && "Hash table is full, but load factor check failed.");
+			//assert(probe_offset < m_capacity && "Hash table is full, but load factor check failed.");
 		}
 	}
-
 	void erase_at(size_type index) {
 		if constexpr (!std::is_trivially_destructible_v<Key>) {
 			m_keys[index].~Key();
