@@ -187,9 +187,7 @@ class Truncators : public Truncator<T> {
 	Truncators(Ts&&... truncs) : truncators(std::forward<Ts>(truncs)...) {}
 	~Truncators() override = default;
 
-	std::size_t truncate(PauliTermContainer<T>& paulis) override {
-		return truncate_impl(paulis, std::index_sequence_for<Ts...>{});
-	}
+	std::size_t truncate(PauliTermContainer<T>& paulis) override { return truncate_impl(paulis, std::index_sequence_for<Ts...>{}); }
 };
 
 template <typename T>
@@ -223,8 +221,7 @@ auto combine_truncators_raw(Truncs&&... truncs) {
  */
 template <typename... Truncs>
 auto combine_truncators(Truncs&&... truncs) {
-	return std::make_shared<decltype(combine_truncators_raw(std::forward<Truncs>(truncs)...))>(
-		std::forward<Truncs>(truncs)...);
+	return std::make_shared<decltype(combine_truncators_raw(std::forward<Truncs>(truncs)...))>(std::forward<Truncs>(truncs)...);
 }
 
 /**
@@ -274,37 +271,6 @@ class RuntimeMultiTruncators : public Truncator<T> {
 template <typename T = coeff_t>
 class KeepNTruncator : public Truncator<T> {
 	std::size_t nb_terms;
-	std::vector<T> heap;
-
-	/**
-	 * @brief Finds the coefficient that will serve as the threshold for removal.
-	 * @return The value of the (total_terms - N)-th smallest coefficient norm.
-	 */
-	template <typename It>
-	T find_nth_smallest_coeff(It begin, It end) {
-		assert(begin != end);
-		assert(std::distance(begin, end) > static_cast<ssize_t>(nb_terms));
-
-		std::size_t to_remove = std::distance(begin, end) - nb_terms;
-		heap.clear();
-		heap.reserve(to_remove);
-
-		for (; heap.size() < to_remove; ++begin) {
-			heap.push_back(std::abs(*begin));
-		}
-		std::make_heap(heap.begin(), heap.end());
-
-		for (; begin != end; ++begin) {
-			if (std::abs(*begin) < heap.front()) {
-				std::pop_heap(heap.begin(), heap.end());
-				heap.pop_back();
-				heap.push_back(std::abs(*begin));
-				std::push_heap(heap.begin(), heap.end());
-			}
-		}
-
-		return heap.front();
-	}
 
     public:
 	/**
@@ -316,7 +282,6 @@ class KeepNTruncator : public Truncator<T> {
 		if (nb_terms == 0) {
 			throw std::invalid_argument("Must keep at least one term.");
 		}
-		heap.reserve(64);
 	}
 	~KeepNTruncator() override = default;
 
@@ -328,10 +293,24 @@ class KeepNTruncator : public Truncator<T> {
 			return 0;
 		}
 
-		T coeff_threshold =
-			find_nth_smallest_coeff(paulis.get_coefficients().begin(), paulis.get_coefficients().end());
-		return std::erase_if(paulis,
-				     [=](auto const& pt) { return std::abs(pt.coefficient()) <= coeff_threshold; });
+		const auto initial_size = paulis.nb_terms();
+
+		// The goal is to find the N-th largest element.
+		// std::nth_element will place this element at the specified iterator position.
+		auto nth_it = paulis.begin() + nb_terms;
+
+		// Partition the container. We use a custom comparator on the absolute value
+		// of the coefficients. Note the '>' to find the N-th *largest*.
+		std::nth_element(paulis.begin(), nth_it, paulis.end(),
+				 [](auto const& a, auto const& b) { return std::abs(a.coefficient()) > std::abs(b.coefficient()); });
+
+		// After partitioning, the N largest elements are in the range [begin(), nth_it).
+		// All elements from nth_it to the end can be safely removed.
+		paulis.erase_to_end(nb_terms);
+
+		assert(paulis.nb_terms() == nb_terms);
+
+		return initial_size - paulis.nb_terms();
 	}
 };
 
