@@ -302,7 +302,7 @@ class KeepNTruncator : public Truncator<T> {
 		// Partition the container. We use a custom comparator on the absolute value
 		// of the coefficients. Note the '>' to find the N-th *largest*.
 		std::nth_element(paulis.begin(), nth_it, paulis.end(),
-				 [](auto const& a, auto const& b) { return std::abs(a.coefficient()) > std::abs(b.coefficient()); });
+				 [](auto const& a, auto const& b) { return std::abs(a.coefficient()) >= std::abs(b.coefficient()); });
 
 		// After partitioning, the N largest elements are in the range [begin(), nth_it).
 		// All elements from nth_it to the end can be safely removed.
