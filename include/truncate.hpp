@@ -24,6 +24,10 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <vector>
+#include <cmath>
+#include <stdexcept>
+#include <cassert>
 
 /**
  * @brief A predicate that returns true if a PauliTerm's coefficient magnitude is below a threshold.
@@ -264,20 +268,18 @@ class RuntimeMultiTruncators : public Truncator<T> {
  * This truncator ensures that after truncation, the observable contains at most `N` terms.
  * It identifies the `N` terms with the largest coefficients norms and removes all others.
  *
- * @note The selection uses an efficient heap-based selection algorithm to find the removal
- * threshold without performing a full sort of the terms.
+ * @note Amortized O(n) complexity. Inspired from the code from the STL, but tweaked to work with proxy iterators.
  *
  */
 template <typename T = coeff_t>
 class KeepNTruncator : public Truncator<T> {
+	// A cutoff for switching to the more efficient insertion sort on small partitions.
+	// A value between 8 and 24 is typical.
+	static constexpr std::size_t INSERTION_SORT_CUTOFF = 16;
+
 	std::size_t nb_terms;
 
     public:
-	/**
-	 * @brief Constructs the truncator to keep a maximum number of terms.
-	 * @param max_n The maximum number of terms to keep.
-	 * @throws std::invalid_argument if max_n is 0.
-	 */
 	KeepNTruncator(std::size_t max_n) : nb_terms(max_n) {
 		if (nb_terms == 0) {
 			throw std::invalid_argument("Must keep at least one term.");
@@ -295,22 +297,93 @@ class KeepNTruncator : public Truncator<T> {
 
 		const auto initial_size = paulis.nb_terms();
 
-		// The goal is to find the N-th largest element.
-		// std::nth_element will place this element at the specified iterator position.
-		auto nth_it = paulis.begin() + nb_terms;
+		// We need to ensure the N largest elements are in the first N positions.
+		// This means we need to find the element that belongs at index `nb_terms - 1`.
+		selection_by_swap(paulis, 0, paulis.nb_terms() - 1, nb_terms - 1,
+				  [](auto const& a, auto const& b) { return std::abs(a.coefficient()) > std::abs(b.coefficient()); });
 
-		// Partition the container. We use a custom comparator on the absolute value
-		// of the coefficients. Note the '>' to find the N-th *largest*.
-		std::nth_element(paulis.begin(), nth_it, paulis.end(),
-				 [](auto const& a, auto const& b) { return std::abs(a.coefficient()) > std::abs(b.coefficient()); });
-
-		// After partitioning, the N largest elements are in the range [begin(), nth_it).
-		// All elements from nth_it to the end can be safely removed.
 		paulis.erase_to_end(nb_terms);
 
 		assert(paulis.nb_terms() == nb_terms);
-
 		return initial_size - paulis.nb_terms();
+	}
+
+    private:
+	/**
+	 * @brief The main Quickselect routine with a cutoff for small partitions.
+	 */
+	template <typename Compare>
+	void selection_by_swap(PauliTermContainer<T>& paulis, std::size_t left, std::size_t right, std::size_t k, Compare comp) {
+		while (right - left > INSERTION_SORT_CUTOFF) {
+			std::size_t pivot_index = partition(paulis, left, right, comp);
+
+			if (pivot_index == k) {
+				return;
+			} else if (pivot_index < k) {
+				left = pivot_index + 1;
+			} else { // pivot_index > k
+				right = pivot_index - 1;
+			}
+		}
+
+		// For the small remaining partition, finish with a full (but swap-based) sort.
+		insertion_sort_by_swap(paulis, left, right, comp);
+	}
+
+	/**
+	 * @brief A robust partitioning scheme using a median-of-three pivot.
+	 */
+	template <typename Compare>
+	std::size_t partition(PauliTermContainer<T>& paulis, std::size_t left, std::size_t right, Compare comp) {
+		// --- Median-of-Three Pivot Selection ---
+		std::size_t mid = left + (right - left) / 2;
+		// Sort the elements at left, mid, and right using swaps.
+		if (comp(paulis[mid], paulis[left])) {
+			paulis.swap_fast(left, mid);
+		}
+		if (comp(paulis[right], paulis[left])) {
+			paulis.swap_fast(left, right);
+		}
+		if (comp(paulis[right], paulis[mid])) {
+			paulis.swap_fast(mid, right);
+		}
+		// The median is now at paulis[mid]. Swap it into the pivot position (right-1)
+		// to simplify the partitioning loop.
+		paulis.swap_fast(mid, right - 1);
+		auto pivot_proxy = paulis[right - 1];
+		// --- End of Pivot Selection ---
+
+		std::size_t i = left;
+		std::size_t j = right - 1;
+
+		// Hoare-style partitioning loop
+		while (true) {
+			while (comp(paulis[++i], pivot_proxy))
+				;
+			while (comp(pivot_proxy, paulis[--j]))
+				;
+			if (i >= j)
+				break;
+			paulis.swap_fast(i, j);
+		}
+		// Swap the pivot back to its final place.
+		paulis.swap_fast(i, right - 1);
+		return i;
+	}
+
+	/**
+	 * @brief A classic insertion sort that uses only swaps, making it safe for proxies.
+	 */
+	template <typename Compare>
+	void insertion_sort_by_swap(PauliTermContainer<T>& paulis, std::size_t left, std::size_t right, Compare comp) {
+		for (std::size_t i = left + 1; i <= right; ++i) {
+			std::size_t j = i;
+			// "Bubble" the current element leftwards until it's in its sorted place.
+			while (j > left && comp(paulis[j], paulis[j - 1])) {
+				paulis.swap_fast(j, j - 1);
+				--j;
+			}
+		}
 	}
 };
 
