@@ -268,8 +268,7 @@ class RuntimeMultiTruncators : public Truncator<T> {
  * This truncator ensures that after truncation, the observable contains at most `N` terms.
  * It identifies the `N` terms with the largest coefficients norms and removes all others.
  *
- * @note The selection uses an efficient heap-based selection algorithm to find the removal
- * threshold without performing a full sort of the terms.
+ * @note Amortized O(n) complexity. Inspired from the code from the STL, but tweaked to work with proxy iterators.
  *
  */
 template <typename T = coeff_t>
@@ -387,4 +386,5 @@ class KeepNTruncator : public Truncator<T> {
 		}
 	}
 };
+
 #endif
