@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <cmath>
+#include <string>
 #include <symbolic/coefficient.hpp>
 
 using Sc = SymbolicCoefficient<float>;
@@ -242,4 +243,23 @@ TEST(SymbolicCoefficient, simplify_associativity_hard) {
 	EXPECT_EQ(x.to_string(), "((x * 2) * 3) * 2");
 	auto sx = x.simplified();
 	EXPECT_EQ(sx.to_string(), "12 * x");
+}
+
+TEST(SymbolicCoefficient, simplify_edge_case) {
+	Sc pi = 3.14159f;
+	pi  = pi / 2.f;
+	pi = -pi;
+	pi = cos(pi);
+	auto smp = pi.simplified();
+	auto converted = std::stof(smp.to_string());
+	EXPECT_NEAR(converted, 0.f, 1e-4f);
+}
+
+TEST(SymbolicCoefficient, simplify_edge_case2) {
+	Sc pi = 3.14159f / 2.f;
+	pi = -pi;
+	pi = cos(pi);
+	auto smp = pi.simplified();
+	auto converted = std::stof(smp.to_string());
+	EXPECT_NEAR(converted, 0.f, 1e-4f);
 }

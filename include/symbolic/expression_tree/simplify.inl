@@ -1,6 +1,7 @@
 #include "simplify/helpers.inl"
 #include "simplify/multiplication.inl"
 #include "simplify/addition.inl"
+#include "simplify/division.inl"
 
 template <typename T>
 ExpressionTree<T> ExpressionTree<T>::simplified() const {
@@ -68,25 +69,11 @@ NodePtr<T> ExpressionTree<T>::simplify_node(NodePtr<T> const& node) const {
 					std::vector<NodePtr<T>> s_operands = { s_lhs, s_rhs };
 					return process_multiplication(s_operands);
 				}
+				case BinaryOp<T>::Op::Divide:
+					return process_division(s_lhs, s_rhs);
 				default:
 					break;
 				}
-
-				// NOTE: + - * already handled, this can only be a division!
-				if (auto const* c_lhs = std::get_if<Constant<T>>(&s_lhs->node_type)) { // 0 / x => 0
-					if (c_lhs->value == 0)
-						return s_lhs;
-				}
-				if (auto const* c_rhs = std::get_if<Constant<T>>(&s_rhs->node_type)) {
-					if (c_rhs->value == 1)
-						return s_lhs;
-				}
-				if (are_trees_identical(s_lhs, s_rhs))
-					return std::make_shared<const ExpressionNode<T>>(Constant<T>{ 1 });
-
-				if (s_lhs != n.lhs || s_rhs != n.rhs)
-					return std::make_shared<const ExpressionNode<T>>(BinaryOp<T>{ n.operation, s_lhs, s_rhs });
-
 			} else if constexpr (std::is_same_v<VT, NaryOp<T>>) {
 				std::vector<NodePtr<T>> s_operands;
 				s_operands.reserve(n.operands.size());

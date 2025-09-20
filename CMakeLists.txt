@@ -6,7 +6,7 @@ set(BENCHMARK OFF CACHE BOOL "Build benchmarks")
 set(TEST OFF CACHE BOOL "Build tests")
 
 project(ProPauli
-	VERSION 3.2.1
+	VERSION 3.3.0
 DESCRIPTION "Fast and efficient C++ library for Pauli Propagation"
 	LANGUAGES CXX)
 
@@ -94,6 +94,12 @@ if (TEST)
 	target_link_libraries(UnitTest propaulib gtest gtest_main gmock)
 	target_include_directories(UnitTest PUBLIC ${INCLUDE_DIR})
 	gtest_discover_tests(UnitTest)
+
+	set_source_files_properties(
+	    "${PROJECT_SOURCE_DIR}/tests/compiled_expression.cpp"
+	    PROPERTIES
+	    COMPILE_FLAGS "-fno-fast-math"
+	)
 endif()
 
 # GoogleBenchmark

@@ -48,6 +48,12 @@ class SymbolicCoefficient {
 	 */
 	SymbolicCoefficient(Variable const& var) : et(ExpressionTree<T>(std::make_shared<const ExpressionNode<T>>(var))) {}
 
+	/**
+	 * @brief Constructs a symbolic coefficient from a variable NAME.
+	 * @param varname Name of the variable.
+	 */
+	SymbolicCoefficient(std::string const& varname) : SymbolicCoefficient{ Variable{ varname } } {}
+
 	SymbolicCoefficient(SymbolicCoefficient const&) = default;
 	SymbolicCoefficient& operator=(SymbolicCoefficient const&) = default;
 	SymbolicCoefficient(SymbolicCoefficient&&) = default;
@@ -96,6 +102,18 @@ class SymbolicCoefficient {
 	 * @return A new `SymbolicCoefficient` representing the simplified expression.
 	 */
 	[[nodiscard]] SymbolicCoefficient simplified() const { return SymbolicCoefficient(et.simplified()); }
+
+	/*
+	 * @brief Compiles the expression to make it faster to evaluate.
+	 * @return a new `CompiledExpression` representing the compiled version of this object.
+	 */
+	[[nodiscard]] CompiledExpression<T> compile() const { return et.compile(); }
+
+	/*
+	 * @brief Optimize the expression for faster evaluation.
+	 * @return A simplified and compiled expression.
+	 */
+	[[nodiscard]] CompiledExpression<T> optimize() const { return et.simplified().compile(); }
 
 	/**
 	 * @brief In-place multiplication by a scalar.
@@ -208,6 +226,9 @@ class SymbolicCoefficient {
 	friend SymbolicCoefficient sqrt(SymbolicCoefficient x) { return x.sqrt(); }
 
 	friend std::ostream& operator<<(std::ostream& os, SymbolicCoefficient const& sc) { return os << sc.et; }
+
+	ExpressionTree<T>& get_expression_tree() { return et; }
+	ExpressionTree<T> const& get_expression_tree() const { return et; }
 };
 
 /**
