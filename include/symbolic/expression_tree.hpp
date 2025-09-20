@@ -11,6 +11,7 @@
  */
 
 #include "symbolic/expression_tree/nodes.hpp"
+#include "symbolic/compiled_expression.hpp"
 
 #include "maths.hpp"
 
@@ -99,6 +100,22 @@ class ExpressionTree {
 
 	friend std::ostream& operator<<(std::ostream& os, ExpressionTree const& tree) { return os << tree.to_string(); }
 
+	/**
+	 * @struct NodePtrComparator
+	 * @brief Functor for comparing nodes to establish a canonical order.
+	 */
+	struct NodePtrComparator {
+		const ExpressionTree<T>* tree_instance;
+		bool operator()(const NodePtr<T>& a, const NodePtr<T>& b) const { return tree_instance->compare_nodes(a, b) < 0; }
+	};
+
+	/**
+	 * @brief Compares two nodes for sorting purposes during simplification.
+	 */
+	int compare_nodes(NodePtr<T> const& a, NodePtr<T> const& b) const;
+
+	[[nodiscard]] CompiledExpression<T> compile() const;
+
     private:
 	/**
 	 * @brief Recursively evaluates a node and its children.
@@ -116,10 +133,6 @@ class ExpressionTree {
 	 * @brief Checks if two subtrees are structurally and functionally identical.
 	 */
 	bool are_trees_identical(NodePtr<T> const& a, NodePtr<T> const& b) const;
-	/**
-	 * @brief Compares two nodes for sorting purposes during simplification.
-	 */
-	int compare_nodes(NodePtr<T> const& a, NodePtr<T> const& b) const;
 
 	/**
 	 * @brief Recursively simplifies a node and its children.
@@ -165,15 +178,6 @@ class ExpressionTree {
 	 * @brief Reconstructs a multiplication node from a list of factors.
 	 */
 	NodePtr<T> build_from_factors(const std::vector<NodePtr<T>>& factors) const;
-
-	/**
-	 * @struct NodePtrComparator
-	 * @brief Functor for comparing nodes to establish a canonical order.
-	 */
-	struct NodePtrComparator {
-		const ExpressionTree<T>* tree_instance;
-		bool operator()(const NodePtr<T>& a, const NodePtr<T>& b) const { return tree_instance->compare_nodes(a, b) < 0; }
-	};
 };
 
 #include "expression_tree/evaluate.inl"
@@ -182,5 +186,6 @@ class ExpressionTree {
 #include "expression_tree/simplify.inl"
 #include "expression_tree/factor.inl"
 #include "expression_tree/substitute.inl"
+#include "symbolic/compiler.inl"
 
 #endif // PP_INCLUDE_EXPRESSION_TREE_HPP
