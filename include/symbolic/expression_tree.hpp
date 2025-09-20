@@ -138,6 +138,12 @@ class ExpressionTree {
 	 * @brief Processes a list of multiplication operands, combining constants and expanding where necessary.
 	 */
 	NodePtr<T> process_multiplication(std::vector<NodePtr<T>>& operands, bool expand = true) const;
+
+	/*
+	 * @brief Process the binary division.
+	 */
+	NodePtr<T> process_division(NodePtr<T>& s_lhs, NodePtr<T>& s_rhs) const;
+
 	/**
 	 * @brief Extracts a numeric coefficient from a node (e.g., 2*x -> {2, x}).
 	 */
