@@ -100,7 +100,7 @@ struct CompiledExpression<T>::Compiler {
 // --- IMPLEMENTATION OF THE CONSTRUCTOR ---
 template <typename T>
 CompiledExpression<T>::CompiledExpression(ExpressionTree<T> const& tree) {
-	Compiler compiler(this, tree);
+	Compiler compiler(*this, tree);
 	compiler.run();
 }
 

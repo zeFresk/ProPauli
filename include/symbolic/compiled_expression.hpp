@@ -43,10 +43,14 @@ class CompiledExpression {
 
 	struct Compiler;
 
+    public:
 	CompiledExpression(ExpressionTree<T> const& tree);
 
-    public:
 	T evaluate(std::unordered_map<std::string, T> const& variables) const {
+		if (nodes.size() == 0) {
+			return T{ 0 };
+		}
+
 		std::vector<T> variables_values;
 		variables_values.reserve(variables_names.size());
 		for (auto const& name : variables_names) {
