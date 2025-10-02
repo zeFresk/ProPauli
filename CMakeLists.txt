@@ -72,6 +72,12 @@ FetchContent_MakeAvailable(xxhash)
 
 target_link_libraries(propaulib PUBLIC xxhash)
 
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(propaulib PUBLIC OpenMP::OpenMP_CXX)
+endif()
+
+
 if (TEST)
 	# Build de GTest
 	include(FetchContent)
