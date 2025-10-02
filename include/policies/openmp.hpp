@@ -93,13 +93,48 @@ struct OpenMPPolicy {
 	template <typename PTC, typename T>
 	inline static void apply_amplitude_damping(PTC& paulis, unsigned qubit, T pn) {
 		const auto nb_terms = paulis.nb_terms();
-		for (std::size_t i = 0; i < nb_terms; ++i) {
-			auto p = paulis[i];
-			if (p.get_pauli(qubit) == p_z) {
-				auto new_path = paulis.duplicate_pauliterm(i); // invalidates p
-				paulis[i].apply_amplitude_damping_z(qubit, pn, new_path);
-			} else if (p.get_pauli(qubit) == p_x || p.get_pauli(qubit) == p_y) {
-				p.apply_amplitude_damping_xy(qubit, pn);
+
+		std::vector<std::size_t> allocated_per_thread(omp_get_max_threads(), 0);
+		std::size_t total_to_allocate = 0;
+
+		#pragma omp parallel shared(allocated_per_thread)
+		{
+			auto tid = omp_get_thread_num();
+
+			// compute number of required nb_term 
+			#pragma omp for reduction(+:total_to_allocate) schedule(static)
+			for (std::size_t i = 0; i < nb_terms; ++i) {
+				if (paulis[i].get_pauli(qubit) == p_z) {
+					allocated_per_thread[tid]++;
+					total_to_allocate++;
+				}
+			}
+
+
+			// pre-alloc is mandatory to not invalidate terms while allocating 
+			#pragma omp single
+			paulis._batch_allocate(total_to_allocate);
+
+			// get start_idx by computing sum of previous elements
+			std::size_t start_idx = nb_terms;
+			for (int k = 0; k < tid; ++k) {
+				start_idx += allocated_per_thread[k];
+			}
+			
+			std::size_t k_idx = 0; // allocated index
+
+			#pragma omp for schedule(static)
+			for (std::size_t i = 0; i < nb_terms; ++i) {
+				auto p = paulis[i];
+				if (p.get_pauli(qubit) == p_z) {
+					const auto tmp_pt_idx = start_idx + k_idx;
+					auto new_path = paulis[tmp_pt_idx];
+					new_path.fast_copy_content(p);
+					paulis[i].apply_amplitude_damping_z(qubit, pn, new_path);
+					k_idx++;
+				} else if (p.get_pauli(qubit) == p_x || p.get_pauli(qubit) == p_y) {
+					p.apply_amplitude_damping_xy(qubit, pn);
+				}
 			}
 		}
 	}
