@@ -92,7 +92,7 @@ TYPED_TEST(ObservableTest, apply_pauli) {
 	// X, Y, Z
 	for (auto g : { I, X, Y, Z }) {
 		for (std::size_t i = 0; i < 4; ++i) {
-			obs.apply_pauli(g, i);
+			obs.apply_pauli(g, i, this->policy);
 			pt1.apply_pauli(g, i);
 			pt2.apply_pauli(g, i);
 			EXPECT_EQ(obs[0], pt1);
