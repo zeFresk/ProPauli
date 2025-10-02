@@ -16,6 +16,7 @@
 #include "pauli_term_container.hpp"
 #include "symbolic/coefficient.hpp"
 #include "merge.hpp"
+#include "policy.hpp"
 
 #include <cstring>
 #include <initializer_list>
@@ -92,11 +93,11 @@ class Observable {
 	 * @param qubit The index of the qubit to apply the gate to.
 	 * @pre `qubit` must be a valid index less than `nb_qubits()`.
 	 */
-	void apply_pauli(Pauli_gates g, unsigned qubit) {
+	template <typename ExecutionPolicy = SequentialPolicy>
+	void apply_pauli(Pauli_gates g, unsigned qubit, [[maybe_unused]] ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
-		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
-			paulis_[i].apply_pauli(g, qubit);
-		}
+		using Policy_t = std::remove_cvref_t<ExecutionPolicy>;
+		Policy_t::apply_pauli(paulis_, g, qubit);
 	}
 
 	/**
@@ -105,11 +106,11 @@ class Observable {
 	 * @param qubit The index of the qubit to apply the gate to.
 	 * @pre `qubit` must be a valid index less than `nb_qubits()`.
 	 */
-	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit) {
+	template <typename ExecutionPolicy = SequentialPolicy>
+	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit, [[maybe_unused]] ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
-		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
-			paulis_[i].apply_clifford(g, qubit);
-		}
+		using Policy_t = std::remove_cvref_t<ExecutionPolicy>;
+		Policy_t::apply_clifford(paulis_, g, qubit);
 	}
 
 	/**
@@ -119,11 +120,11 @@ class Observable {
 	 * @param p The noise probability parameter.
 	 * @pre `qubit` must be a valid index less than `nb_qubits()`.
 	 */
-	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p) {
+	template <typename ExecutionPolicy = SequentialPolicy>
+	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p, [[maybe_unused]] ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
-		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
-			paulis_[i].apply_unital_noise(n, qubit, p);
-		}
+		using Policy_t = std::remove_cvref_t<ExecutionPolicy>;
+		Policy_t::apply_unital_noise(paulis_, n, qubit, p);
 	}
 
 	/**
@@ -132,16 +133,16 @@ class Observable {
 	 * @param qubit_target The index of the target qubit.
 	 * @pre `qubit_control` and `qubit_target` must be valid and distinct qubit indices.
 	 */
-	void apply_cx(unsigned qubit_control, unsigned qubit_target) {
+	template <typename ExecutionPolicy = SequentialPolicy>
+	void apply_cx(unsigned qubit_control, unsigned qubit_target, [[maybe_unused]] ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit_control);
 		check_qubit(qubit_target);
 		if (qubit_control == qubit_target) {
 			throw std::invalid_argument("cx gate target must be != from control.");
 		}
 
-		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
-			paulis_[i].apply_cx(qubit_control, qubit_target);
-		}
+		using Policy_t = std::remove_cvref_t<ExecutionPolicy>;
+		Policy_t::apply_cx(paulis_, qubit_control, qubit_target);
 	}
 
 	/**
@@ -153,16 +154,11 @@ class Observable {
 	 * output Pauli terms. This can increase the size of the observable, often
 	 * necessitating a subsequent `merge()` or `truncate()` call.
 	 */
-	void apply_rz(unsigned qubit, T theta) {
+	template <typename ExecutionPolicy = SequentialPolicy>
+	void apply_rz(unsigned qubit, T theta, [[maybe_unused]] ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
-		const auto nb_terms = paulis_.nb_terms();
-		for (std::size_t i = 0; i < nb_terms; ++i) {
-			auto p = paulis_[i];
-			if (!p.get_pauli(qubit).commutes_with(p_z)) {
-				auto new_path = paulis_.duplicate_pauliterm(i);
-				paulis_[i].apply_rz(qubit, theta, new_path);
-			}
-		}
+		using Policy_t = std::remove_cvref_t<ExecutionPolicy>;
+		Policy_t::apply_rz(paulis_, qubit, theta);
 	}
 
 	/**
@@ -173,18 +169,11 @@ class Observable {
 	 * target qubit, it will be split into two. If it has X or Y, its coefficient is
 	 * simply scaled. If it has I, there is no effect.
 	 */
-	void apply_amplitude_damping(unsigned qubit, T pn) {
+	template <typename ExecutionPolicy = SequentialPolicy>
+	void apply_amplitude_damping(unsigned qubit, T pn, [[maybe_unused]] ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
-		const auto nb_terms = paulis_.nb_terms();
-		for (std::size_t i = 0; i < nb_terms; ++i) {
-			auto p = paulis_[i];
-			if (p.get_pauli(qubit) == p_z) {
-				auto new_path = paulis_.duplicate_pauliterm(i); // invalidates p
-				paulis_[i].apply_amplitude_damping_z(qubit, pn, new_path);
-			} else if (p.get_pauli(qubit) == p_x || p.get_pauli(qubit) == p_y) {
-				p.apply_amplitude_damping_xy(qubit, pn);
-			}
-		}
+		using Policy_t = std::remove_cvref_t<ExecutionPolicy>;
+		Policy_t::apply_amplitude_damping(paulis_, qubit, pn);
 	}
 	/** @} */
 
@@ -196,12 +185,10 @@ class Observable {
 	 * entirely of I and Z operators. These are the terms that are diagonal in the
 	 * computational basis.
 	 */
-	T expectation_value() const {
-		T ret = 0;
-		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
-			ret += paulis_[i].expectation_value();
-		}
-		return ret;
+	template <typename ExecutionPolicy = SequentialPolicy>
+	T expectation_value([[maybe_unused]] ExecutionPolicy&& policy = ExecutionPolicy{}) const {
+		using Policy_t = std::remove_cvref_t<ExecutionPolicy>;
+		return Policy_t::expectation_value(paulis_);
 	}
 
 	/** @name Container Interface
