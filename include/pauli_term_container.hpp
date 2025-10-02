@@ -26,6 +26,7 @@
 #include <cstddef>
 #include <cstring>
 #include <iterator>
+#include <mutex>
 #include <string_view>
 #include <vector>
 
@@ -204,8 +205,8 @@ class PauliTermContainer {
 
 	PauliTermContainer(PauliTermContainer const& oth) = default;
 	PauliTermContainer& operator=(PauliTermContainer const& oth) = default;
-	PauliTermContainer(PauliTermContainer&& oth) = default;
-	PauliTermContainer& operator=(PauliTermContainer&& oth) = default;
+	PauliTermContainer(PauliTermContainer&& oth) noexcept = default;
+	PauliTermContainer& operator=(PauliTermContainer&& oth) noexcept = default;
 
 	/** @name Capacity
 	 * @{
@@ -373,6 +374,11 @@ class PauliTermContainer {
 		auto np = create_pauliterm();
 		np.fast_copy_content((*this)[idx]);
 		return np;
+	}
+
+	void _batch_allocate(std::size_t nb_new_terms) {
+		resize_paulis_terms(nb_terms() + nb_new_terms);
+		raw_coefficients.resize(nb_terms() + nb_new_terms, T{0});
 	}
 
 	/**
