@@ -3,4 +3,6 @@
 
 #include "policies/sequential.hpp"
 
+using DefaultExecutionPolicy = SequentialPolicy;
+
 #endif

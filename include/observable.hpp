@@ -93,10 +93,10 @@ class Observable {
 	 * @param qubit The index of the qubit to apply the gate to.
 	 * @pre `qubit` must be a valid index less than `nb_qubits()`.
 	 */
-	template <typename ExecutionPolicy = SequentialPolicy>
-	void apply_pauli(Pauli_gates g, unsigned qubit, [[maybe_unused]] ExecutionPolicy&& policy = ExecutionPolicy{}) {
+	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_pauli(Pauli_gates g, unsigned qubit, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
-		using Policy_t = std::remove_cvref_t<ExecutionPolicy>;
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		Policy_t::apply_pauli(paulis_, g, qubit);
 	}
 
@@ -106,10 +106,10 @@ class Observable {
 	 * @param qubit The index of the qubit to apply the gate to.
 	 * @pre `qubit` must be a valid index less than `nb_qubits()`.
 	 */
-	template <typename ExecutionPolicy = SequentialPolicy>
-	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit, [[maybe_unused]] ExecutionPolicy&& policy = ExecutionPolicy{}) {
+	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
-		using Policy_t = std::remove_cvref_t<ExecutionPolicy>;
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		Policy_t::apply_clifford(paulis_, g, qubit);
 	}
 
@@ -120,10 +120,10 @@ class Observable {
 	 * @param p The noise probability parameter.
 	 * @pre `qubit` must be a valid index less than `nb_qubits()`.
 	 */
-	template <typename ExecutionPolicy = SequentialPolicy>
-	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p, [[maybe_unused]] ExecutionPolicy&& policy = ExecutionPolicy{}) {
+	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
-		using Policy_t = std::remove_cvref_t<ExecutionPolicy>;
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		Policy_t::apply_unital_noise(paulis_, n, qubit, p);
 	}
 
@@ -133,15 +133,15 @@ class Observable {
 	 * @param qubit_target The index of the target qubit.
 	 * @pre `qubit_control` and `qubit_target` must be valid and distinct qubit indices.
 	 */
-	template <typename ExecutionPolicy = SequentialPolicy>
-	void apply_cx(unsigned qubit_control, unsigned qubit_target, [[maybe_unused]] ExecutionPolicy&& policy = ExecutionPolicy{}) {
+	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_cx(unsigned qubit_control, unsigned qubit_target, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit_control);
 		check_qubit(qubit_target);
 		if (qubit_control == qubit_target) {
 			throw std::invalid_argument("cx gate target must be != from control.");
 		}
 
-		using Policy_t = std::remove_cvref_t<ExecutionPolicy>;
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		Policy_t::apply_cx(paulis_, qubit_control, qubit_target);
 	}
 
@@ -154,10 +154,10 @@ class Observable {
 	 * output Pauli terms. This can increase the size of the observable, often
 	 * necessitating a subsequent `merge()` or `truncate()` call.
 	 */
-	template <typename ExecutionPolicy = SequentialPolicy>
-	void apply_rz(unsigned qubit, T theta, [[maybe_unused]] ExecutionPolicy&& policy = ExecutionPolicy{}) {
+	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_rz(unsigned qubit, T theta, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
-		using Policy_t = std::remove_cvref_t<ExecutionPolicy>;
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		Policy_t::apply_rz(paulis_, qubit, theta);
 	}
 
@@ -169,10 +169,10 @@ class Observable {
 	 * target qubit, it will be split into two. If it has X or Y, its coefficient is
 	 * simply scaled. If it has I, there is no effect.
 	 */
-	template <typename ExecutionPolicy = SequentialPolicy>
-	void apply_amplitude_damping(unsigned qubit, T pn, [[maybe_unused]] ExecutionPolicy&& policy = ExecutionPolicy{}) {
+	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_amplitude_damping(unsigned qubit, T pn, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
-		using Policy_t = std::remove_cvref_t<ExecutionPolicy>;
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		Policy_t::apply_amplitude_damping(paulis_, qubit, pn);
 	}
 	/** @} */
@@ -185,9 +185,9 @@ class Observable {
 	 * entirely of I and Z operators. These are the terms that are diagonal in the
 	 * computational basis.
 	 */
-	template <typename ExecutionPolicy = SequentialPolicy>
-	T expectation_value([[maybe_unused]] ExecutionPolicy&& policy = ExecutionPolicy{}) const {
-		using Policy_t = std::remove_cvref_t<ExecutionPolicy>;
+	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	T expectation_value(ExecutionPolicy&& policy = ExecutionPolicy{}) const {
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		return Policy_t::expectation_value(paulis_);
 	}
 
