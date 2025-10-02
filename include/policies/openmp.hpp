@@ -66,7 +66,7 @@ struct OpenMPPolicy {
 
 	template <typename PTC>
 	inline static auto expectation_value(PTC const& paulis) -> decltype(paulis[0].expectation_value()) {
-		decltype(paulis[0].expectation_value()) ret = 0;
+		decltype(paulis[0].expectation_value()) ret{0};
 		#pragma omp parallel for schedule(static) reduction(+:ret)
 		for (std::size_t i = 0; i < paulis.nb_terms(); ++i) {
 			ret += paulis[i].expectation_value();

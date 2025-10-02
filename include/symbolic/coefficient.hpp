@@ -40,7 +40,7 @@ class SymbolicCoefficient {
 	 * @brief Constructs a symbolic coefficient from a constant value.
 	 * @param v The constant value.
 	 */
-	SymbolicCoefficient(T const v) : et(ExpressionTree<T>(std::make_shared<const ExpressionNode<T>>(Constant<T>{ v }))) {}
+	SymbolicCoefficient(T const v = T{0}) : et(ExpressionTree<T>(std::make_shared<const ExpressionNode<T>>(Constant<T>{ v }))) {}
 
 	/**
 	 * @brief Constructs a symbolic coefficient from a variable.
