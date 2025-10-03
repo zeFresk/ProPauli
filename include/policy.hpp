@@ -8,7 +8,7 @@
 #include <variant>
 
 #if defined(_OPENMP)
-static constexpr auto available_policies = std::make_tuple(omp, seq);
+static constexpr auto available_policies = std::make_tuple(par, seq);
 using runtime_policy = std::variant<SequentialPolicy, OpenMPPolicy>;
 
 template <typename T>

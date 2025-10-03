@@ -2,6 +2,7 @@
 #define PP_INCLUDE_POLICY_OMP_HPP
 
 #include "pauli.hpp"
+#include "symbolic/coefficient.hpp"
 #include <cmath>
 #include <ios>
 #include <iostream>
@@ -118,6 +119,12 @@ class OpenMPMerger {
 				--i;
 			}
 		}
+
+		// parallel implementation: 
+		// isolate a chunk from the right with Nb holes non holes elements exactly.
+		// then, each block is allocated exactly what it needs to fill its hole 
+		// finally, each thread fill its chunk holes using the allocated non holes elems (using move)
+		// at the end, resize from the right
 	}
 };
 
@@ -255,16 +262,30 @@ struct OpenMPPolicy {
 
 	template <typename PTC>
 	inline static auto expectation_value(PTC const& paulis) -> decltype(paulis[0].expectation_value()) {
-		decltype(paulis[0].expectation_value()) ret{0};
-		#pragma omp parallel for POLICY_OMP_SCHEDULE reduction(+:ret)
-		for (std::size_t i = 0; i < paulis.nb_terms(); ++i) {
-			ret += paulis[i].expectation_value();
+		using Coeff_t = std::remove_cvref_t<decltype(paulis[0].expectation_value())>;
+		Coeff_t ret{0};
+
+		// needed for openMP on GCC...
+		if constexpr (Symbolic<Coeff_t>) {
+			#pragma omp declare reduction(SymbolicAddition : Coeff_t : \
+				omp_out = omp_out + omp_in) \
+				initializer(omp_priv = Coeff_t{0})
+
+			#pragma omp parallel for POLICY_OMP_SCHEDULE reduction(SymbolicAddition:ret)
+			for (std::size_t i = 0; i < paulis.nb_terms(); ++i) {
+				ret += paulis[i].expectation_value();
+			}
+		} else {
+			#pragma omp parallel for POLICY_OMP_SCHEDULE reduction(+:ret)
+			for (std::size_t i = 0; i < paulis.nb_terms(); ++i) {
+				ret += paulis[i].expectation_value();
+			}
 		}
 		return ret;
 	}
 };
 
-inline constexpr OpenMPPolicy omp;
+inline constexpr OpenMPPolicy par;
 
 #endif
 
