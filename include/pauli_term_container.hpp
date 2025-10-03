@@ -494,4 +494,9 @@ struct GenericPauliStringEqual {
 	bool operator()(T const& lhs, T const& rhs) const { return lhs.equal_bitstring(rhs); }
 };
 
+template <typename T>
+struct FastPauliStringEqual {
+	bool operator()(T const& lhs, T const& rhs) const { return lhs.fast_equal_bitstring(rhs); }
+};
+
 #endif

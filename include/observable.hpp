@@ -244,8 +244,12 @@ class Observable {
 	 * This is a crucial optimization for reducing the complexity of the simulation.
 	 * It calls a high-performance, in-place merging algorithm.
 	 */
-	std::size_t merge() {
-		merger_(paulis_);
+	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	std::size_t merge(ExecutionPolicy&& policy = ExecutionPolicy{}) {
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
+		using Merger_t = Policy_t:: template Merger<T>;
+		std::get<Merger_t>(merger_)(paulis_);
+		// merger_(paulis_);
 		return paulis_.nb_terms();
 	}
 
@@ -285,7 +289,7 @@ class Observable {
 
     private:
 	PauliTermContainer<T> paulis_;
-	Merger<T> merger_;
+	RuntimeMerger<T> merger_;
 
 	void check_invariant() const {
 		if (paulis_.nb_terms() == 0) {

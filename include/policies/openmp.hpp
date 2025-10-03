@@ -2,6 +2,9 @@
 #define PP_INCLUDE_POLICY_OMP_HPP
 
 #include "pauli.hpp"
+#include <cmath>
+#include <ios>
+#include <iostream>
 
 #if defined(_OPENMP)
 
@@ -10,9 +13,114 @@
 #include <vector>
 #include <omp.h>
 
+#include "pauli_term_container.hpp"
+#include "container/dirty_set.hpp"
+
 static constexpr std::size_t ALLOCATION_FACTOR = 2;
 
+template <typename T>
+class OpenMPMerger {
+    private:
+	using PTC_t = PauliTermContainer<T>;
+	using nopt_t = std::remove_cvref_t<PTC_t>::non_owning_t;
+	std::vector<DirtySet<nopt_t, GenericPauliTermHash<nopt_t>, FastPauliStringEqual<nopt_t>>> hsets;
+	[[no_unique_address]] GenericPauliTermHash<T> hasher;
+	std::vector<std::size_t> hashes;
+	std::vector<bool> is_hole;
+
+    public:
+	OpenMPMerger() : hsets(omp_get_max_threads()) {}
+
+	// copyable and movable
+	OpenMPMerger(OpenMPMerger const&) : hsets(omp_get_max_threads()) {}
+	OpenMPMerger(OpenMPMerger&&) : hsets(omp_get_max_threads()) {}
+	OpenMPMerger& operator=(OpenMPMerger const&) {
+		const auto nb_sets = hsets.size();
+		#pragma omp parallel for POLICY_OMP_SCHEDULE
+		for (std::size_t i = 0; i < nb_sets; ++i) {
+			hsets[i].clear();
+		}
+		return *this;
+	}
+	OpenMPMerger& operator=(OpenMPMerger&&) {
+		const auto nb_sets = hsets.size();
+		#pragma omp parallel for POLICY_OMP_SCHEDULE
+		for (std::size_t i = 0; i < nb_sets; ++i) {
+			hsets[i].clear();
+		}
+		return *this;
+	}
+
+	void operator()(PTC_t& paulis_) {
+		static constexpr float z_score = 6.f; // z = 6 => p realloc = 3*10^-7
+
+		const auto nb_terms = paulis_.nb_terms();
+
+		// reset holes array
+		is_hole.clear();
+		is_hole.resize(nb_terms, false);
+
+		// prepare hash array
+		hashes.resize(nb_terms);
+
+		#pragma omp parallel
+		{
+			const unsigned nb_threads = omp_get_num_threads();
+			const unsigned tid = omp_get_thread_num();
+			auto& hset = hsets[tid];
+
+			// pre-compute all hashes
+			#pragma omp for POLICY_OMP_SCHEDULE nowait
+			for (std::size_t i = 0; i < nb_terms; ++i) {
+				hashes[i] = paulis_[i].phash();
+			}
+
+			// prepare so that there is a very low probability of needing a rehash.
+			hset.clear();
+			float mean = nb_terms / static_cast<float>(nb_threads);
+			float sigma = std::sqrt(mean * (1.f - (1.f / nb_terms)));
+			std::size_t required_alloc = mean + z_score * sigma;
+			if (hset.capacity() < required_alloc) {
+				hset.reserve(required_alloc);
+			} else {
+				// hset.compact();
+			}
+
+			#pragma omp barrier
+
+			for (std::size_t i = 0; i < nb_terms; ++i) {
+				auto nopt = paulis_[i];
+				auto c = nopt.coefficient();
+				auto hash = hashes[i];
+
+				if (static_cast<unsigned int>(hash >> 32) % nb_threads != tid) {
+					continue;
+				}
+
+				auto [it, is_new] = hset.emplace_with_hash(std::move(nopt), hash);
+				if (!is_new) {
+					it->add_coeff(c);
+					is_hole[i] = true; // mark for removal
+				}
+			}
+		}
+
+		//remove holes (sequentially for now)
+		std::size_t removed = 0;
+		for (std::size_t i = 0; i < nb_terms; ++i) {
+			if (is_hole[i]) {
+				auto cidx = i - removed;
+				paulis_.remove_pauliterm(cidx);
+				++removed;
+			}
+		}
+	}
+};
+
 struct OpenMPPolicy {
+	template <typename T>
+	using Merger = OpenMPMerger<T>;
+
 	template <typename PTC>
 	inline static void apply_pauli(PTC& paulis, Pauli_gates g, unsigned qubit) {
 		#pragma omp parallel for POLICY_OMP_SCHEDULE

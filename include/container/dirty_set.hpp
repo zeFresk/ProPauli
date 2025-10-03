@@ -190,6 +190,13 @@ class DirtySet {
 		return find_or_insert_impl(std::move(key));
 	}
 
+	std::pair<iterator, bool> emplace_with_hash(Key key, size_t hash) {
+		if (m_occupied_slots + 1 > m_capacity * MAX_LOAD_FACTOR) {
+			rehash(m_capacity > 0 ? m_capacity * 2 : 8);
+		}
+		return find_or_insert_impl(std::move(key), hash);
+	}
+
 	template <typename Predicate>
 	size_type erase_if(Predicate pred) {
 		size_type removed_count = 0;
@@ -215,9 +222,13 @@ class DirtySet {
 		int8_t h2;
 	};
 	static HashInfo split_hash(size_t hash) { return { hash >> 7, static_cast<int8_t>(hash & 0x7F) }; }
-
+	
 	std::pair<iterator, bool> find_or_insert_impl(Key key) {
-		size_t hash = m_hasher(key);
+		auto hash = m_hasher(key);
+		return find_or_insert_impl(std::move(key), hash);
+	}
+
+	std::pair<iterator, bool> find_or_insert_impl(Key key, size_t hash) {
 		HashInfo info = split_hash(hash);
 		size_type start_index = info.h1 & (m_capacity - 1);
 		size_type probe_offset = 0;

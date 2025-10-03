@@ -10,6 +10,10 @@
 #if defined(_OPENMP)
 static constexpr auto available_policies = std::make_tuple(omp, seq);
 using runtime_policy = std::variant<SequentialPolicy, OpenMPPolicy>;
+
+template <typename T>
+using RuntimeMerger = std::tuple<SequentialMerger<T>, OpenMPMerger<T>>;
+
 using DefaultExecutionPolicy = OpenMPPolicy;
 #else
 static constexpr auto available_policies = std::make_tuple(seq);
