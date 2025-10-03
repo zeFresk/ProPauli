@@ -5,6 +5,8 @@
 
 #if defined(_OPENMP)
 
+#define POLICY_OMP_SCHEDULE schedule(static)
+
 #include <vector>
 #include <omp.h>
 
@@ -13,7 +15,7 @@ static constexpr std::size_t ALLOCATION_FACTOR = 2;
 struct OpenMPPolicy {
 	template <typename PTC>
 	inline static void apply_pauli(PTC& paulis, Pauli_gates g, unsigned qubit) {
-		#pragma omp parallel for schedule(static)
+		#pragma omp parallel for POLICY_OMP_SCHEDULE
 		for (std::size_t i = 0; i < paulis.nb_terms(); ++i) {
 			paulis[i].apply_pauli(g, qubit);
 		}
@@ -21,7 +23,7 @@ struct OpenMPPolicy {
 
 	template <typename PTC>
 	inline static void apply_clifford(PTC& paulis, Clifford_Gates_1Q g, unsigned qubit) {
-		#pragma omp parallel for schedule(static)
+		#pragma omp parallel for POLICY_OMP_SCHEDULE
 		for (std::size_t i = 0; i < paulis.nb_terms(); ++i) {
 			paulis[i].apply_clifford(g, qubit);
 		}
@@ -29,7 +31,7 @@ struct OpenMPPolicy {
 
 	template <typename PTC, typename T>
 	inline static void apply_unital_noise(PTC& paulis, UnitalNoise n, unsigned qubit, T p) {
-		#pragma omp parallel for schedule(static)
+		#pragma omp parallel for POLICY_OMP_SCHEDULE
 		for (std::size_t i = 0; i < paulis.nb_terms(); ++i) {
 			paulis[i].apply_unital_noise(n, qubit, p);
 		}
@@ -37,7 +39,7 @@ struct OpenMPPolicy {
 
 	template <typename PTC>
 	inline static void apply_cx(PTC& paulis, unsigned qubit_control, unsigned qubit_target) {
-		#pragma omp parallel for schedule(static)
+		#pragma omp parallel for POLICY_OMP_SCHEDULE
 		for (std::size_t i = 0; i < paulis.nb_terms(); ++i) {
 			paulis[i].apply_cx(qubit_control, qubit_target);
 		}
@@ -55,7 +57,7 @@ struct OpenMPPolicy {
 			auto tid = omp_get_thread_num();
 
 			// compute number of required nb_term 
-			#pragma omp for reduction(+:total_to_allocate) schedule(static)
+			#pragma omp for reduction(+:total_to_allocate) POLICY_OMP_SCHEDULE
 			for (std::size_t i = 0; i < nb_terms; ++i) {
 				if (!paulis[i].get_pauli(qubit).commutes_with(p_z)) {
 					allocated_per_thread[tid]++;
@@ -76,7 +78,7 @@ struct OpenMPPolicy {
 			
 			std::size_t k_idx = 0; // allocated index
 
-			#pragma omp for schedule(static)
+			#pragma omp for POLICY_OMP_SCHEDULE
 			for (std::size_t i = 0; i < nb_terms; ++i) {
 				auto p = paulis[i];
 				if (!paulis[i].get_pauli(qubit).commutes_with(p_z)) {
@@ -102,7 +104,7 @@ struct OpenMPPolicy {
 			auto tid = omp_get_thread_num();
 
 			// compute number of required nb_term 
-			#pragma omp for reduction(+:total_to_allocate) schedule(static)
+			#pragma omp for reduction(+:total_to_allocate) POLICY_OMP_SCHEDULE
 			for (std::size_t i = 0; i < nb_terms; ++i) {
 				if (paulis[i].get_pauli(qubit) == p_z) {
 					allocated_per_thread[tid]++;
@@ -123,7 +125,7 @@ struct OpenMPPolicy {
 			
 			std::size_t k_idx = 0; // allocated index
 
-			#pragma omp for schedule(static)
+			#pragma omp for POLICY_OMP_SCHEDULE
 			for (std::size_t i = 0; i < nb_terms; ++i) {
 				auto p = paulis[i];
 				if (p.get_pauli(qubit) == p_z) {
@@ -142,7 +144,7 @@ struct OpenMPPolicy {
 	template <typename PTC>
 	inline static auto expectation_value(PTC const& paulis) -> decltype(paulis[0].expectation_value()) {
 		decltype(paulis[0].expectation_value()) ret{0};
-		#pragma omp parallel for schedule(static) reduction(+:ret)
+		#pragma omp parallel for POLICY_OMP_SCHEDULE reduction(+:ret)
 		for (std::size_t i = 0; i < paulis.nb_terms(); ++i) {
 			ret += paulis[i].expectation_value();
 		}
