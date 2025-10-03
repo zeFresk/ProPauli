@@ -116,8 +116,8 @@ static void Circuit_run_paulis(benchmark::State& state) {
 	}
 
 	state.SetItemsProcessed(state.iterations() * nb_gates);
-	state.counters["GateSpeed"] = benchmark::Counter(state.iterations() * nb_gates,
-							 benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
+	state.counters["GateSpeed"] =
+		benchmark::Counter(state.iterations() * nb_gates, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
 }
 
 class Circuit_ZZ_feature_map : public benchmark::Fixture {
@@ -208,7 +208,7 @@ class Circuit_Efficient_SU2 : public benchmark::Fixture {
 		for (unsigned i = 0; i < nb_qubits; ++i)
 			qc.add_operation("Rz", i, static_cast<coeff_t>(random_coeff() * pi));
 	}
-	void TearDown([[maybe_unused]] benchmark::State const& state) override {qc = Circuit(nb_qubits);}
+	void TearDown([[maybe_unused]] benchmark::State const& state) override { qc = Circuit(nb_qubits); }
 	~Circuit_Efficient_SU2() override {}
 };
 
@@ -285,13 +285,18 @@ class MaxCutQAOAN4P1 : public benchmark::Fixture {
 		rx(qc, 2, rx_theta);
 		rx(qc, 3, rx_theta);
 	}
-	void TearDown([[maybe_unused]] benchmark::State const& state) override {qc = Circuit<coeff_t>(4);}
+	void TearDown([[maybe_unused]] benchmark::State const& state) override { qc = Circuit<coeff_t>(4); }
 	~MaxCutQAOAN4P1() override {}
 };
 
 BENCHMARK_DEFINE_F(MaxCutQAOAN4P1, run)(benchmark::State& state) {
+	//bool first = true;
 	for (auto _ : state) {
 		auto res = qc.run(obs);
+		/*if (first) {
+			std::cout << res.expectation_value(seq) << ": " << res << "\n";
+			first = false;
+		}*/
 		benchmark::DoNotOptimize(res);
 	}
 }

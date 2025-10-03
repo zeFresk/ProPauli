@@ -15,6 +15,7 @@ template <typename T>
 using RuntimeMerger = std::tuple<SequentialMerger<T>, OpenMPMerger<T>>;
 
 using DefaultExecutionPolicy = OpenMPPolicy;
+//using DefaultExecutionPolicy = SequentialPolicy;
 #else
 static constexpr auto available_policies = std::make_tuple(seq);
 using runtime_policy = std::variant<SequentialPolicy>;

@@ -201,7 +201,7 @@ TYPED_TEST(ObservableTest, serialize) {
 
 TYPED_TEST(ObservableTest, merge_simple) {
 	Observable obs{ PauliTerm{ "IXYZ", coeff_t{ -0.25 } }, PauliTerm{ "IXYZ", coeff_t{ 0.5 } } };
-	obs.merge();
+	obs.merge(this->policy);
 	EXPECT_EQ(obs.size(), 1);
 	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
 	EXPECT_EQ(nb_elems_internal, 1);
@@ -216,10 +216,26 @@ TYPED_TEST(ObservableTest, merge_long) {
 
 	EXPECT_GT(std::distance(obs.cbegin(), obs.cend()), 2);
 
-	obs.merge();
+	obs.merge(this->policy);
 
 	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
 	EXPECT_EQ(nb_elems_internal, 2);
+}
+
+TYPED_TEST(ObservableTest, merge_long_twice) {
+	Observable obs{ PauliTerm{ "XXXX", coeff_t{ -0.25 } } };
+	for (std::size_t i = 0; i < 2; ++i) {
+		for (int i = 0; i < 8; ++i) {
+			obs.apply_rz(0, 3.14 / 2, this->policy);
+		}
+
+		EXPECT_GT(std::distance(obs.cbegin(), obs.cend()), 2);
+
+		obs.merge(this->policy);
+
+		auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
+		EXPECT_EQ(nb_elems_internal, 2);
+	}
 }
 
 TYPED_TEST(ObservableTest, truncate_coeff) {

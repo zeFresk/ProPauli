@@ -23,10 +23,14 @@ class OpenMPMerger {
     private:
 	using PTC_t = PauliTermContainer<T>;
 	using nopt_t = std::remove_cvref_t<PTC_t>::non_owning_t;
-	std::vector<DirtySet<nopt_t, GenericPauliTermHash<nopt_t>, FastPauliStringEqual<nopt_t>>> hsets;
 	[[no_unique_address]] GenericPauliTermHash<T> hasher;
+
+	// per thread
+	std::vector<DirtySet<nopt_t, GenericPauliTermHash<nopt_t>, FastPauliStringEqual<nopt_t>>> hsets;
 	std::vector<std::size_t> hashes;
-	std::vector<bool> is_hole;
+
+	// shared
+	std::vector<std::uint8_t> is_hole; // NOTE: vector<bool> can't be used in parallel!
 
     public:
 	OpenMPMerger() : hsets(omp_get_max_threads()) {}
@@ -70,7 +74,7 @@ class OpenMPMerger {
 			auto& hset = hsets[tid];
 
 			// pre-compute all hashes
-			#pragma omp for POLICY_OMP_SCHEDULE nowait
+			#pragma omp for POLICY_OMP_SCHEDULE
 			for (std::size_t i = 0; i < nb_terms; ++i) {
 				hashes[i] = paulis_[i].phash();
 			}
@@ -86,16 +90,16 @@ class OpenMPMerger {
 				// hset.compact();
 			}
 
-			#pragma omp barrier
-
+			// merge and mark for deletion
 			for (std::size_t i = 0; i < nb_terms; ++i) {
-				auto nopt = paulis_[i];
-				auto c = nopt.coefficient();
 				auto hash = hashes[i];
 
 				if (static_cast<unsigned int>(hash >> 32) % nb_threads != tid) {
 					continue;
 				}
+
+				auto nopt = paulis_[i];
+				auto c = nopt.coefficient();
 
 				auto [it, is_new] = hset.emplace_with_hash(std::move(nopt), hash);
 				if (!is_new) {
@@ -106,12 +110,12 @@ class OpenMPMerger {
 		}
 
 		//remove holes (sequentially for now)
-		std::size_t removed = 0;
-		for (std::size_t i = 0; i < nb_terms; ++i) {
+		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
 			if (is_hole[i]) {
-				auto cidx = i - removed;
-				paulis_.remove_pauliterm(cidx);
-				++removed;
+				paulis_.remove_pauliterm(i);
+				std::swap(is_hole[i], is_hole.back());
+				is_hole.pop_back();
+				--i;
 			}
 		}
 	}

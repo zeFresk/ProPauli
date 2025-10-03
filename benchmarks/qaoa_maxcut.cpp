@@ -315,8 +315,13 @@ BENCHMARK_DEFINE_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn50k_r
 	qc.set_truncate_policy(std::make_shared<AlwaysAfterSplittingPolicy>());
 	qc.set_truncator(std::make_shared<KeepNTruncator<coeff_t>>(50000));
 
+	//bool first = true;
 	for (auto _ : state) {
 		auto res = qc.run(obs);
+		/*if (first) {
+			std::cout << res.expectation_value(seq) << "\n";
+			first = false;
+		}*/
 		benchmark::DoNotOptimize(res);
 	}
 }

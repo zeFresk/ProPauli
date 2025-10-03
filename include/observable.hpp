@@ -249,7 +249,6 @@ class Observable {
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		using Merger_t = Policy_t:: template Merger<T>;
 		std::get<Merger_t>(merger_)(paulis_);
-		// merger_(paulis_);
 		return paulis_.nb_terms();
 	}
 
