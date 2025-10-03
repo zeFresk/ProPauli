@@ -44,7 +44,7 @@ target_compile_features(propaulib PUBLIC cxx_std_23)
 target_compile_options(propaulib PUBLIC
 	$<$<CXX_COMPILER_ID:MSVC>:/W4>
 	$<$<CXX_COMPILER_ID:Clang,GNU>:-Wall -Wextra -Wpedantic>
-										#$<$<CXX_COMPILER_ID:Clang>:-stdlib=libc++>
+	#$<$<CXX_COMPILER_ID:Clang>:-stdlib=libc++>
 	$<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/O2>
 	$<$<AND:$<CONFIG:Release>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-O3 -march=native -g>
 	$<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:Clang>>:-ffast-math>
@@ -57,16 +57,16 @@ target_compile_options(propaulib PUBLIC
 target_link_options(propaulib INTERFACE
 	$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>,$<BOOL:${SANITIZE}>>:-fsanitize=address -fsanitize=undefined>
 	$<$<AND:$<BOOL:${COVERAGE}>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-fprofile-instr-generate --coverage>
-										#$<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>
+	#$<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>
 	)
 
 include(FetchContent)
 
 FetchContent_Declare(
-  xxhash
-  GIT_REPOSITORY https://github.com/Cyan4973/xxHash.git
-  GIT_TAG        v0.8.3
-  SOURCE_SUBDIR  cmake_unofficial
+		xxhash
+		GIT_REPOSITORY https://github.com/Cyan4973/xxHash.git
+		GIT_TAG        v0.8.3
+		SOURCE_SUBDIR  cmake_unofficial
 )
 FetchContent_MakeAvailable(xxhash)
 
@@ -74,16 +74,15 @@ target_link_libraries(propaulib PUBLIC xxhash)
 
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(propaulib PUBLIC OpenMP::OpenMP_CXX)
+	target_link_libraries(propaulib PUBLIC OpenMP::OpenMP_CXX)
 endif()
-
 
 if (TEST)
 	# Build de GTest
 	include(FetchContent)
 	FetchContent_Declare(
 		googletest
-										# Specify the commit you depend on and update it regularly.
+		# Specify the commit you depend on and update it regularly.
 		URL https://github.com/google/googletest/archive/52eb8108c5bdec04579160ae17225d66034bd723.zip
 		DOWNLOAD_EXTRACT_TIMESTAMP true
 )
@@ -102,9 +101,9 @@ if (TEST)
 	gtest_discover_tests(UnitTest)
 
 	set_source_files_properties(
-	    "${PROJECT_SOURCE_DIR}/tests/compiled_expression.cpp"
-	    PROPERTIES
-	    COMPILE_FLAGS "-fno-fast-math"
+					"${PROJECT_SOURCE_DIR}/tests/compiled_expression.cpp"
+					PROPERTIES
+					COMPILE_FLAGS "-fno-fast-math"
 	)
 endif()
 
@@ -114,7 +113,7 @@ if (BENCHMARK)
 	FetchContent_Declare(
 		googlebenchmark
 		URL https://github.com/google/benchmark/archive/refs/tags/v1.9.4.zip
-				DOWNLOAD_EXTRACT_TIMESTAMP true
+		DOWNLOAD_EXTRACT_TIMESTAMP true
 	)
 	set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable testing for Google Benchmark")
 	FetchContent_MakeAvailable(googlebenchmark)

@@ -109,6 +109,7 @@ class DirtySet {
 			m_spare_key_buffer.reset();
 			m_spare_ctrl_buffer.reset();
 			m_spare_capacity = 0;
+			m_next_capacity = 0;
 			copy_from(other);
 		}
 		return *this;
@@ -118,11 +119,12 @@ class DirtySet {
 		: m_keys(other.m_keys), m_key_buffer(std::move(other.m_key_buffer)), m_ctrl(std::move(other.m_ctrl)),
 		  m_spare_key_buffer(std::move(other.m_spare_key_buffer)), m_spare_ctrl_buffer(std::move(other.m_spare_ctrl_buffer)),
 		  m_spare_capacity(other.m_spare_capacity), m_size(other.m_size), m_occupied_slots(other.m_occupied_slots),
-		  m_capacity(other.m_capacity), m_hasher(std::move(other.m_hasher)), m_key_equal(std::move(other.m_key_equal)) {
+		  m_capacity(other.m_capacity), m_next_capacity(other.m_next_capacity), m_hasher(std::move(other.m_hasher)), m_key_equal(std::move(other.m_key_equal)) {
 		other.m_keys = nullptr;
 		other.m_size = 0;
 		other.m_occupied_slots = 0;
 		other.m_capacity = 0;
+		other.m_next_capacity = 0;
 		other.m_spare_capacity = 0;
 	}
 
@@ -138,12 +140,14 @@ class DirtySet {
 			m_size = other.m_size;
 			m_occupied_slots = other.m_occupied_slots;
 			m_capacity = other.m_capacity;
+			m_next_capacity = other.m_next_capacity;
 			m_hasher = std::move(other.m_hasher);
 			m_key_equal = std::move(other.m_key_equal);
 			other.m_keys = nullptr;
 			other.m_size = 0;
 			other.m_occupied_slots = 0;
 			other.m_capacity = 0;
+			other.m_next_capacity = 0;
 			other.m_spare_capacity = 0;
 		}
 		return *this;
@@ -184,14 +188,14 @@ class DirtySet {
 	void clear() noexcept { destroy_keys(); }
 
 	std::pair<iterator, bool> emplace(Key key) {
-		if (m_occupied_slots + 1 > m_capacity * MAX_LOAD_FACTOR) {
+		if (m_occupied_slots + 1 > m_next_capacity) {
 			rehash(m_capacity > 0 ? m_capacity * 2 : 8);
 		}
 		return find_or_insert_impl(std::move(key));
 	}
 
 	std::pair<iterator, bool> emplace_with_hash(Key key, size_t hash) {
-		if (m_occupied_slots + 1 > m_capacity * MAX_LOAD_FACTOR) {
+		if (m_occupied_slots + 1 > m_next_capacity) {
 			rehash(m_capacity > 0 ? m_capacity * 2 : 8);
 		}
 		return find_or_insert_impl(std::move(key), hash);
@@ -311,6 +315,7 @@ class DirtySet {
 		}
 
 		m_capacity = new_capacity;
+		m_next_capacity = MAX_LOAD_FACTOR * m_capacity;
 		std::memset(m_ctrl.get(), K_EMPTY, m_capacity);
 		std::memset(m_ctrl.get() + m_capacity, K_SENTINEL, GROUP_SIZE);
 
@@ -355,6 +360,7 @@ class DirtySet {
 
 	void copy_from(const DirtySet& other) {
 		m_capacity = other.m_capacity;
+		m_next_capacity = other.m_next_capacity;
 		m_size = other.m_size;
 		m_occupied_slots = other.m_occupied_slots;
 		m_hasher = other.m_hasher;
@@ -403,6 +409,7 @@ class DirtySet {
 	size_type m_size = 0;
 	size_type m_occupied_slots = 0;
 	size_type m_capacity = 0;
+	size_type m_next_capacity = 0;
 	static constexpr float MAX_LOAD_FACTOR = 0.875f;
 
 #if __has_cpp_attribute(no_unique_address)
