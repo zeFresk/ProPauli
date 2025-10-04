@@ -39,7 +39,6 @@ class OpenMPMerger {
 	// per thread
 	std::vector<DirtySet<nopt_t, GenericPauliTermHash<nopt_t>, FastPauliStringEqual<nopt_t>>> hsets;
 	std::vector<std::size_t> hashes;
-	std::vector<std::uint32_t> bins;
 
 	// shared
 	std::vector<std::uint8_t> is_hole; // NOTE: vector<bool> can't be used in parallel!
@@ -78,7 +77,6 @@ class OpenMPMerger {
 
 		// prepare hash array
 		hashes.resize(nb_terms);
-		bins.resize(nb_terms);
 
 		#pragma omp parallel
 		{
@@ -103,34 +101,43 @@ class OpenMPMerger {
 				// hset.compact();
 			}
 
-			// compute which thread should take care of an element
-			if (is_power_of_two(nb_threads)) {
-				std::size_t mask = nb_threads - 1;
-				#pragma omp for POLICY_OMP_SCHEDULE
-				for (std::size_t i = 0; i < nb_terms; ++i) {
-					bins[i] = hashes[i] & mask;
-				}
-			} else {
-				#pragma omp for POLICY_OMP_SCHEDULE
-				for (std::size_t i = 0; i < nb_terms; ++i) {
-					bins[i] = bin_index(hashes[i], nb_threads);
-				}
-			}
+
 
 			// merge and mark for deletion
-			for (std::size_t i = 0; i < nb_terms; ++i) {
-				if (bins[i] != tid) {
-					continue;
+			if (is_power_of_two(nb_threads)) {
+				std::size_t mask = nb_threads - 1;
+				for (std::size_t i = 0; i < nb_terms; ++i) {
+					auto hash = hashes[i];
+
+					if ((hash & mask) != tid) {
+						continue;
+					}
+
+					auto nopt = paulis_[i];
+					auto c = nopt.coefficient();
+
+					auto [it, is_new] = hset.emplace_with_hash(std::move(nopt), hash);
+					if (!is_new) {
+						it->add_coeff(c);
+						is_hole[i] = true; // mark for removal
+					}
 				}
+			} else {
+				for (std::size_t i = 0; i < nb_terms; ++i) {
+					auto hash = hashes[i];
 
-				auto hash = hashes[i];
-				auto nopt = paulis_[i];
-				auto c = nopt.coefficient();
+					if (bin_index(hash, nb_threads) != tid) {
+						continue;
+					}
 
-				auto [it, is_new] = hset.emplace_with_hash(std::move(nopt), hash);
-				if (!is_new) {
-					it->add_coeff(c);
-					is_hole[i] = true; // mark for removal
+					auto nopt = paulis_[i];
+					auto c = nopt.coefficient();
+
+					auto [it, is_new] = hset.emplace_with_hash(std::move(nopt), hash);
+					if (!is_new) {
+						it->add_coeff(c);
+						is_hole[i] = true; // mark for removal
+					}
 				}
 			}
 		}
