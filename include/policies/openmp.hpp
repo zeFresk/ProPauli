@@ -21,7 +21,9 @@
 static constexpr std::size_t ALLOCATION_FACTOR = 2;
 
 inline std::uint32_t bin_index(std::size_t hash, std::uint32_t nb_bins) {
-	return static_cast<unsigned int>(hash >> 32) % nb_bins;
+	// fast modulo
+	return ((hash >> 32) * nb_bins) >> 32;
+	//return static_cast<unsigned int>(hash >> 32) % nb_bins;
 }
 
 template <typename T>
