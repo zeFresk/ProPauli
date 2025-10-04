@@ -105,11 +105,11 @@ class OpenMPMerger {
 
 			// merge and mark for deletion
 			if (is_power_of_two(nb_threads)) {
-				std::size_t mask = nb_threads - 1;
+				std::uint32_t mask = nb_threads - 1;
 				for (std::size_t i = 0; i < nb_terms; ++i) {
 					auto hash = hashes[i];
 
-					if ((hash & mask) != tid) {
+					if ((static_cast<std::uint32_t>(hash >> 32) & mask) != tid) {
 						continue;
 					}
 
