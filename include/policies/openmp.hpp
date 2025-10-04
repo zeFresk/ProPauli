@@ -4,6 +4,7 @@
 #include "pauli.hpp"
 #include "symbolic/coefficient.hpp"
 #include <cmath>
+#include <cstdint>
 #include <ios>
 #include <iostream>
 
@@ -18,6 +19,10 @@
 #include "container/dirty_set.hpp"
 
 static constexpr std::size_t ALLOCATION_FACTOR = 2;
+
+inline std::uint32_t bin_index(std::size_t hash, std::uint32_t nb_bins) {
+	return static_cast<unsigned int>(hash >> 32) % nb_bins;
+}
 
 template <typename T>
 class OpenMPMerger {
@@ -95,7 +100,7 @@ class OpenMPMerger {
 			for (std::size_t i = 0; i < nb_terms; ++i) {
 				auto hash = hashes[i];
 
-				if (static_cast<unsigned int>(hash >> 32) % nb_threads != tid) {
+				if (bin_index(hash, nb_threads) != tid) {
 					continue;
 				}
 
