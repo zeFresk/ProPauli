@@ -14,6 +14,7 @@
 #include <cassert>
 
 #include "dirty_set_internal.hpp"
+#include "bit_operations.hpp"
 
 template <typename Key, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>>
 class DirtySet {
@@ -377,20 +378,6 @@ class DirtySet {
 				}
 			}
 		}
-	}
-
-	static constexpr size_type next_power_of_two(size_type n) {
-		if (n == 0)
-			return 1;
-		n--;
-		n |= n >> 1;
-		n |= n >> 2;
-		n |= n >> 4;
-		n |= n >> 8;
-		n |= n >> 16;
-		if constexpr (sizeof(size_type) > 4)
-			n |= n >> 32;
-		return ++n;
 	}
 
 	// --- Private Members ---

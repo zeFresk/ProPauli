@@ -1,6 +1,7 @@
 #ifndef PP_INCLUDE_POLICY_OMP_HPP
 #define PP_INCLUDE_POLICY_OMP_HPP
 
+#include "container/bit_operations.hpp"
 #include "pauli.hpp"
 #include "symbolic/coefficient.hpp"
 #include <cmath>
@@ -18,17 +19,6 @@
 #include "pauli_term_container.hpp"
 #include "container/dirty_set.hpp"
 
-static constexpr std::size_t ALLOCATION_FACTOR = 2;
-
-inline bool is_power_of_two(std::uint32_t k) {
-	return (k > 0) && ((k & (k - 1)) == 0);
-}
-
-inline std::uint32_t bin_index(std::size_t hash, std::uint32_t nb_bins) {
-	// fast modulo
-	return ((hash >> 32) * nb_bins) >> 32;
-}
-
 template <typename T>
 class OpenMPMerger {
     private:
@@ -39,9 +29,12 @@ class OpenMPMerger {
 	// per thread
 	std::vector<DirtySet<nopt_t, GenericPauliTermHash<nopt_t>, FastPauliStringEqual<nopt_t>>> hsets;
 	std::vector<std::size_t> hashes;
+	std::vector<std::size_t> masked;
 
 	// shared
 	std::vector<std::uint8_t> is_hole; // NOTE: vector<bool> can't be used in parallel!
+
+	static constexpr std::size_t NB_BATCHES_PER_THREADS = 4;
 
     public:
 	OpenMPMerger() : hsets(omp_get_max_threads()) {}
@@ -77,17 +70,23 @@ class OpenMPMerger {
 
 		// prepare hash array
 		hashes.resize(nb_terms);
+		masked.resize(nb_terms);
 
 		#pragma omp parallel
 		{
 			const unsigned nb_threads = omp_get_num_threads();
 			const unsigned tid = omp_get_thread_num();
+			const std::uint32_t nb_batches_hint = NB_BATCHES_PER_THREADS * nb_threads;
+			const std::uint32_t nb_batches =
+				is_power_of_two(nb_batches_hint) ? nb_batches_hint : next_power_of_two(nb_batches_hint);
+			std::uint32_t mask32 = nb_batches - 1;
 			auto& hset = hsets[tid];
 
 			// pre-compute all hashes
 			#pragma omp for POLICY_OMP_SCHEDULE
 			for (std::size_t i = 0; i < nb_terms; ++i) {
 				hashes[i] = paulis_[i].phash();
+				masked[i] = static_cast<std::uint32_t>(hashes[i] >> 32) & mask32;
 			}
 
 			// prepare so that there is a very low probability of needing a rehash.
@@ -101,32 +100,13 @@ class OpenMPMerger {
 				// hset.compact();
 			}
 
-
-
-			// merge and mark for deletion
-			if (is_power_of_two(nb_threads)) {
-				std::uint32_t mask = nb_threads - 1;
+			// merge and mark for deletion (batched)
+			#pragma omp for schedule(dynamic, 1)
+			for (std::size_t bid = 0; bid < nb_batches; ++bid) {
 				for (std::size_t i = 0; i < nb_terms; ++i) {
 					auto hash = hashes[i];
 
-					if ((static_cast<std::uint32_t>(hash >> 32) & mask) != tid) {
-						continue;
-					}
-
-					auto nopt = paulis_[i];
-					auto c = nopt.coefficient();
-
-					auto [it, is_new] = hset.emplace_with_hash(std::move(nopt), hash);
-					if (!is_new) {
-						it->add_coeff(c);
-						is_hole[i] = true; // mark for removal
-					}
-				}
-			} else {
-				for (std::size_t i = 0; i < nb_terms; ++i) {
-					auto hash = hashes[i];
-
-					if (bin_index(hash, nb_threads) != tid) {
+					if (masked[i] != bid) {
 						continue;
 					}
 
@@ -142,7 +122,7 @@ class OpenMPMerger {
 			}
 		}
 
-		//remove holes (sequentially for now)
+		// remove holes (sequentially for now)
 		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
 			if (is_hole[i]) {
 				paulis_.remove_pauliterm(i);
@@ -152,9 +132,9 @@ class OpenMPMerger {
 			}
 		}
 
-		// parallel implementation: 
+		// parallel implementation:
 		// isolate a chunk from the right with Nb holes non holes elements exactly.
-		// then, each block is allocated exactly what it needs to fill its hole 
+		// then, each block is allocated exactly what it needs to fill its hole
 		// finally, each thread fill its chunk holes using the allocated non holes elems (using move)
 		// at the end, resize from the right
 	}
@@ -207,8 +187,8 @@ struct OpenMPPolicy {
 		{
 			auto tid = omp_get_thread_num();
 
-			// compute number of required nb_term 
-			#pragma omp for reduction(+:total_to_allocate) POLICY_OMP_SCHEDULE
+			// compute number of required nb_term
+			#pragma omp for reduction(+ : total_to_allocate) POLICY_OMP_SCHEDULE
 			for (std::size_t i = 0; i < nb_terms; ++i) {
 				if (!paulis[i].get_pauli(qubit).commutes_with(p_z)) {
 					allocated_per_thread[tid]++;
@@ -216,8 +196,7 @@ struct OpenMPPolicy {
 				}
 			}
 
-
-			// pre-alloc is mandatory to not invalidate terms while allocating 
+			// pre-alloc is mandatory to not invalidate terms while allocating
 			#pragma omp single
 			paulis._batch_allocate(total_to_allocate);
 
@@ -226,7 +205,7 @@ struct OpenMPPolicy {
 			for (int k = 0; k < tid; ++k) {
 				start_idx += allocated_per_thread[k];
 			}
-			
+
 			std::size_t k_idx = 0; // allocated index
 
 			#pragma omp for POLICY_OMP_SCHEDULE
@@ -254,8 +233,8 @@ struct OpenMPPolicy {
 		{
 			auto tid = omp_get_thread_num();
 
-			// compute number of required nb_term 
-			#pragma omp for reduction(+:total_to_allocate) POLICY_OMP_SCHEDULE
+			// compute number of required nb_term
+			#pragma omp for reduction(+ : total_to_allocate) POLICY_OMP_SCHEDULE
 			for (std::size_t i = 0; i < nb_terms; ++i) {
 				if (paulis[i].get_pauli(qubit) == p_z) {
 					allocated_per_thread[tid]++;
@@ -263,8 +242,7 @@ struct OpenMPPolicy {
 				}
 			}
 
-
-			// pre-alloc is mandatory to not invalidate terms while allocating 
+			// pre-alloc is mandatory to not invalidate terms while allocating
 			#pragma omp single
 			paulis._batch_allocate(total_to_allocate);
 
@@ -273,7 +251,7 @@ struct OpenMPPolicy {
 			for (int k = 0; k < tid; ++k) {
 				start_idx += allocated_per_thread[k];
 			}
-			
+
 			std::size_t k_idx = 0; // allocated index
 
 			#pragma omp for POLICY_OMP_SCHEDULE
@@ -295,20 +273,18 @@ struct OpenMPPolicy {
 	template <typename PTC>
 	inline static auto expectation_value(PTC const& paulis) -> decltype(paulis[0].expectation_value()) {
 		using Coeff_t = std::remove_cvref_t<decltype(paulis[0].expectation_value())>;
-		Coeff_t ret{0};
+		Coeff_t ret{ 0 };
 
 		// needed for openMP on GCC...
 		if constexpr (Symbolic<Coeff_t>) {
-			#pragma omp declare reduction(SymbolicAddition : Coeff_t : \
-				omp_out = omp_out + omp_in) \
-				initializer(omp_priv = Coeff_t{0})
+			#pragma omp declare reduction(SymbolicAddition:Coeff_t : omp_out = omp_out + omp_in) initializer(omp_priv = Coeff_t{ 0 })
 
-			#pragma omp parallel for POLICY_OMP_SCHEDULE reduction(SymbolicAddition:ret)
+			#pragma omp parallel for POLICY_OMP_SCHEDULE reduction(SymbolicAddition : ret)
 			for (std::size_t i = 0; i < paulis.nb_terms(); ++i) {
 				ret += paulis[i].expectation_value();
 			}
 		} else {
-			#pragma omp parallel for POLICY_OMP_SCHEDULE reduction(+:ret)
+			#pragma omp parallel for POLICY_OMP_SCHEDULE reduction(+ : ret)
 			for (std::size_t i = 0; i < paulis.nb_terms(); ++i) {
 				ret += paulis[i].expectation_value();
 			}

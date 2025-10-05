@@ -16,6 +16,26 @@
 #include <concepts>
 #include <bit>
 
+template <typename T>
+bool is_power_of_two(T k) {
+	return (k > 0) && ((k & (k - 1)) == 0);
+}
+
+template <typename size_type>
+constexpr size_type next_power_of_two(size_type n) {
+	if (n == 0)
+		return 1;
+	n--;
+	n |= n >> 1;
+	n |= n >> 2;
+	n |= n >> 4;
+	n |= n >> 8;
+	n |= n >> 16;
+	if constexpr (sizeof(size_type) > 4)
+		n |= n >> 32;
+	return ++n;
+}
+
 /**
  * @brief Creates a bitmask with a specified number of lower bits set to 1.
  * @tparam T The integer type for the mask.
@@ -27,7 +47,7 @@ template <typename T>
 constexpr T compute_mask(T nb_bits) {
 	T ret = 0;
 	for (T i = 0; i < nb_bits; ++i) {
-		ret |= (T{1} << i);
+		ret |= (T{ 1 } << i);
 	}
 	return ret;
 }
