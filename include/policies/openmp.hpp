@@ -188,7 +188,7 @@ struct OpenMPPolicy {
 			auto tid = omp_get_thread_num();
 
 			// compute number of required nb_term
-			#pragma omp for reduction(+ : total_to_allocate) POLICY_OMP_SCHEDULE
+			#pragma omp for reduction(+ : total_to_allocate) schedule(static)
 			for (std::size_t i = 0; i < nb_terms; ++i) {
 				if (!paulis[i].get_pauli(qubit).commutes_with(p_z)) {
 					allocated_per_thread[tid]++;
@@ -208,7 +208,7 @@ struct OpenMPPolicy {
 
 			std::size_t k_idx = 0; // allocated index
 
-			#pragma omp for POLICY_OMP_SCHEDULE
+			#pragma omp for schedule(static)
 			for (std::size_t i = 0; i < nb_terms; ++i) {
 				auto p = paulis[i];
 				if (!paulis[i].get_pauli(qubit).commutes_with(p_z)) {
@@ -234,7 +234,7 @@ struct OpenMPPolicy {
 			auto tid = omp_get_thread_num();
 
 			// compute number of required nb_term
-			#pragma omp for reduction(+ : total_to_allocate) POLICY_OMP_SCHEDULE
+			#pragma omp for reduction(+ : total_to_allocate) schedule(static)
 			for (std::size_t i = 0; i < nb_terms; ++i) {
 				if (paulis[i].get_pauli(qubit) == p_z) {
 					allocated_per_thread[tid]++;
@@ -254,7 +254,7 @@ struct OpenMPPolicy {
 
 			std::size_t k_idx = 0; // allocated index
 
-			#pragma omp for POLICY_OMP_SCHEDULE
+			#pragma omp for schedule(static)
 			for (std::size_t i = 0; i < nb_terms; ++i) {
 				auto p = paulis[i];
 				if (p.get_pauli(qubit) == p_z) {
