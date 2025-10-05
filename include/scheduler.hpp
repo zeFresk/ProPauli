@@ -2,9 +2,10 @@
 #define PP_SCHEDULER_HPP
 
 #include <cstddef>
-#include <iostream>
-#include <memory>
 #include <vector>
+#include <unordered_map>
+
+#include "pauli.hpp"
 
 enum class OperationType { BasicGate, SplittingGate, Merge, Truncate };
 enum class Timing { Before, After };
@@ -13,6 +14,29 @@ struct CompressionResult {
 	std::size_t nb_terms_before;
 	std::size_t nb_terms_merged;
 	std::size_t nb_terms_after() const noexcept { return nb_terms_before - nb_terms_merged; }
+};
+
+/**
+ * @var opt_map
+ * @brief Maps a QGate enum to its corresponding OperationType.
+ *
+ * This static map is used internally to classify gates as either `BasicGate` or
+ * `SplittingGate`. This classification is crucial for the scheduling logic,
+
+ * which may trigger actions like merging or truncation based on the type of
+ * gate being applied.
+ */
+static std::unordered_map<QGate, OperationType> opt_map = {
+	{ QGate::I, OperationType::BasicGate },
+	{ QGate::X, OperationType::BasicGate },
+	{ QGate::Y, OperationType::BasicGate },
+	{ QGate::Z, OperationType::BasicGate },
+	{ QGate::H, OperationType::BasicGate },
+	{ QGate::Cx, OperationType::BasicGate },
+	{ QGate::Rz, OperationType::SplittingGate },
+	{ QGate::AmplitudeDamping, OperationType::SplittingGate },
+	{ QGate::Depolarizing, OperationType::BasicGate },
+	{ QGate::Dephasing, OperationType::BasicGate },
 };
 
 /**

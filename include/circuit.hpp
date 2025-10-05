@@ -14,9 +14,11 @@
 #include "noise_model.hpp"
 #include "observable.hpp"
 #include "pauli.hpp"
+#include "policy.hpp"
 #include "scheduler.hpp"
 #include "symbolic/coefficient.hpp"
 #include "truncate.hpp"
+#include "quantum_op.hpp"
 
 #include <algorithm>
 #include <iterator>
@@ -26,93 +28,6 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-
-/**
- * @struct QuantumOp
- * @brief Internal representation of a single quantum operation in a circuit.
- * @tparam F The callable type representing the gate's action on an observable.
- *
- * This struct bundles an operation's type, its gate identifier, and the
- * function that implements its transformation on an `Observable` object.
- */
-template <typename F>
-struct QuantumOp {
-	OperationType op_t; /**< The type of operation, used for scheduling. */
-	QGate gate; /**< The specific gate or noise channel identifier. */
-	F func; /**< A callable that applies the operation to an observable. */
-
-	/**
-	 * @brief Constructs a QuantumOp.
-	 * @param op The operation type.
-	 * @param qg The gate identifier.
-	 * @param f The function implementing the gate's action.
-	 */
-	QuantumOp(OperationType op, QGate qg, F&& f) : op_t(op), gate(qg), func(std::move(f)) {}
-};
-
-/**
- * @var opt_map
- * @brief Maps a QGate enum to its corresponding OperationType.
- *
- * This static map is used internally to classify gates as either `BasicGate` or
- * `SplittingGate`. This classification is crucial for the scheduling logic,
-
- * which may trigger actions like merging or truncation based on the type of
- * gate being applied.
- */
-static std::unordered_map<QGate, OperationType> opt_map = {
-	{ QGate::I, OperationType::BasicGate },
-	{ QGate::X, OperationType::BasicGate },
-	{ QGate::Y, OperationType::BasicGate },
-	{ QGate::Z, OperationType::BasicGate },
-	{ QGate::H, OperationType::BasicGate },
-	{ QGate::Cx, OperationType::BasicGate },
-	{ QGate::Rz, OperationType::SplittingGate },
-	{ QGate::AmplitudeDamping, OperationType::SplittingGate },
-	{ QGate::Depolarizing, OperationType::BasicGate },
-	{ QGate::Dephasing, OperationType::BasicGate },
-};
-
-/**
- * @var pg_map
- * @brief Maps single-qubit Pauli QGate enums to their library-internal Pauli_gates representation.
- */
-static constexpr std::array<std::pair<QGate, Pauli_gates>, 4> pg_map = { {
-	{ QGate::I, Pauli_gates::I },
-	{ QGate::X, Pauli_gates::X },
-	{ QGate::Y, Pauli_gates::Y },
-	{ QGate::Z, Pauli_gates::Z },
-} };
-
-/**
- * @var clifford_map
- * @brief Maps single-qubit Clifford QGate enums to their library-internal Clifford_Gates_1Q representation.
- */
-static constexpr std::array<std::pair<QGate, Clifford_Gates_1Q>, 1> clifford_map = { {
-	{ QGate::H, Clifford_Gates_1Q::H },
-} };
-
-/**
- * @var unoise_map
- * @brief Maps unital noise channel QGate enums to their library-internal UnitalNoise representation.
- */
-static constexpr std::array<std::pair<QGate, UnitalNoise>, 2> unoise_map = { {
-	{ QGate::Depolarizing, UnitalNoise::Depolarizing },
-	{ QGate::Dephasing, UnitalNoise::Dephasing },
-} };
-
-/**
- * @brief A helper function to find a value in a map-like array of pairs.
- * @tparam T The type of the value to search for (the key).
- * @tparam Arr The type of the array-like container of pairs.
- * @param v The value to find in the `first` element of the pairs.
- * @param arr The container to search within.
- * @return An iterator to the first element in `arr` where `e.first == v`, or `std::cend(arr)` if not found.
- */
-template <typename T, typename Arr>
-inline auto in_array(T&& v, Arr const& arr) {
-	return std::find_if(std::cbegin(arr), std::cend(arr), [&](auto&& e) { return e.first == v; });
-}
 
 /**
  * @brief Represents a quantum circuit and provides a high-level simulation interface.
@@ -151,9 +66,8 @@ class Circuit {
 		NoiseModel<Coefficient_t> const& noise_model = {},
 		std::shared_ptr<SchedulingPolicy> merge_policy = std::make_shared<AlwaysAfterSplittingPolicy>(),
 		std::shared_ptr<SchedulingPolicy> truncate_policy = std::make_shared<AlwaysAfterSplittingPolicy>())
-		: nb_qubits_{ nb_qubits }, merge_policy_{ std::move(merge_policy) },
-		  truncate_policy_{ std::move(truncate_policy) }, truncator_{ std::move(truncator) },
-		  noise_model_(noise_model) {}
+		: nb_qubits_{ nb_qubits }, merge_policy_{ std::move(merge_policy) }, truncate_policy_{ std::move(truncate_policy) },
+		  truncator_{ std::move(truncator) }, noise_model_(noise_model) {}
 
 	Circuit(Circuit const&) = delete;
 	Circuit& operator=(Circuit const&) = delete;
@@ -217,10 +131,18 @@ class Circuit {
 	 */
 	template <typename... T>
 	void add_operation(QGate g, T&&... args) {
-		add_operation_internal(g, std::forward<T>(args)...);
-
+		check_args(args...); // copy needed here
+		operations_.emplace_back(g, std::forward<T>(args)...);
 		noise_model_.apply_noise_after(*this, g, std::forward<T>(args)...);
 	}
+
+	void h(unsigned qubit) { add_operation(QGate::H, qubit); }
+	void cx(unsigned control, unsigned target) { add_operation(QGate::Cx, control, target); }
+	void i(unsigned qubit) { add_operation(QGate::I, qubit); }
+	void x(unsigned qubit) { add_operation(QGate::X, qubit); }
+	void y(unsigned qubit) { add_operation(QGate::Y, qubit); }
+	void z(unsigned qubit) { add_operation(QGate::Z, qubit); }
+	void rz(unsigned qubit, Coefficient_t const& coeff) { add_operation(QGate::Rz, qubit, coeff); }
 
 	/**
 	 * @brief Runs the simulation on the circuit.
@@ -237,27 +159,32 @@ class Circuit {
 	 * @see Observable::expectation_value()
 	 * @snippet tests/snippets/circuit.cpp basic_circuit
 	 */
-	Observable<Coefficient_t> run(Observable<Coefficient_t> const& target_observable) {
+	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	Observable<Coefficient_t> run(Observable<Coefficient_t> const& target_observable, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		if (target_observable.nb_qubits() != nb_qubits()) {
 			throw std::invalid_argument("Number of qubits of the circuit doesn't match observable.");
 		}
+
 		auto obs = target_observable;
 		SimulationState state(nb_splitting_gates());
+
 		for (auto const& qop : std::ranges::reverse_view{ operations_ }) {
-			schedule(state, obs, Timing::Before, qop.op_t);
+			auto op_t = opt_map[qop.gate_type()];
+			schedule(state, obs, Timing::Before, op_t);
 
 			if (obs.size() == 0) { // maximally mixed state
 				break;
 			}
-			qop.func(obs);
-			if (qop.op_t == OperationType::BasicGate) {
+			qop(obs, policy);
+			if (op_t == OperationType::BasicGate) {
 				state.register_basic_gate(obs.size());
-			} else if (qop.op_t == OperationType::SplittingGate) {
+			} else if (op_t == OperationType::SplittingGate) {
 				state.register_splitting_gate(obs.size());
 			}
 
-			schedule(state, obs, Timing::After, qop.op_t);
+			schedule(state, obs, Timing::After, op_t);
 		}
+
 		if (obs.size() > 0) {
 			return obs;
 		} else {
@@ -275,7 +202,7 @@ class Circuit {
 	 */
 	std::size_t nb_splitting_gates() const {
 		return std::accumulate(operations_.cbegin(), operations_.cend(), 0, [](auto&& acc, auto&& op) {
-			return acc + (op.op_t == OperationType::SplittingGate ? 1 : 0);
+			return acc + (opt_map[op.gate_type()] == OperationType::SplittingGate ? 1 : 0);
 		});
 	}
 
@@ -309,27 +236,12 @@ class Circuit {
 	void set_truncate_policy(std::shared_ptr<SchedulingPolicy> policy) { truncate_policy_ = std::move(policy); }
 
     private:
-	/**
-	 * @brief Type alias for the function stored in a QuantumOp.
-	 */
-	using Fn = std::function<void(O_t&)>;
-
-	std::vector<QuantumOp<Fn>> operations_; ///< Sequence of quantum operations in the circuit.
+	std::vector<QuantumOp<Coefficient_t>> operations_; ///< Sequence of quantum operations in the circuit.
 	unsigned nb_qubits_; ///< The number of qubits in the circuit.
 	std::shared_ptr<SchedulingPolicy> merge_policy_; ///< Policy for triggering Pauli term merging.
 	std::shared_ptr<SchedulingPolicy> truncate_policy_; ///< Policy for triggering observable truncation.
 	std::shared_ptr<Truncator<Coefficient_t>> truncator_; ///< The truncator used to simplify the observable.
 	NoiseModel<Coefficient_t> noise_model_; ///< The noise model applied to the circuit.
-
-	/**
-	 * @brief Creates a QuantumOp and adds it to the operations list.
-	 * @param qg The gate identifier.
-	 * @param f The function implementing the gate's action.
-	 */
-	void register_op(QGate qg, Fn&& f) {
-		auto op_t = opt_map.at(qg);
-		operations_.push_back(QuantumOp{ op_t, qg, std::move(f) });
-	}
 
 	/**
 	 * @brief Applies merge and truncate policies based on the current simulation state.
@@ -352,83 +264,21 @@ class Circuit {
 		}
 	}
 
-	/**
-	 * @brief Internal implementation for adding a single-qubit gate.
-	 * @param g The gate to add (e.g., QGate::H, QGate::X).
-	 * @param qubit The index of the qubit to apply the gate to.
-	 * @throw std::invalid_argument if the gate is not a supported single-qubit gate.
-	 * @pre `qubit` must be a valid index.
-	 */
-	void add_operation_internal(QGate g, unsigned qubit) {
-		check_qubit(qubit);
-		if (in_array(g, pg_map) != std::cend(pg_map)) {
-			auto it = in_array(g, pg_map);
-			register_op(g, [=](O_t& obs) { obs.apply_pauli(it->second, qubit); });
-			return;
-		} else if (in_array(g, clifford_map) != std::cend(clifford_map)) {
-			auto it = in_array(g, clifford_map);
-			register_op(g, [=](O_t& obs) { obs.apply_clifford(it->second, qubit); });
-			return;
-		} else {
-			throw std::invalid_argument("Unsupported gate type with those arguments");
-		}
-	}
+	void check_args(unsigned qubit) { check_qubit(qubit); }
 
-	/**
-	 * @brief Internal implementation for adding a single-qubit gate with a real parameter.
-	 * @tparam Real A floating-point type.
-	 * @param g The gate to add (e.g., QGate::Rz).
-	 * @param qubit The index of the qubit to apply the gate to.
-	 * @param c The real-valued parameter (e.g., rotation angle, noise probability).
-	 * @throw std::invalid_argument if the gate does not support a real parameter.
-	 * @pre `qubit` must be a valid index.
-	 */
-	// template <typename Real, std::enable_if_t<std::is_floating_point_v<Real>, bool> = true>
-	template <typename Real>
-	void add_operation_internal(QGate g, unsigned qubit, Real c)
-		requires(std::is_floating_point_v<Real> || Symbolic<Real>) {
-		check_qubit(qubit);
-		switch (g) {
-		case QGate::Rz:
-			register_op(g, [=](O_t& obs) { obs.apply_rz(qubit, c); });
-			break;
-		case QGate::AmplitudeDamping:
-			register_op(g, [=](O_t& obs) { obs.apply_amplitude_damping(qubit, c); });
-			break;
-		case QGate::Dephasing:
-		case QGate::Depolarizing: {
-			auto it = in_array(g, unoise_map);
-			register_op(g, [=](O_t& obs) { obs.apply_unital_noise(it->second, qubit, c); });
-		} break;
-		default:
-			throw std::invalid_argument("Unsupported gate type with those arguments");
-		}
-	}
-
-	/**
-	 * @brief Internal implementation for adding a two-qubit gate.
-	 * @tparam Integer An integral type.
-	 * @param g The gate to add (e.g., QGate::Cx).
-	 * @param control The index of the control qubit.
-	 * @param target The index of the target qubit.
-	 * @throw std::invalid_argument if the gate is not a supported two-qubit gate.
-	 * @pre `control` and `target` must be valid and distinct qubit indices.
-	 */
 	template <typename Integer, std::enable_if_t<std::is_integral_v<Integer>, bool> = true>
-	void add_operation_internal(QGate g, unsigned control, Integer target) {
+	void check_args(unsigned control, Integer target) {
 		check_qubit(control);
 		check_qubit(target);
 		if (control == static_cast<unsigned>(target)) {
 			throw std::invalid_argument("control must be != from target for 2 qubits gates.");
 		}
+	}
 
-		switch (g) {
-		case QGate::Cx:
-			register_op(g, [=](O_t& obs) { obs.apply_cx(control, target); });
-			break;
-		default:
-			throw std::invalid_argument("Unsupported gate type with those arguments");
-		}
+	template <typename Real>
+	void check_args(unsigned qubit, [[maybe_unused]] Real&& arg)
+		requires(std::is_floating_point_v<std::remove_cvref_t<Real>> || Symbolic<std::remove_cvref_t<Real>>) {
+		check_args(qubit);
 	}
 
 	/**
