@@ -170,7 +170,7 @@ class Circuit {
 
 		for (auto const& qop : std::ranges::reverse_view{ operations_ }) {
 			auto op_t = opt_map[qop.gate_type()];
-			schedule(state, obs, Timing::Before, op_t);
+			schedule(state, obs, Timing::Before, op_t, policy);
 
 			if (obs.size() == 0) { // maximally mixed state
 				break;
@@ -182,7 +182,7 @@ class Circuit {
 				state.register_splitting_gate(obs.size());
 			}
 
-			schedule(state, obs, Timing::After, op_t);
+			schedule(state, obs, Timing::After, op_t, policy);
 		}
 
 		if (obs.size() > 0) {
@@ -194,7 +194,7 @@ class Circuit {
 
 	template <typename ExecutionPolicy = DefaultExecutionPolicy>
 	std::vector<Observable<Coefficient_t>> run(std::vector<Observable<Coefficient_t>> const& target_observables,
-				      ExecutionPolicy&& policy = ExecutionPolicy{}) {
+						   ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		return Policy_t::circuit_batched_run(*this, target_observables);
 	}
@@ -257,10 +257,11 @@ class Circuit {
 	 * @param timing Specifies whether this is before or after a gate application.
 	 * @param op_t The type of the gate that was just applied (or is about to be).
 	 */
-	void schedule(SimulationState& state, Observable<Coefficient_t>& obs, Timing timing, OperationType op_t) {
+	template <typename ExecutionPolicy>
+	void schedule(SimulationState& state, Observable<Coefficient_t>& obs, Timing timing, OperationType op_t, ExecutionPolicy&& policy) {
 		if (merge_policy_->should_apply(state, op_t, timing)) {
 			auto before_nb = obs.size();
-			auto removed = obs.merge();
+			auto removed = obs.merge(policy);
 			state.register_merge(CompressionResult{ before_nb, removed });
 		}
 
