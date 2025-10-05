@@ -3,6 +3,7 @@
 
 #include "container/bit_operations.hpp"
 #include "pauli.hpp"
+#include "policies/sequential.hpp"
 #include "symbolic/coefficient.hpp"
 #include <cmath>
 #include <cstdint>
@@ -290,6 +291,16 @@ struct OpenMPPolicy {
 			}
 		}
 		return ret;
+	}
+
+	template <typename T, typename ObservableType, typename QC>
+	std::vector<ObservableType> circuit_batched_run(QC& qc, std::vector<ObservableType> observables) {
+		const std::size_t nb_obs = observables.size();
+		#pragma omp parallel for schedule(guided)
+		for (std::size_t i = 0; i < nb_obs; ++i) {
+			qc.run(observables[i], seq);
+		}
+		return observables;
 	}
 };
 

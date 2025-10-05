@@ -129,6 +129,14 @@ struct SequentialPolicy {
 		}
 		return ret;
 	}
+
+	template <typename T, typename ObservableType, typename QC>
+	std::vector<ObservableType> circuit_batched_run(QC& qc, std::vector<ObservableType> observables) {
+		for (std::size_t i = 0; i < observables.size(); ++i) {
+			qc.run(observables[i], SequentialPolicy{});
+		}
+		return observables;
+	}
 };
 
 inline constexpr SequentialPolicy seq;
