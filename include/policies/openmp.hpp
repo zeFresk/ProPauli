@@ -34,7 +34,7 @@ class OpenMPMerger {
 	// shared
 	std::vector<std::uint8_t> is_hole; // NOTE: vector<bool> can't be used in parallel!
 
-	static constexpr std::size_t NB_BATCHES_PER_THREADS = 4;
+	static constexpr std::size_t NB_BATCHES_PER_THREADS = 1;
 
     public:
 	OpenMPMerger() : hsets(omp_get_max_threads()) {}
