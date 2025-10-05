@@ -1,4 +1,5 @@
 #include "pauli.hpp"
+#include "policies/sequential.hpp"
 #include "truncate.hpp"
 #include <benchmark/benchmark.h>
 
@@ -38,7 +39,7 @@ static void Observable_apply_pauli(benchmark::State& state) {
 		auto pg = static_cast<Pauli_gates>(std::to_underlying(static_cast<Pauli_enum>(random_paulis[i])));
 		auto qubit = random_idx[i];
 
-		rd_obs.apply_pauli(pg, qubit);
+		rd_obs.apply_pauli(pg, qubit, seq);
 
 		i = (i + 1) % buffer_size;
 	}
@@ -54,7 +55,7 @@ static void Observable_apply_clifford(benchmark::State& state) {
 	for (auto _ : state) {
 		auto qubit = random_idx[i];
 
-		rd_obs.apply_clifford(Clifford_Gates_1Q::H, qubit);
+		rd_obs.apply_clifford(Clifford_Gates_1Q::H, qubit, seq);
 
 		i = (i + 1) % buffer_size;
 	}
@@ -84,7 +85,7 @@ static void Observable_apply_rz_once(benchmark::State& state) {
 		auto qubit = random_idx[i];
 		auto theta = random_theta[i];
 
-		rd_obs.apply_rz(qubit, theta);
+		rd_obs.apply_rz(qubit, theta, seq);
 
 		i = (i + 1) % buffer_size;
 	}
@@ -118,7 +119,7 @@ static void Observable_apply_rz_ntimes(benchmark::State& state) {
 			auto qubit = random_idx[i];
 			auto theta = random_theta[i];
 
-			rd_obs.apply_rz(qubit, theta);
+			rd_obs.apply_rz(qubit, theta, seq);
 
 			i = (i + 1) % buffer_size;
 		}
@@ -142,7 +143,7 @@ static void Observable_ev_after_nrz(benchmark::State& state) {
 	// apply rzs
 	std::size_t nb_rz = state.range(1);
 	for (std::size_t j = 0; j < nb_rz; ++j) {
-		rd_obs_copy.apply_rz(random_in(state.range(0) - 1), pi * random_coeff());
+		rd_obs_copy.apply_rz(random_in(state.range(0) - 1), pi * random_coeff(), seq);
 	}
 
 	for (auto _ : state) {
@@ -164,7 +165,7 @@ static void Observable_merge_after_nrz(benchmark::State& state) {
 	// apply rzs
 	std::size_t nb_rz = state.range(1);
 	for (std::size_t j = 0; j < nb_rz; ++j) {
-		rd_obs_copy.apply_rz(random_in(state.range(0) - 1), pi * random_coeff());
+		rd_obs_copy.apply_rz(random_in(state.range(0) - 1), pi * random_coeff(), seq);
 	}
 
 	for (auto _ : state) {
@@ -193,7 +194,7 @@ static void Observable_truncate_coeff_after_nrz(benchmark::State& state) {
 	// apply rzs
 	std::size_t nb_rz = state.range(1);
 	for (std::size_t j = 0; j < nb_rz; ++j) {
-		rd_obs_copy.apply_rz(random_in(state.range(0) - 1), pi * random_coeff());
+		rd_obs_copy.apply_rz(random_in(state.range(0) - 1), pi * random_coeff(), seq);
 	}
 
 	CoefficientTruncator<coeff_t> ct{ 0.001 };
@@ -224,7 +225,7 @@ static void Observable_truncate_weight10_after_nrz(benchmark::State& state) {
 	// apply rzs
 	std::size_t nb_rz = state.range(1);
 	for (std::size_t j = 0; j < nb_rz; ++j) {
-		rd_obs_copy.apply_rz(random_in(state.range(0) - 1), pi * random_coeff());
+		rd_obs_copy.apply_rz(random_in(state.range(0) - 1), pi * random_coeff(), seq);
 	}
 
 	WeightTruncator<> wt{ 10 };
@@ -255,7 +256,7 @@ static void Observable_truncate_keepn1024_after_nrz(benchmark::State& state) {
 	// apply rzs
 	std::size_t nb_rz = state.range(1);
 	for (std::size_t j = 0; j < nb_rz; ++j) {
-		rd_obs_copy.apply_rz(random_in(state.range(0) - 1), pi * random_coeff());
+		rd_obs_copy.apply_rz(random_in(state.range(0) - 1), pi * random_coeff(), seq);
 	}
 
 	KeepNTruncator knt{ 1024 };
@@ -293,7 +294,7 @@ static void Observable_apply_unital_noise(benchmark::State& state) {
 		auto n = random_noise[i];
 		auto qubit = random_idx[i];
 
-		rd_obs.apply_unital_noise(n, qubit, 0.999999);
+		rd_obs.apply_unital_noise(n, qubit, 0.999999, seq);
 
 		i = (i + 1) % buffer_size;
 	}
@@ -317,7 +318,7 @@ static void Observable_appy_amplitude_damping_i(benchmark::State& state) {
 	for (auto _ : state) {
 		auto qubit = random_idx[i];
 
-		obs.apply_amplitude_damping(qubit, p);
+		obs.apply_amplitude_damping(qubit, p, seq);
 
 		i = (i + 1) % buffer_size;
 	}
@@ -343,7 +344,7 @@ static void Observable_appy_amplitude_damping_xy(benchmark::State& state) {
 	for (auto _ : state) {
 		auto qubit = random_idx[i];
 
-		obs.apply_amplitude_damping(qubit, p);
+		obs.apply_amplitude_damping(qubit, p, seq);
 
 		i = (i + 1) % buffer_size;
 	}
@@ -368,7 +369,7 @@ static void Observable_appy_amplitude_damping_z(benchmark::State& state) {
 		auto obs = obs_cpy;
 		auto qubit = random_idx[i];
 
-		obs.apply_amplitude_damping(qubit, p);
+		obs.apply_amplitude_damping(qubit, p, seq);
 
 		i = (i + 1) % buffer_size;
 	}

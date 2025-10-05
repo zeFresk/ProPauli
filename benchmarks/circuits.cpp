@@ -2,6 +2,7 @@
 
 #include "helper.hpp"
 #include "pauli.hpp"
+#include "policies/sequential.hpp"
 #include "truncate.hpp"
 #include <benchmark/benchmark.h>
 #include <cmath>
@@ -111,7 +112,7 @@ static void Circuit_run_paulis(benchmark::State& state) {
 	auto target_obs = Observable{ random_pauli_string(state.range(0)) };
 
 	for (auto _ : state) {
-		auto res = qc.run(target_obs);
+		auto res = qc.run(target_obs, seq);
 		benchmark::DoNotOptimize(res);
 	}
 
@@ -152,7 +153,7 @@ BENCHMARK_DEFINE_F(Circuit_ZZ_feature_map, GlobalObservable)(benchmark::State& s
 	auto obs = Observable{ std::string(state.range(0), 'Z') };
 
 	for (auto _ : state) {
-		auto res = this->qc.run(obs);
+		auto res = this->qc.run(obs, seq);
 		benchmark::DoNotOptimize(res);
 	}
 }
@@ -161,7 +162,7 @@ BENCHMARK_DEFINE_F(Circuit_ZZ_feature_map, ZLocal)(benchmark::State& state) {
 	auto obs = Observable{ std::string(state.range(0) - 1, 'Z') + "I" };
 
 	for (auto _ : state) {
-		auto res = this->qc.run(obs);
+		auto res = this->qc.run(obs, seq);
 		benchmark::DoNotOptimize(res);
 	}
 }
@@ -216,7 +217,7 @@ BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, GlobalObservable)(benchmark::State& st
 	auto obs = Observable{ std::string(state.range(0), 'Z') };
 
 	for (auto _ : state) {
-		auto res = this->qc.run(obs);
+		auto res = this->qc.run(obs, seq);
 		benchmark::DoNotOptimize(res);
 	}
 }
@@ -228,7 +229,7 @@ BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, withCoefficientTruncation01)(benchmark
 	qc.set_truncator(std::make_shared<CoefficientTruncator<>>(0.01f));
 
 	for (auto _ : state) {
-		auto res = this->qc.run(obs);
+		auto res = this->qc.run(obs, seq);
 		benchmark::DoNotOptimize(res);
 	}
 }
@@ -239,7 +240,7 @@ BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, withWeightTruncation4)(benchmark::Stat
 	qc.set_truncator(std::make_shared<WeightTruncator<>>(4));
 
 	for (auto _ : state) {
-		auto res = this->qc.run(obs);
+		auto res = this->qc.run(obs, seq);
 		benchmark::DoNotOptimize(res);
 	}
 }
@@ -250,7 +251,7 @@ BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, withMultiTruncation6001)(benchmark::St
 	qc.set_truncator(combine_truncators(CoefficientTruncator<>{ 0.001f }, WeightTruncator<>{ 6 }));
 
 	for (auto _ : state) {
-		auto res = this->qc.run(obs);
+		auto res = this->qc.run(obs, seq);
 		benchmark::DoNotOptimize(res);
 	}
 }
@@ -292,7 +293,7 @@ class MaxCutQAOAN4P1 : public benchmark::Fixture {
 BENCHMARK_DEFINE_F(MaxCutQAOAN4P1, run)(benchmark::State& state) {
 	//bool first = true;
 	for (auto _ : state) {
-		auto res = qc.run(obs);
+		auto res = qc.run(obs, seq);
 		/*if (first) {
 			std::cout << res.expectation_value(seq) << ": " << res << "\n";
 			first = false;
@@ -302,7 +303,7 @@ BENCHMARK_DEFINE_F(MaxCutQAOAN4P1, run)(benchmark::State& state) {
 }
 
 BENCHMARK_DEFINE_F(MaxCutQAOAN4P1, ev)(benchmark::State& state) {
-	auto res = qc.run(obs);
+	auto res = qc.run(obs, seq);
 	for (auto _ : state) {
 		auto ev = res.expectation_value();
 		benchmark::DoNotOptimize(ev);

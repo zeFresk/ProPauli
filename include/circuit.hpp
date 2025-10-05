@@ -193,7 +193,7 @@ class Circuit {
 	}
 
 	template <typename ExecutionPolicy = DefaultExecutionPolicy>
-	Observable<Coefficient_t> run(std::vector<Observable<Coefficient_t>> const& target_observables,
+	std::vector<Observable<Coefficient_t>> run(std::vector<Observable<Coefficient_t>> const& target_observables,
 				      ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		return Policy_t::circuit_batched_run(*this, target_observables);
