@@ -394,10 +394,6 @@ BENCHMARK_DEFINE_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_r
 		std::vector<Observable<coeff_t>> results = qc.run(observables, par);
 		auto sum_ev = std::accumulate(results.cbegin(), results.cend(), 0.f,
 					      [=](auto l, auto const& r) { return l + r.expectation_value(par); });
-		for (auto sv : sv_obss) {
-			auto ob = Observable(sv);
-			sum_ev += qc.run(ob, par).expectation_value(par);
-		}
 		benchmark::DoNotOptimize(sum_ev);
 	}
 }
