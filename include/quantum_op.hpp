@@ -5,6 +5,7 @@
 #include "pauli.hpp"
 #include "policy.hpp"
 #include "symbolic/coefficient.hpp"
+#include "operation_type.hpp"
 
 #include <iterator>
 #include <stdexcept>
@@ -125,7 +126,14 @@ class QuantumOp {
 		return std::visit([this, &obs](auto const& policy) { return (*this)(obs, policy); }, runtime_policy);
 	}
 
-	QGate gate_type() const { return gate; }
+	QGate get_gate() const { return gate; }
+
+	OperationType operation_type() const {
+		return (gate == QGate::Rz || gate == QGate::AmplitudeDamping) ? OperationType::SplittingGate : OperationType::BasicGate;
+
+		//static constexpr std::array<OperationType, 2> arr_map{OperationType::BasicGate, OperationType::SplittingGate};
+		//return arr_map[gate == QGate::Rz || gate == QGate::AmplitudeDamping]; // branchless
+	}
 };
 
 #endif

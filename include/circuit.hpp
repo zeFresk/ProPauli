@@ -66,7 +66,7 @@ class Circuit {
 		NoiseModel<Coefficient_t> const& noise_model = {},
 		std::shared_ptr<SchedulingPolicy> merge_policy = std::make_shared<AlwaysAfterSplittingPolicy>(),
 		std::shared_ptr<SchedulingPolicy> truncate_policy = std::make_shared<AlwaysAfterSplittingPolicy>())
-		: nb_qubits_{ nb_qubits }, merge_policy_{ std::move(merge_policy) }, truncate_policy_{ std::move(truncate_policy) },
+		: nb_qubits_{ nb_qubits }, nb_splitting_gates_{0}, merge_policy_{ std::move(merge_policy) }, truncate_policy_{ std::move(truncate_policy) },
 		  truncator_{ std::move(truncator) }, noise_model_(noise_model) {}
 
 	Circuit(Circuit const&) = delete;
@@ -132,7 +132,9 @@ class Circuit {
 	template <typename... T>
 	void add_operation(QGate g, T&&... args) {
 		check_args(args...); // copy needed here
-		operations_.emplace_back(g, std::forward<T>(args)...);
+		QuantumOp<Coefficient_t> qop(g, std::forward<T>(args)...);
+		nb_splitting_gates_ += std::to_underlying(qop.operation_type());
+		operations_.push_back(std::move(qop));
 		noise_model_.apply_noise_after(*this, g, std::forward<T>(args)...);
 	}
 
@@ -169,7 +171,7 @@ class Circuit {
 		SimulationState state(nb_splitting_gates());
 
 		for (auto const& qop : std::ranges::reverse_view{ operations_ }) {
-			auto op_t = opt_map[qop.gate_type()];
+			auto op_t = qop.operation_type();
 			schedule(state, obs, Timing::Before, op_t, policy);
 
 			if (obs.size() == 0) { // maximally mixed state
@@ -208,9 +210,7 @@ class Circuit {
 	 * the `SimulationState`.
 	 */
 	std::size_t nb_splitting_gates() const {
-		return std::accumulate(operations_.cbegin(), operations_.cend(), 0, [](auto&& acc, auto&& op) {
-			return acc + (opt_map[op.gate_type()] == OperationType::SplittingGate ? 1 : 0);
-		});
+		return nb_splitting_gates_;
 	}
 
 	/**
@@ -245,6 +245,7 @@ class Circuit {
     private:
 	std::vector<QuantumOp<Coefficient_t>> operations_; ///< Sequence of quantum operations in the circuit.
 	unsigned nb_qubits_; ///< The number of qubits in the circuit.
+	unsigned nb_splitting_gates_;
 	std::shared_ptr<SchedulingPolicy> merge_policy_; ///< Policy for triggering Pauli term merging.
 	std::shared_ptr<SchedulingPolicy> truncate_policy_; ///< Policy for triggering observable truncation.
 	std::shared_ptr<Truncator<Coefficient_t>> truncator_; ///< The truncator used to simplify the observable.
