@@ -62,7 +62,6 @@ class SequentialMerger {
 	}
 };
 
-
 struct SequentialPolicy {
 	template <typename T>
 	using Merger = SequentialMerger<T>;
@@ -98,11 +97,27 @@ struct SequentialPolicy {
 	template <typename PTC, typename T>
 	inline static void apply_rz(PTC& paulis, unsigned qubit, T theta) {
 		const auto nb_terms = paulis.nb_terms();
+
+		// compute number of required nb_term
+		std::size_t total_to_allocate = 0;
+		for (std::size_t i = 0; i < nb_terms; ++i) {
+			if (!paulis[i].get_pauli(qubit).commutes_with(p_z)) {
+				total_to_allocate++;
+			}
+		}
+
+		// pre-alloc is mandatory to not invalidate terms while allocating
+		paulis._batch_allocate(total_to_allocate);
+
+		std::size_t k_idx = 0; // allocated index
 		for (std::size_t i = 0; i < nb_terms; ++i) {
 			auto p = paulis[i];
-			if (!p.get_pauli(qubit).commutes_with(p_z)) {
-				auto new_path = paulis.duplicate_pauliterm(i);
-				paulis[i].apply_rz(qubit, theta, new_path);
+			if (!paulis[i].get_pauli(qubit).commutes_with(p_z)) {
+				const auto tmp_pt_idx = nb_terms + k_idx;
+				auto new_path = paulis[tmp_pt_idx];
+				new_path.fast_copy_content(p);
+				p.apply_rz(qubit, theta, new_path);
+				k_idx++;
 			}
 		}
 	}
@@ -110,11 +125,27 @@ struct SequentialPolicy {
 	template <typename PTC, typename T>
 	inline static void apply_amplitude_damping(PTC& paulis, unsigned qubit, T pn) {
 		const auto nb_terms = paulis.nb_terms();
+
+		// compute number of required nb_term
+		std::size_t total_to_allocate = 0;
+		for (std::size_t i = 0; i < nb_terms; ++i) {
+			if (paulis[i].get_pauli(qubit) == p_z) {
+				total_to_allocate++;
+			}
+		}
+
+		// pre-alloc is mandatory to not invalidate terms while allocating
+		paulis._batch_allocate(total_to_allocate);
+
+		std::size_t k_idx = 0; // allocated index
 		for (std::size_t i = 0; i < nb_terms; ++i) {
 			auto p = paulis[i];
 			if (p.get_pauli(qubit) == p_z) {
-				auto new_path = paulis.duplicate_pauliterm(i); // invalidates p
+				const auto tmp_pt_idx = nb_terms + k_idx;
+				auto new_path = paulis[tmp_pt_idx];
+				new_path.fast_copy_content(p);
 				paulis[i].apply_amplitude_damping_z(qubit, pn, new_path);
+				k_idx++;
 			} else if (p.get_pauli(qubit) == p_x || p.get_pauli(qubit) == p_y) {
 				p.apply_amplitude_damping_xy(qubit, pn);
 			}
