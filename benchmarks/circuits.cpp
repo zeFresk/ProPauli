@@ -39,40 +39,37 @@ static void Circuit_add_pauli_string(benchmark::State& state) {
 }
 
 static void Circuit_add_random_gate(benchmark::State& state) {
-	static constexpr auto PER_BUF_SIZE = buffer_size / 4;
 	std::array<std::string, 10> gates = { "I", "X", "Y", "Z", "H", "CX", "RZ", "AMPLITUDEDAMPING", "DEPOLARIZING", "DEPHASING" };
 	std::vector<std::size_t> random_gates;
 	std::vector<std::size_t> random_qubits;
 	std::vector<float> random_coeffs;
 	random_gates.reserve(buffer_size);
-	random_qubits.reserve(buffer_size * 2);
+	random_qubits.reserve(buffer_size);
 	random_coeffs.reserve(buffer_size);
-	std::generate_n(std::back_inserter(random_gates), PER_BUF_SIZE, [&]() { return random_in(10); });
-	std::generate_n(std::back_inserter(random_qubits), PER_BUF_SIZE * 2, [&]() { return random_in(4); });
-	std::generate_n(std::back_inserter(random_coeffs), PER_BUF_SIZE, [&]() { return random_coeff(); });
+	std::generate_n(std::back_inserter(random_gates), buffer_size, [&]() { return random_in(9); });
+	std::generate_n(std::back_inserter(random_qubits), buffer_size, [&]() { return random_in(3); });
+	std::generate_n(std::back_inserter(random_coeffs), buffer_size, [&]() { return random_coeff(); });
 
-	std::size_t ig = 0;
-	std::size_t iq = 0;
-	std::size_t ic = 0;
+	std::size_t i = 0;
 	auto qc = Circuit{ 4 };
 
 	for (auto _ : state) {
-		if (ig >= buffer_size) {
+		if (i >= buffer_size) {
 			state.PauseTiming();
 			qc = Circuit{ 4 };
-			ig = iq = ic = 0;
+			i = 0;
 			state.ResumeTiming();
 		}
 
-		auto g = random_gates[ig] ;
+		auto g = random_gates[i];
 		if (g < 5) {
-			qc.add_operation(gates[g], random_qubits[iq++]);
+			qc.add_operation(gates[g], random_qubits[i]);
 		} else if (g > 5) {
-			qc.add_operation(gates[g], random_qubits[iq++], random_coeffs[ic++]);
+			qc.add_operation(gates[g], random_qubits[i], random_coeffs[i]);
 		} else {
-			qc.add_operation(gates[g], random_qubits[iq], random_qubits[iq+1]);
-			iq++;
+			qc.add_operation(gates[g], random_qubits[i], (random_qubits[i] + 1) % 4);
 		}
+		++i;
 	}
 }
 
@@ -302,15 +299,15 @@ BENCHMARK_DEFINE_F(MaxCutQAOAN4P1, ev)(benchmark::State& state) {
 	}
 }
 
-BENCHMARK(Circuit_init)->Range(1024, 1024);
+BENCHMARK(Circuit_init)->Arg(1)->Arg(1024);
 BENCHMARK(Circuit_add_pauli_string);
 BENCHMARK(Circuit_add_random_gate);
-BENCHMARK(Circuit_run_paulis)->Ranges({ { 512, 512 }, { 1, 1024 } });
-BENCHMARK_REGISTER_F(Circuit_ZZ_feature_map, GlobalObservable)->RangeMultiplier(2)->Range(2, 8);
-BENCHMARK_REGISTER_F(Circuit_ZZ_feature_map, ZLocal)->RangeMultiplier(2)->Range(2, 8);
-BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, GlobalObservable)->RangeMultiplier(2)->Range(2, 8);
-BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withCoefficientTruncation01)->RangeMultiplier(2)->Range(2, 8);
-BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withWeightTruncation4)->RangeMultiplier(2)->Range(2, 8);
-BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withMultiTruncation6001)->RangeMultiplier(2)->Range(2, 64);
+BENCHMARK(Circuit_run_paulis)->Args({1, 1})->Args({1, 1024});
+BENCHMARK_REGISTER_F(Circuit_ZZ_feature_map, GlobalObservable)->Arg(8);
+BENCHMARK_REGISTER_F(Circuit_ZZ_feature_map, ZLocal)->Arg(8);
+BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, GlobalObservable)->Arg(8);
+BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withCoefficientTruncation01)->Arg(8);
+BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withWeightTruncation4)->Arg(8);
+BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withMultiTruncation6001)->Arg(8)->Arg(64);
 BENCHMARK_REGISTER_F(MaxCutQAOAN4P1, run);
 BENCHMARK_REGISTER_F(MaxCutQAOAN4P1, ev);
