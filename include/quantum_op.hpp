@@ -95,7 +95,7 @@ class QuantumOp {
 	}
 
 	template <typename ExecutionPolicy = DefaultExecutionPolicy>
-	void operator()(ObservableType& obs, ExecutionPolicy&& policy = ExecutionPolicy{}) const {
+	[[gnu::always_inline]] inline void operator()(ObservableType& obs, ExecutionPolicy&& policy = ExecutionPolicy{}) const {
 		switch (gate) {
 		case QGate::Rz:
 			return obs.apply_rz(qubit0, parameter, policy);
@@ -128,7 +128,7 @@ class QuantumOp {
 
 	QGate get_gate() const { return gate; }
 
-	OperationType operation_type() const {
+	[[gnu::always_inline]] inline OperationType operation_type() const {
 		return (gate == QGate::Rz || gate == QGate::AmplitudeDamping) ? OperationType::SplittingGate : OperationType::BasicGate;
 
 		//static constexpr std::array<OperationType, 2> arr_map{OperationType::BasicGate, OperationType::SplittingGate};
