@@ -194,24 +194,37 @@ class Circuit {
 		}
 	}
 
-	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
 	std::vector<Observable<Coefficient_t>> run(std::vector<Observable<Coefficient_t>> const& target_observables,
 						   ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		return Policy_t::circuit_batched_run(*this, target_observables);
 	}
 
+	template <typename Input, IsVariant DynamicPolicy>
+	auto run(Input&& input, DynamicPolicy&& rpol) {
+		return std::visit([input = std::forward<Input>(input),
+				   this](auto const& pol) { return this->run(std::forward<Input>(input), pol); },
+				  rpol);
+	}
+
 	template <typename ExecutionPolicy = DefaultExecutionPolicy>
 	std::vector<Observable<Coefficient_t>> expectation_value(std::vector<Observable<Coefficient_t>> const& target_observables,
-						   ExecutionPolicy&& policy = ExecutionPolicy{}) {
+								 ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		return Policy_t::circuit_batched_evs(*this, target_observables);
 	}
 
 	template <typename ExecutionPolicy = DefaultExecutionPolicy>
-	Coefficient_t expectation_value(Observable<Coefficient_t> const& target_observable,
-						   ExecutionPolicy&& policy = ExecutionPolicy{}) {
+	Coefficient_t expectation_value(Observable<Coefficient_t> const& target_observable, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		return run(target_observable, std::forward<ExecutionPolicy>(policy)).expectation_value();
+	}
+
+	template <typename Input, IsVariant DynamicPolicy>
+	auto expectation_value(Input&& input, DynamicPolicy&& rpol) {
+		return std::visit([input = std::forward<Input>(input),
+				   this](auto const& pol) { return this->expectation_value(std::forward<Input>(input), pol); },
+				  rpol);
 	}
 
 	/**
