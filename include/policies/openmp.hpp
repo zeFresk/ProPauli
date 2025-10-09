@@ -294,13 +294,26 @@ struct OpenMPPolicy {
 	}
 
 	template <typename ObservableType, typename QC>
-	inline static std::vector<ObservableType> circuit_batched_run(QC& qc, std::vector<ObservableType> observables) {
+	inline static std::vector<ObservableType> circuit_batched_run(QC& qc, std::vector<ObservableType> const& observables) {
 		const std::size_t nb_obs = observables.size();
+
 		#pragma omp parallel for schedule(guided)
 		for (std::size_t i = 0; i < nb_obs; ++i) {
 			qc.run(observables[i], seq);
 		}
 		return observables;
+	}
+
+	template <typename ObservableType, typename QC>
+	inline static auto circuit_batched_evs(QC& qc, std::vector<ObservableType> const& observables) {
+		const std::size_t nb_obs = observables.size();
+		std::vector<std::decay_t<decltype(observables[0].expectation_value())>> evs(nb_obs);
+
+		#pragma omp parallel for schedule(guided)
+		for (std::size_t i = 0; i < observables.size(); ++i) {
+			evs[i] = qc.run(observables[i], seq).expectation_value();
+		}
+		return evs;
 	}
 };
 

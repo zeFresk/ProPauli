@@ -4,6 +4,7 @@
 #include "pauli.hpp"
 #include "pauli_term_container.hpp"
 #include "container/dirty_set.hpp"
+#include <type_traits>
 
 template <typename T>
 class SequentialMerger {
@@ -167,6 +168,17 @@ struct SequentialPolicy {
 			qc.run(observables[i], SequentialPolicy{});
 		}
 		return observables;
+	}
+
+	template <typename ObservableType, typename QC>
+	inline static auto circuit_batched_evs(QC& qc, std::vector<ObservableType> observables) {
+		std::vector<std::decay_t<decltype(observables[0].expectation_value())>> evs;
+		evs.reserve(observables.size());
+		for (std::size_t i = 0; i < observables.size(); ++i) {
+			auto ev = qc.run(observables[i], SequentialPolicy{}).expectation_value();
+			evs.push_back(std::move(ev));
+		}
+		return evs;
 	}
 };
 

@@ -66,8 +66,8 @@ class Circuit {
 		NoiseModel<Coefficient_t> const& noise_model = {},
 		std::shared_ptr<SchedulingPolicy> merge_policy = std::make_shared<AlwaysAfterSplittingPolicy>(),
 		std::shared_ptr<SchedulingPolicy> truncate_policy = std::make_shared<AlwaysAfterSplittingPolicy>())
-		: nb_qubits_{ nb_qubits }, nb_splitting_gates_{0}, merge_policy_{ std::move(merge_policy) }, truncate_policy_{ std::move(truncate_policy) },
-		  truncator_{ std::move(truncator) }, noise_model_(noise_model) {}
+		: nb_qubits_{ nb_qubits }, nb_splitting_gates_{ 0 }, merge_policy_{ std::move(merge_policy) },
+		  truncate_policy_{ std::move(truncate_policy) }, truncator_{ std::move(truncator) }, noise_model_(noise_model) {}
 
 	Circuit(Circuit const&) = delete;
 	Circuit& operator=(Circuit const&) = delete;
@@ -201,6 +201,19 @@ class Circuit {
 		return Policy_t::circuit_batched_run(*this, target_observables);
 	}
 
+	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	std::vector<Observable<Coefficient_t>> expectation_value(std::vector<Observable<Coefficient_t>> const& target_observables,
+						   ExecutionPolicy&& policy = ExecutionPolicy{}) {
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
+		return Policy_t::circuit_batched_evs(*this, target_observables);
+	}
+
+	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	Coefficient_t expectation_value(Observable<Coefficient_t> const& target_observable,
+						   ExecutionPolicy&& policy = ExecutionPolicy{}) {
+		return run(target_observable, std::forward<ExecutionPolicy>(policy)).expectation_value();
+	}
+
 	/**
 	 * @brief Counts the number of gates in the circuit that can split an observable.
 	 * @return The total number of splitting gates (e.g., Rz, AmplitudeDamping).
@@ -209,9 +222,7 @@ class Circuit {
 	 * observable, making the simulation more complex. This count is used to initialize
 	 * the `SimulationState`.
 	 */
-	std::size_t nb_splitting_gates() const {
-		return nb_splitting_gates_;
-	}
+	std::size_t nb_splitting_gates() const { return nb_splitting_gates_; }
 
 	/**
 	 * @brief Clears all operations from the circuit.
