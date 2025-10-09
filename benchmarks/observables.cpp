@@ -147,8 +147,8 @@ static void Observable_ev_after_nrz(benchmark::State& state) {
 	}
 
 	for (auto _ : state) {
-		benchmark::DoNotOptimize(rd_obs_copy);
-		benchmark::DoNotOptimize(rd_obs_copy.expectation_value());
+		auto ev = rd_obs_copy.expectation_value(seq);
+		benchmark::DoNotOptimize(ev);
 	}
 }
 
@@ -282,9 +282,8 @@ static void Observable_apply_unital_noise(benchmark::State& state) {
 	random_noise.reserve(buffer_size);
 	random_idx.reserve(buffer_size);
 	std::generate_n(std::back_inserter(random_paulis), buffer_size, random_pauli);
-	std::generate_n(std::back_inserter(random_noise), buffer_size, []() {
-		return static_cast<UnitalNoise>(random_in(std::to_underlying(UnitalNoise::Count) - 1));
-	});
+	std::generate_n(std::back_inserter(random_noise), buffer_size,
+			[]() { return static_cast<UnitalNoise>(random_in(std::to_underlying(UnitalNoise::Count) - 1)); });
 	std::generate_n(std::back_inserter(random_idx), buffer_size, [=]() { return random_in(state.range(0) - 1); });
 	std::size_t i = 0;
 
@@ -375,21 +374,17 @@ static void Observable_appy_amplitude_damping_z(benchmark::State& state) {
 	}
 }
 
-BENCHMARK(Observable_init_from_string)->Range(1, 1024);
-BENCHMARK(Observable_apply_pauli)->Range(1, 1024);
-BENCHMARK(Observable_apply_clifford)->Range(1, 1024);
-BENCHMARK(Observable_apply_unital_noise)->Range(1, 1024);
-BENCHMARK(Observable_apply_rz_once)->Range(1, 1024);
-BENCHMARK(Observable_apply_rz_ntimes)->Ranges({ { 1, 1024 }, { 1, 16 } });
-BENCHMARK(Observable_ev_after_nrz)->Ranges({ { 1, 1024 }, { 16, 16 } });
-BENCHMARK(Observable_merge_after_nrz)
-	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 8, 2) });
-BENCHMARK(Observable_truncate_coeff_after_nrz)
-	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 8, 2) });
-BENCHMARK(Observable_truncate_weight10_after_nrz)
-	->ArgsProduct({ benchmark::CreateRange(1, 1024, 8), benchmark::CreateRange(1, 8, 2) });
-BENCHMARK(Observable_truncate_keepn1024_after_nrz)
-	->ArgsProduct({ benchmark::CreateRange(64, 1024, 8), benchmark::CreateRange(4, 8, 2) });
-BENCHMARK(Observable_appy_amplitude_damping_i)->Range(1, 1024);
-BENCHMARK(Observable_appy_amplitude_damping_xy)->Range(1, 1024);
-BENCHMARK(Observable_appy_amplitude_damping_z)->Range(1, 1024);
+BENCHMARK(Observable_init_from_string)->Arg(1)->Arg(1024);
+BENCHMARK(Observable_apply_pauli)->Arg(1)->Arg(1024);
+BENCHMARK(Observable_apply_clifford)->Arg(1)->Arg(1024);
+BENCHMARK(Observable_apply_unital_noise)->Arg(1)->Arg(1024);
+BENCHMARK(Observable_apply_rz_once)->Arg(1)->Arg(1024);
+BENCHMARK(Observable_apply_rz_ntimes)->Args({ 1024, 16 });
+BENCHMARK(Observable_ev_after_nrz)->Args({ 1024, 16 });
+BENCHMARK(Observable_merge_after_nrz)->Args({ 8, 16 })->Args({ 1024, 1 })->Args({ 1024, 8 });
+BENCHMARK(Observable_truncate_coeff_after_nrz)->Args({ 8, 16 })->Args({ 1024, 1 })->Args({ 1024, 8 });
+BENCHMARK(Observable_truncate_weight10_after_nrz)->Args({ 8, 16 })->Args({ 1024, 1 })->Args({ 1024, 8 });
+BENCHMARK(Observable_truncate_keepn1024_after_nrz)->Args({ 8, 16 })->Args({ 1024, 1 })->Args({ 1024, 8 });
+BENCHMARK(Observable_appy_amplitude_damping_i)->Arg(1)->Arg(1024);
+BENCHMARK(Observable_appy_amplitude_damping_xy)->Arg(1)->Arg(1024);
+BENCHMARK(Observable_appy_amplitude_damping_z)->Arg(1)->Arg(1024);

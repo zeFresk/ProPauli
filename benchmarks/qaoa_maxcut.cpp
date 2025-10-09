@@ -398,8 +398,27 @@ BENCHMARK_DEFINE_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_r
 	}
 }
 
+BENCHMARK_DEFINE_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_run_one_by_one_ev_batched_evs_par)(benchmark::State& state) {
+	qc.set_merge_policy(std::make_shared<AlwaysAfterSplittingPolicy>());
+	qc.set_truncate_policy(std::make_shared<AlwaysAfterSplittingPolicy>());
+	qc.set_truncator(std::make_shared<KeepNTruncator<coeff_t>>(10000));
+
+	std::vector<Observable<coeff_t>> observables;
+	observables.reserve(sv_obss.size());
+	for (auto const& sv : sv_obss) {
+		observables.push_back(Observable{ sv });
+	}
+
+	for (auto _ : state) {
+		auto results = qc.expectation_value(observables, par);
+		auto sum_ev = std::accumulate(results.cbegin(), results.cend(), 0.f);
+		benchmark::DoNotOptimize(sum_ev);
+	}
+}
+
 BENCHMARK_REGISTER_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn50k_run_par);
 BENCHMARK_REGISTER_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_run_one_by_one_ev_par);
 BENCHMARK_REGISTER_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_run_one_by_one_ev_batched_par);
+BENCHMARK_REGISTER_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_run_one_by_one_ev_batched_evs_par);
 
 #endif

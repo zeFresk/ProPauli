@@ -196,6 +196,8 @@ static void PauliTerm_apply_amplitude_damping_z(benchmark::State& state) {
 	}
 }
 
+/*
+ * Not tracked anymore because we use PackedPauliTerm 
 BENCHMARK(PauliTerm_init_from_string)->Range(1, 1024);
 BENCHMARK(PauliTerm_apply_pauli)->Range(1, 1024);
 BENCHMARK(PauliTerm_apply_clifford)->Range(1, 1024);
@@ -206,3 +208,5 @@ BENCHMARK(PauliTerm_pauli_weight)->Range(1, 1024);
 BENCHMARK(PauliTerm_apply_unital_noise)->Range(1, 1024);
 BENCHMARK(PauliTerm_apply_amplitude_damping_xy)->Range(1, 1024);
 BENCHMARK(PauliTerm_apply_amplitude_damping_z)->Range(1, 1024);
+
+*/

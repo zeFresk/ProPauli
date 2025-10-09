@@ -29,57 +29,49 @@ static void Circuit_add_pauli_string(benchmark::State& state) {
 
 	for (auto _ : state) {
 		if (i >= buffer_size) {
+			state.PauseTiming();
 			qc.reset();
 			i = 0;
+			state.ResumeTiming();
 		}
 		qc.add_operation(random_paulis[i++], 0);
 	}
 }
 
-static void Circuit_add_random_string(benchmark::State& state) {
-	std::vector<std::size_t> random_num;
-	random_num.reserve(buffer_size);
-	std::generate_n(std::back_inserter(random_num), buffer_size, []() { return random_in(9); });
+static void Circuit_add_random_gate(benchmark::State& state) {
+	static constexpr auto PER_BUF_SIZE = buffer_size / 4;
+	std::array<std::string, 10> gates = { "I", "X", "Y", "Z", "H", "CX", "RZ", "AMPLITUDEDAMPING", "DEPOLARIZING", "DEPHASING" };
+	std::vector<std::size_t> random_gates;
+	std::vector<std::size_t> random_qubits;
+	std::vector<float> random_coeffs;
+	random_gates.reserve(buffer_size);
+	random_qubits.reserve(buffer_size * 2);
+	random_coeffs.reserve(buffer_size);
+	std::generate_n(std::back_inserter(random_gates), PER_BUF_SIZE, [&]() { return random_in(10); });
+	std::generate_n(std::back_inserter(random_qubits), PER_BUF_SIZE * 2, [&]() { return random_in(4); });
+	std::generate_n(std::back_inserter(random_coeffs), PER_BUF_SIZE, [&]() { return random_coeff(); });
 
-	std::size_t i = 0;
-	auto qc = Circuit{ 2 };
+	std::size_t ig = 0;
+	std::size_t iq = 0;
+	std::size_t ic = 0;
+	auto qc = Circuit{ 4 };
 
 	for (auto _ : state) {
-		if (i >= buffer_size) {
-			qc = Circuit{ 2 };
-			i = 0;
+		if (ig >= buffer_size) {
+			state.PauseTiming();
+			qc = Circuit{ 4 };
+			ig = iq = ic = 0;
+			state.ResumeTiming();
 		}
-		switch (random_num[i]) {
-		case 0:
-			qc.add_operation("I", 0);
-			break;
-		case 1:
-			qc.add_operation("X", 0);
-			break;
-		case 2:
-			qc.add_operation("Y", 0);
-			break;
-		case 3:
-			qc.add_operation("Z", 0);
-			break;
-		case 4:
-			qc.add_operation("H", 0);
-			break;
-		case 5:
-			qc.add_operation("CX", 0u, 1u);
-			break;
-		case 6:
-			qc.add_operation("RZ", 0, 0.5f);
-			break;
-		case 7:
-			qc.add_operation("AMPLITUDEDAMPING", 0, 0.5f);
-			break;
-		case 8:
-			qc.add_operation("DEPOLARIZING", 0, 0.5f);
-			break;
-		case 9:
-			qc.add_operation("DEPHASING", 0, 0.5f);
-			break;
+
+		auto g = random_gates[ig] ;
+		if (g < 5) {
+			qc.add_operation(gates[g], random_qubits[iq++]);
+		} else if (g > 5) {
+			qc.add_operation(gates[g], random_qubits[iq++], random_coeffs[ic++]);
+		} else {
+			qc.add_operation(gates[g], random_qubits[iq], random_qubits[iq+1]);
+			iq++;
 		}
 	}
 }
@@ -291,7 +283,7 @@ class MaxCutQAOAN4P1 : public benchmark::Fixture {
 };
 
 BENCHMARK_DEFINE_F(MaxCutQAOAN4P1, run)(benchmark::State& state) {
-	//bool first = true;
+	// bool first = true;
 	for (auto _ : state) {
 		auto res = qc.run(obs, seq);
 		/*if (first) {
@@ -312,7 +304,7 @@ BENCHMARK_DEFINE_F(MaxCutQAOAN4P1, ev)(benchmark::State& state) {
 
 BENCHMARK(Circuit_init)->Range(1024, 1024);
 BENCHMARK(Circuit_add_pauli_string);
-BENCHMARK(Circuit_add_random_string);
+BENCHMARK(Circuit_add_random_gate);
 BENCHMARK(Circuit_run_paulis)->Ranges({ { 512, 512 }, { 1, 1024 } });
 BENCHMARK_REGISTER_F(Circuit_ZZ_feature_map, GlobalObservable)->RangeMultiplier(2)->Range(2, 8);
 BENCHMARK_REGISTER_F(Circuit_ZZ_feature_map, ZLocal)->RangeMultiplier(2)->Range(2, 8);

@@ -209,7 +209,7 @@ class Circuit {
 	}
 
 	template <typename ExecutionPolicy = DefaultExecutionPolicy>
-	std::vector<Observable<Coefficient_t>> expectation_value(std::vector<Observable<Coefficient_t>> const& target_observables,
+	std::vector<Coefficient_t> expectation_value(std::vector<Observable<Coefficient_t>> const& target_observables,
 								 ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		return Policy_t::circuit_batched_evs(*this, target_observables);
