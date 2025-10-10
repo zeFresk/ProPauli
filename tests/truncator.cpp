@@ -204,6 +204,59 @@ TEST(Truncator, KeepNTruncator_random) {
 	}
 }
 
+// X times: Generate observable of Mx N qubits pauli term, KeepN=L a random number, ensure it is correctly done.
+TEST(Truncator, KeepNTruncator_random_large) {
+	static constexpr std::size_t nb_runs = 100;
+	static constexpr std::size_t pauli_size = 8;
+	static constexpr std::size_t obs_size = 64;
+	static constexpr std::string_view chars = "IXYZ";
+	std::mt19937 gen{ 42 };
+	std::uniform_int_distribution<> dis_ps(0, chars.size() - 1);
+	std::uniform_int_distribution<> dis_kn{ 2, obs_size - 1 };
+	std::uniform_real_distribution<coeff_t> dis_coeff{ 0.f, 1.f };
+	for (std::size_t k = 0; k < nb_runs; ++k) {
+		std::vector<PauliTerm<coeff_t>> data;
+		data.reserve(obs_size);
+		std::generate_n(std::back_inserter(data), obs_size, [&]() {
+			std::string ps(pauli_size, 'I');
+			for (std::size_t i = 0; i < ps.size(); ++i)
+				ps[i] = chars[dis_ps(gen)];
+			return PauliTerm<coeff_t>{ ps, dis_coeff(gen) };
+		});
+		PauliTermContainer<coeff_t> ptc{ data };
+
+		std::size_t kn = dis_kn(gen);
+		KeepNTruncator kt{ kn };
+
+		// check that the STL implementation is correct
+		auto [coeffs_only, ground_truth_coeffs] = keepn_test_stl(ptc, data, kn);
+		EXPECT_EQ(coeffs_only.size(), kn);
+		EXPECT_EQ(coeffs_only, ground_truth_coeffs) << "Isolation test failed: The bug might be in the truncate logic itself!";
+
+		kt.truncate(ptc);
+
+		std::sort(data.begin(), data.end(),
+			  [](auto const& lhs, auto const& rhs) { return abs(lhs.coefficient()) < abs(rhs.coefficient()); });
+		std::reverse(data.begin(), data.end());
+
+		bool ok = true;
+		std::size_t i = 0;
+		for (i = 0; ok && i < kn; ++i) {
+			ok = ok && is_in(ptc, data[i]);
+			EXPECT_TRUE(ok);
+		}
+		if (!ok) {
+			std::cerr << data[i - 1] << " not found for KeepN=" << kn << "\n\nOriginal data (sorted):\n";
+			for (std::size_t i = 0; i < data.size(); ++i)
+				std::cerr << i << ": " << data[i] << (i < kn ? "\n" : "[deleted]\n");
+			std::cerr << "\n\nResult from KeepN:\n";
+			for (std::size_t i = 0; i < ptc.nb_terms(); ++i)
+				std::cerr << i << ": " << ptc[i] << "\n";
+		}
+		ASSERT_TRUE(ok);
+	}
+}
+
 TEST(Truncator, MultiTruncator) {
 	WeightTruncator<> wt{ 4 };
 	CoefficientTruncator<> ct{ 0.1f };

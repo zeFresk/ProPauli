@@ -114,9 +114,9 @@ class QuantumOp {
 		case QGate::X:
 			return obs.apply_pauli(Pauli_gates::X, qubit0);
 		case QGate::Y:
-			return obs.apply_pauli(Pauli_gates::X, qubit0);
+			return obs.apply_pauli(Pauli_gates::Y, qubit0);
 		case QGate::Z:
-			return obs.apply_pauli(Pauli_gates::X, qubit0);
+			return obs.apply_pauli(Pauli_gates::Z, qubit0);
 		case QGate::Count:
 			return;
 		}
