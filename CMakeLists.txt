@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 set(CMAKE_VERBOSE_MAKEFILE OFF CACHE BOOL "Explicit Makefile")
 set(COVERAGE OFF CACHE BOOL "Build for coverage")
+set(COVERAGE_HTML_DIR "${CMAKE_BINARY_DIR}/coverage_html")
 set(SANITIZE OFF CACHE BOOL "Build with sanitizers")
 set(BENCHMARK OFF CACHE BOOL "Build benchmarks")
 set(TEST OFF CACHE BOOL "Build tests")
@@ -51,12 +52,13 @@ target_compile_options(propaulib PUBLIC
 	$<$<CONFIG:Debug>:-g>
 	$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>,$<BOOL:${SANITIZE}>>:-fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined>
 	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:GNU>>:-ftest-coverage -fprofile-arcs>
-	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:Clang>>:-fprofile-instr-generate -fcoverage-mapping --coverage>
+	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:Clang>>:-fprofile-instr-generate -fcoverage-mapping>
 	)
 
 target_link_options(propaulib INTERFACE
 	$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>,$<BOOL:${SANITIZE}>>:-fsanitize=address -fsanitize=undefined>
-	$<$<AND:$<BOOL:${COVERAGE}>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-fprofile-instr-generate --coverage>
+	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:GNU>>:-fprofile-instr-generate --coverage>
+	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:Clang>>:-fprofile-instr-generate>
 	#$<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>
 	)
 
@@ -144,7 +146,8 @@ if (COVERAGE)
 		add_custom_target(coverage
 					COMMAND LLVM_PROFILE_FILE=${TARGET_NAME}.profraw $<TARGET_FILE:${TARGET_NAME}>
 					COMMAND llvm-profdata merge -sparse ${TARGET_NAME}.profraw -o ${TARGET_NAME}.profdata
-					COMMAND llvm-cov report $<TARGET_FILE:${TARGET_NAME}> -instr-profile=${TARGET_NAME}.profdata
+					COMMAND llvm-cov report $<TARGET_FILE:${TARGET_NAME}> -instr-profile=${TARGET_NAME}.profdata ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/include
+					COMMAND llvm-cov show $<TARGET_FILE:${TARGET_NAME}> -instr-profile=${TARGET_NAME}.profdata -format=html -output-dir=${COVERAGE_HTML_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include
 					DEPENDS ${TARGET_NAME}
 	)
 	elseif(CMAKE_COMPILER_IS_GNUCXX)
