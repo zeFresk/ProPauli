@@ -2,11 +2,12 @@
 #define PP_SCHEDULER_HPP
 
 #include <cstddef>
-#include <iostream>
-#include <memory>
 #include <vector>
+#include <unordered_map>
 
-enum class OperationType { BasicGate, SplittingGate, Merge, Truncate };
+#include "pauli.hpp"
+#include "operation_type.hpp"
+
 enum class Timing { Before, After };
 
 struct CompressionResult {

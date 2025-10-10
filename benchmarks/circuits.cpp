@@ -2,6 +2,7 @@
 
 #include "helper.hpp"
 #include "pauli.hpp"
+#include "policies/sequential.hpp"
 #include "truncate.hpp"
 #include <benchmark/benchmark.h>
 #include <cmath>
@@ -28,58 +29,47 @@ static void Circuit_add_pauli_string(benchmark::State& state) {
 
 	for (auto _ : state) {
 		if (i >= buffer_size) {
+			state.PauseTiming();
 			qc.reset();
 			i = 0;
+			state.ResumeTiming();
 		}
 		qc.add_operation(random_paulis[i++], 0);
 	}
 }
 
-static void Circuit_add_random_string(benchmark::State& state) {
-	std::vector<std::size_t> random_num;
-	random_num.reserve(buffer_size);
-	std::generate_n(std::back_inserter(random_num), buffer_size, []() { return random_in(9); });
+static void Circuit_add_random_gate(benchmark::State& state) {
+	std::array<std::string, 10> gates = { "I", "X", "Y", "Z", "H", "CX", "RZ", "AMPLITUDEDAMPING", "DEPOLARIZING", "DEPHASING" };
+	std::vector<std::size_t> random_gates;
+	std::vector<std::size_t> random_qubits;
+	std::vector<float> random_coeffs;
+	random_gates.reserve(buffer_size);
+	random_qubits.reserve(buffer_size);
+	random_coeffs.reserve(buffer_size);
+	std::generate_n(std::back_inserter(random_gates), buffer_size, [&]() { return random_in(9); });
+	std::generate_n(std::back_inserter(random_qubits), buffer_size, [&]() { return random_in(3); });
+	std::generate_n(std::back_inserter(random_coeffs), buffer_size, [&]() { return random_coeff(); });
 
 	std::size_t i = 0;
-	auto qc = Circuit{ 2 };
+	auto qc = Circuit{ 4 };
 
 	for (auto _ : state) {
 		if (i >= buffer_size) {
-			qc = Circuit{ 2 };
+			state.PauseTiming();
+			qc = Circuit{ 4 };
 			i = 0;
+			state.ResumeTiming();
 		}
-		switch (random_num[i]) {
-		case 0:
-			qc.add_operation("I", 0);
-			break;
-		case 1:
-			qc.add_operation("X", 0);
-			break;
-		case 2:
-			qc.add_operation("Y", 0);
-			break;
-		case 3:
-			qc.add_operation("Z", 0);
-			break;
-		case 4:
-			qc.add_operation("H", 0);
-			break;
-		case 5:
-			qc.add_operation("CX", 0u, 1u);
-			break;
-		case 6:
-			qc.add_operation("RZ", 0, 0.5f);
-			break;
-		case 7:
-			qc.add_operation("AMPLITUDEDAMPING", 0, 0.5f);
-			break;
-		case 8:
-			qc.add_operation("DEPOLARIZING", 0, 0.5f);
-			break;
-		case 9:
-			qc.add_operation("DEPHASING", 0, 0.5f);
-			break;
+
+		auto g = random_gates[i];
+		if (g < 5) {
+			qc.add_operation(gates[g], random_qubits[i]);
+		} else if (g > 5) {
+			qc.add_operation(gates[g], random_qubits[i], random_coeffs[i]);
+		} else {
+			qc.add_operation(gates[g], random_qubits[i], (random_qubits[i] + 1) % 4);
 		}
+		++i;
 	}
 }
 
@@ -111,13 +101,13 @@ static void Circuit_run_paulis(benchmark::State& state) {
 	auto target_obs = Observable{ random_pauli_string(state.range(0)) };
 
 	for (auto _ : state) {
-		auto res = qc.run(target_obs);
+		auto res = qc.run(target_obs, seq);
 		benchmark::DoNotOptimize(res);
 	}
 
 	state.SetItemsProcessed(state.iterations() * nb_gates);
-	state.counters["GateSpeed"] = benchmark::Counter(state.iterations() * nb_gates,
-							 benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
+	state.counters["GateSpeed"] =
+		benchmark::Counter(state.iterations() * nb_gates, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
 }
 
 class Circuit_ZZ_feature_map : public benchmark::Fixture {
@@ -152,7 +142,7 @@ BENCHMARK_DEFINE_F(Circuit_ZZ_feature_map, GlobalObservable)(benchmark::State& s
 	auto obs = Observable{ std::string(state.range(0), 'Z') };
 
 	for (auto _ : state) {
-		auto res = this->qc.run(obs);
+		auto res = this->qc.run(obs, seq);
 		benchmark::DoNotOptimize(res);
 	}
 }
@@ -161,7 +151,7 @@ BENCHMARK_DEFINE_F(Circuit_ZZ_feature_map, ZLocal)(benchmark::State& state) {
 	auto obs = Observable{ std::string(state.range(0) - 1, 'Z') + "I" };
 
 	for (auto _ : state) {
-		auto res = this->qc.run(obs);
+		auto res = this->qc.run(obs, seq);
 		benchmark::DoNotOptimize(res);
 	}
 }
@@ -208,7 +198,7 @@ class Circuit_Efficient_SU2 : public benchmark::Fixture {
 		for (unsigned i = 0; i < nb_qubits; ++i)
 			qc.add_operation("Rz", i, static_cast<coeff_t>(random_coeff() * pi));
 	}
-	void TearDown([[maybe_unused]] benchmark::State const& state) override {qc = Circuit(nb_qubits);}
+	void TearDown([[maybe_unused]] benchmark::State const& state) override { qc = Circuit(nb_qubits); }
 	~Circuit_Efficient_SU2() override {}
 };
 
@@ -216,7 +206,7 @@ BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, GlobalObservable)(benchmark::State& st
 	auto obs = Observable{ std::string(state.range(0), 'Z') };
 
 	for (auto _ : state) {
-		auto res = this->qc.run(obs);
+		auto res = this->qc.run(obs, seq);
 		benchmark::DoNotOptimize(res);
 	}
 }
@@ -228,7 +218,7 @@ BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, withCoefficientTruncation01)(benchmark
 	qc.set_truncator(std::make_shared<CoefficientTruncator<>>(0.01f));
 
 	for (auto _ : state) {
-		auto res = this->qc.run(obs);
+		auto res = this->qc.run(obs, seq);
 		benchmark::DoNotOptimize(res);
 	}
 }
@@ -239,7 +229,7 @@ BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, withWeightTruncation4)(benchmark::Stat
 	qc.set_truncator(std::make_shared<WeightTruncator<>>(4));
 
 	for (auto _ : state) {
-		auto res = this->qc.run(obs);
+		auto res = this->qc.run(obs, seq);
 		benchmark::DoNotOptimize(res);
 	}
 }
@@ -250,7 +240,7 @@ BENCHMARK_DEFINE_F(Circuit_Efficient_SU2, withMultiTruncation6001)(benchmark::St
 	qc.set_truncator(combine_truncators(CoefficientTruncator<>{ 0.001f }, WeightTruncator<>{ 6 }));
 
 	for (auto _ : state) {
-		auto res = this->qc.run(obs);
+		auto res = this->qc.run(obs, seq);
 		benchmark::DoNotOptimize(res);
 	}
 }
@@ -285,34 +275,39 @@ class MaxCutQAOAN4P1 : public benchmark::Fixture {
 		rx(qc, 2, rx_theta);
 		rx(qc, 3, rx_theta);
 	}
-	void TearDown([[maybe_unused]] benchmark::State const& state) override {qc = Circuit<coeff_t>(4);}
+	void TearDown([[maybe_unused]] benchmark::State const& state) override { qc = Circuit<coeff_t>(4); }
 	~MaxCutQAOAN4P1() override {}
 };
 
 BENCHMARK_DEFINE_F(MaxCutQAOAN4P1, run)(benchmark::State& state) {
+	// bool first = true;
 	for (auto _ : state) {
-		auto res = qc.run(obs);
+		auto res = qc.run(obs, seq);
+		/*if (first) {
+			std::cout << res.expectation_value(seq) << ": " << res << "\n";
+			first = false;
+		}*/
 		benchmark::DoNotOptimize(res);
 	}
 }
 
 BENCHMARK_DEFINE_F(MaxCutQAOAN4P1, ev)(benchmark::State& state) {
-	auto res = qc.run(obs);
+	auto res = qc.run(obs, seq);
 	for (auto _ : state) {
 		auto ev = res.expectation_value();
 		benchmark::DoNotOptimize(ev);
 	}
 }
 
-BENCHMARK(Circuit_init)->Range(1024, 1024);
+BENCHMARK(Circuit_init)->Arg(1)->Arg(1024);
 BENCHMARK(Circuit_add_pauli_string);
-BENCHMARK(Circuit_add_random_string);
-BENCHMARK(Circuit_run_paulis)->Ranges({ { 512, 512 }, { 1, 1024 } });
-BENCHMARK_REGISTER_F(Circuit_ZZ_feature_map, GlobalObservable)->RangeMultiplier(2)->Range(2, 8);
-BENCHMARK_REGISTER_F(Circuit_ZZ_feature_map, ZLocal)->RangeMultiplier(2)->Range(2, 8);
-BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, GlobalObservable)->RangeMultiplier(2)->Range(2, 8);
-BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withCoefficientTruncation01)->RangeMultiplier(2)->Range(2, 8);
-BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withWeightTruncation4)->RangeMultiplier(2)->Range(2, 8);
-BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withMultiTruncation6001)->RangeMultiplier(2)->Range(2, 64);
+BENCHMARK(Circuit_add_random_gate);
+BENCHMARK(Circuit_run_paulis)->Args({1, 1})->Args({1, 1024});
+BENCHMARK_REGISTER_F(Circuit_ZZ_feature_map, GlobalObservable)->Arg(8);
+BENCHMARK_REGISTER_F(Circuit_ZZ_feature_map, ZLocal)->Arg(8);
+BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, GlobalObservable)->Arg(8);
+BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withCoefficientTruncation01)->Arg(8);
+BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withWeightTruncation4)->Arg(8);
+BENCHMARK_REGISTER_F(Circuit_Efficient_SU2, withMultiTruncation6001)->Arg(8)->Arg(64);
 BENCHMARK_REGISTER_F(MaxCutQAOAN4P1, run);
 BENCHMARK_REGISTER_F(MaxCutQAOAN4P1, ev);

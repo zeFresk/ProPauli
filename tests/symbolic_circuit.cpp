@@ -71,7 +71,7 @@ TEST(SymbolicCircuit, run_rz_const) {
 	qc.add_operation("H", 0);
 	qc.add_operation("H", 1);
 
-	auto res = qc.run({ "IZ", "ZI" });
+	auto res = qc.run(So_t{ "IZ", "ZI" });
 	EXPECT_NEAR(res.expectation_value().evaluate(), 1.207108, 1e-4f);
 }
 
@@ -87,7 +87,7 @@ TEST(SymbolicCircuit, run_rz_var) {
 	qc.add_operation("H", 0);
 	qc.add_operation("H", 1);
 
-	auto res = qc.run({ "IZ", "ZI" });
+	auto res = qc.run(So_t{ "IZ", "ZI" });
 	EXPECT_NEAR(res.expectation_value().evaluate({ { "a", 3.14159 / 3.f }, { "b", 3.14159 / 4.f } }), 1.207108,
 		    1e-4f);
 }

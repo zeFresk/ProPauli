@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
 set(CMAKE_VERBOSE_MAKEFILE OFF CACHE BOOL "Explicit Makefile")
 set(COVERAGE OFF CACHE BOOL "Build for coverage")
+set(COVERAGE_HTML_DIR "${CMAKE_BINARY_DIR}/coverage_html")
+set(COVERAGE_LCOV_FILE "${CMAKE_BINARY_DIR}/coverage.info")
 set(SANITIZE OFF CACHE BOOL "Build with sanitizers")
 set(BENCHMARK OFF CACHE BOOL "Build benchmarks")
 set(TEST OFF CACHE BOOL "Build tests")
@@ -44,40 +46,46 @@ target_compile_features(propaulib PUBLIC cxx_std_23)
 target_compile_options(propaulib PUBLIC
 	$<$<CXX_COMPILER_ID:MSVC>:/W4>
 	$<$<CXX_COMPILER_ID:Clang,GNU>:-Wall -Wextra -Wpedantic>
-										#$<$<CXX_COMPILER_ID:Clang>:-stdlib=libc++>
+	#$<$<CXX_COMPILER_ID:Clang>:-stdlib=libc++>
 	$<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/O2>
-	$<$<AND:$<CONFIG:Release>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-O3 -march=native -g>
+	$<$<AND:$<CONFIG:Release>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-O3 -march=native>
 	$<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:Clang>>:-ffast-math>
 	$<$<CONFIG:Debug>:-g>
 	$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>,$<BOOL:${SANITIZE}>>:-fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined>
 	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:GNU>>:-ftest-coverage -fprofile-arcs>
-	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:Clang>>:-fprofile-instr-generate -fcoverage-mapping --coverage>
+	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:Clang>>:-fprofile-instr-generate -fcoverage-mapping>
 	)
 
 target_link_options(propaulib INTERFACE
 	$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>,$<BOOL:${SANITIZE}>>:-fsanitize=address -fsanitize=undefined>
-	$<$<AND:$<BOOL:${COVERAGE}>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-fprofile-instr-generate --coverage>
-										#$<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>
+	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:GNU>>:-fprofile-instr-generate --coverage>
+	$<$<AND:$<BOOL:${COVERAGE}>,$<CXX_COMPILER_ID:Clang>>:-fprofile-instr-generate>
+	#$<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>
 	)
 
 include(FetchContent)
 
 FetchContent_Declare(
-  xxhash
-  GIT_REPOSITORY https://github.com/Cyan4973/xxHash.git
-  GIT_TAG        v0.8.3
-  SOURCE_SUBDIR  cmake_unofficial
+		xxhash
+		GIT_REPOSITORY https://github.com/Cyan4973/xxHash.git
+		GIT_TAG        v0.8.3
+		SOURCE_SUBDIR  cmake_unofficial
 )
 FetchContent_MakeAvailable(xxhash)
 
 target_link_libraries(propaulib PUBLIC xxhash)
+
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+	target_link_libraries(propaulib PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
 if (TEST)
 	# Build de GTest
 	include(FetchContent)
 	FetchContent_Declare(
 		googletest
-										# Specify the commit you depend on and update it regularly.
+		# Specify the commit you depend on and update it regularly.
 		URL https://github.com/google/googletest/archive/52eb8108c5bdec04579160ae17225d66034bd723.zip
 		DOWNLOAD_EXTRACT_TIMESTAMP true
 )
@@ -96,9 +104,9 @@ if (TEST)
 	gtest_discover_tests(UnitTest)
 
 	set_source_files_properties(
-	    "${PROJECT_SOURCE_DIR}/tests/compiled_expression.cpp"
-	    PROPERTIES
-	    COMPILE_FLAGS "-fno-fast-math"
+					"${PROJECT_SOURCE_DIR}/tests/compiled_expression.cpp"
+					PROPERTIES
+					COMPILE_FLAGS "-fno-fast-math"
 	)
 endif()
 
@@ -108,7 +116,7 @@ if (BENCHMARK)
 	FetchContent_Declare(
 		googlebenchmark
 		URL https://github.com/google/benchmark/archive/refs/tags/v1.9.4.zip
-				DOWNLOAD_EXTRACT_TIMESTAMP true
+		DOWNLOAD_EXTRACT_TIMESTAMP true
 	)
 	set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable testing for Google Benchmark")
 	FetchContent_MakeAvailable(googlebenchmark)
@@ -139,7 +147,9 @@ if (COVERAGE)
 		add_custom_target(coverage
 					COMMAND LLVM_PROFILE_FILE=${TARGET_NAME}.profraw $<TARGET_FILE:${TARGET_NAME}>
 					COMMAND llvm-profdata merge -sparse ${TARGET_NAME}.profraw -o ${TARGET_NAME}.profdata
-					COMMAND llvm-cov report $<TARGET_FILE:${TARGET_NAME}> -instr-profile=${TARGET_NAME}.profdata
+					COMMAND llvm-cov report $<TARGET_FILE:${TARGET_NAME}> -instr-profile=${TARGET_NAME}.profdata ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/include
+					COMMAND llvm-cov show $<TARGET_FILE:${TARGET_NAME}> -instr-profile=${TARGET_NAME}.profdata -format=html -output-dir=${COVERAGE_HTML_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include
+					COMMAND llvm-cov export $<TARGET_FILE:${TARGET_NAME}> -instr-profile=${TARGET_NAME}.profdata -format=lcov ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include > ${COVERAGE_LCOV_FILE}
 					DEPENDS ${TARGET_NAME}
 	)
 	elseif(CMAKE_COMPILER_IS_GNUCXX)

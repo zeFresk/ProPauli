@@ -1,3 +1,5 @@
+#include "pauli.hpp"
+#include "policies/sequential.hpp"
 #include <benchmark/benchmark.h>
 
 #include "circuit.hpp"
@@ -315,13 +317,18 @@ BENCHMARK_DEFINE_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn50k_r
 	qc.set_truncate_policy(std::make_shared<AlwaysAfterSplittingPolicy>());
 	qc.set_truncator(std::make_shared<KeepNTruncator<coeff_t>>(50000));
 
+	// bool first = true;
 	for (auto _ : state) {
-		auto res = qc.run(obs);
+		auto res = qc.run(obs, seq);
+		/*if (first) {
+			std::cout << res.expectation_value(seq) << "\n";
+			first = false;
+		}*/
 		benchmark::DoNotOptimize(res);
 	}
 }
 
-BENCHMARK_DEFINE_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_run_one_by_one)(benchmark::State& state) {
+BENCHMARK_DEFINE_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_run_one_by_one_ev)(benchmark::State& state) {
 	qc.set_merge_policy(std::make_shared<AlwaysAfterSplittingPolicy>());
 	qc.set_truncate_policy(std::make_shared<AlwaysAfterSplittingPolicy>());
 	qc.set_truncator(std::make_shared<KeepNTruncator<coeff_t>>(10000));
@@ -330,11 +337,88 @@ BENCHMARK_DEFINE_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_r
 		auto sum_ev = 0.f;
 		for (auto sv : sv_obss) {
 			auto ob = Observable(sv);
-			sum_ev += qc.run(ob).expectation_value();
+			sum_ev += qc.run(ob, seq).expectation_value(seq);
 		}
 		benchmark::DoNotOptimize(sum_ev);
 	}
 }
 
 BENCHMARK_REGISTER_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn50k_run);
-BENCHMARK_REGISTER_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_run_one_by_one);
+BENCHMARK_REGISTER_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_run_one_by_one_ev);
+
+#if defined(_OPENMP)
+
+BENCHMARK_DEFINE_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn50k_run_par)(benchmark::State& state) {
+	qc.set_merge_policy(std::make_shared<AlwaysAfterSplittingPolicy>());
+	qc.set_truncate_policy(std::make_shared<AlwaysAfterSplittingPolicy>());
+	qc.set_truncator(std::make_shared<KeepNTruncator<coeff_t>>(50000));
+
+	// bool first = true;
+	for (auto _ : state) {
+		auto res = qc.run(obs, par);
+		/*if (first) {
+			std::cout << res.expectation_value(seq) << "\n";
+			first = false;
+		}*/
+		benchmark::DoNotOptimize(res);
+	}
+}
+
+BENCHMARK_DEFINE_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_run_one_by_one_ev_par)(benchmark::State& state) {
+	qc.set_merge_policy(std::make_shared<AlwaysAfterSplittingPolicy>());
+	qc.set_truncate_policy(std::make_shared<AlwaysAfterSplittingPolicy>());
+	qc.set_truncator(std::make_shared<KeepNTruncator<coeff_t>>(10000));
+
+	for (auto _ : state) {
+		auto sum_ev = 0.f;
+		for (auto sv : sv_obss) {
+			auto ob = Observable(sv);
+			sum_ev += qc.run(ob, par).expectation_value(par);
+		}
+		benchmark::DoNotOptimize(sum_ev);
+	}
+}
+
+BENCHMARK_DEFINE_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_run_one_by_one_ev_batched_par)(benchmark::State& state) {
+	qc.set_merge_policy(std::make_shared<AlwaysAfterSplittingPolicy>());
+	qc.set_truncate_policy(std::make_shared<AlwaysAfterSplittingPolicy>());
+	qc.set_truncator(std::make_shared<KeepNTruncator<coeff_t>>(10000));
+
+	std::vector<Observable<coeff_t>> observables;
+	observables.reserve(sv_obss.size());
+	for (auto const& sv : sv_obss) {
+		observables.push_back(Observable{ sv });
+	}
+
+	for (auto _ : state) {
+		std::vector<Observable<coeff_t>> results = qc.run(observables, par);
+		auto sum_ev = std::accumulate(results.cbegin(), results.cend(), 0.f,
+					      [=](auto l, auto const& r) { return l + r.expectation_value(par); });
+		benchmark::DoNotOptimize(sum_ev);
+	}
+}
+
+BENCHMARK_DEFINE_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_run_one_by_one_ev_batched_evs_par)(benchmark::State& state) {
+	qc.set_merge_policy(std::make_shared<AlwaysAfterSplittingPolicy>());
+	qc.set_truncate_policy(std::make_shared<AlwaysAfterSplittingPolicy>());
+	qc.set_truncator(std::make_shared<KeepNTruncator<coeff_t>>(10000));
+
+	std::vector<Observable<coeff_t>> observables;
+	observables.reserve(sv_obss.size());
+	for (auto const& sv : sv_obss) {
+		observables.push_back(Observable{ sv });
+	}
+
+	for (auto _ : state) {
+		auto results = qc.expectation_value(observables, par);
+		auto sum_ev = std::accumulate(results.cbegin(), results.cend(), 0.f);
+		benchmark::DoNotOptimize(sum_ev);
+	}
+}
+
+BENCHMARK_REGISTER_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn50k_run_par);
+BENCHMARK_REGISTER_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_run_one_by_one_ev_par);
+BENCHMARK_REGISTER_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_run_one_by_one_ev_batched_par);
+BENCHMARK_REGISTER_F(MergeMaxCutQAOAN32P3, alwayafter_merge_alwaysafter_keepn10k_run_one_by_one_ev_batched_evs_par);
+
+#endif

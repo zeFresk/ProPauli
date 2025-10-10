@@ -16,6 +16,7 @@
 #include "pauli_term_container.hpp"
 #include "symbolic/coefficient.hpp"
 #include "merge.hpp"
+#include "policy.hpp"
 
 #include <cstring>
 #include <initializer_list>
@@ -92,11 +93,16 @@ class Observable {
 	 * @param qubit The index of the qubit to apply the gate to.
 	 * @pre `qubit` must be a valid index less than `nb_qubits()`.
 	 */
-	void apply_pauli(Pauli_gates g, unsigned qubit) {
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_pauli(Pauli_gates g, unsigned qubit, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
-		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
-			paulis_[i].apply_pauli(g, qubit);
-		}
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
+		Policy_t::apply_pauli(paulis_, g, qubit);
+	}
+
+	template <IsVariant DynamicPolicy>
+	void apply_pauli(Pauli_gates g, unsigned qubit, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_pauli(g, qubit, pol); }, rpol);
 	}
 
 	/**
@@ -105,11 +111,16 @@ class Observable {
 	 * @param qubit The index of the qubit to apply the gate to.
 	 * @pre `qubit` must be a valid index less than `nb_qubits()`.
 	 */
-	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit) {
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
-		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
-			paulis_[i].apply_clifford(g, qubit);
-		}
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
+		Policy_t::apply_clifford(paulis_, g, qubit);
+	}
+
+	template <IsVariant DynamicPolicy>
+	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_clifford(g, qubit, pol); }, rpol);
 	}
 
 	/**
@@ -119,11 +130,16 @@ class Observable {
 	 * @param p The noise probability parameter.
 	 * @pre `qubit` must be a valid index less than `nb_qubits()`.
 	 */
-	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p) {
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
-		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
-			paulis_[i].apply_unital_noise(n, qubit, p);
-		}
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
+		Policy_t::apply_unital_noise(paulis_, n, qubit, p);
+	}
+
+	template <IsVariant DynamicPolicy>
+	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_unital_noise(n, qubit, p, pol); }, rpol);
 	}
 
 	/**
@@ -132,16 +148,21 @@ class Observable {
 	 * @param qubit_target The index of the target qubit.
 	 * @pre `qubit_control` and `qubit_target` must be valid and distinct qubit indices.
 	 */
-	void apply_cx(unsigned qubit_control, unsigned qubit_target) {
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_cx(unsigned qubit_control, unsigned qubit_target, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit_control);
 		check_qubit(qubit_target);
 		if (qubit_control == qubit_target) {
 			throw std::invalid_argument("cx gate target must be != from control.");
 		}
 
-		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
-			paulis_[i].apply_cx(qubit_control, qubit_target);
-		}
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
+		Policy_t::apply_cx(paulis_, qubit_control, qubit_target);
+	}
+
+	template <IsVariant DynamicPolicy>
+	void apply_cx(unsigned qubit_control, unsigned qubit_target, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_cx(qubit_control, qubit_target, pol); }, rpol);
 	}
 
 	/**
@@ -153,16 +174,16 @@ class Observable {
 	 * output Pauli terms. This can increase the size of the observable, often
 	 * necessitating a subsequent `merge()` or `truncate()` call.
 	 */
-	void apply_rz(unsigned qubit, T theta) {
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_rz(unsigned qubit, T theta, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
-		const auto nb_terms = paulis_.nb_terms();
-		for (std::size_t i = 0; i < nb_terms; ++i) {
-			auto p = paulis_[i];
-			if (!p.get_pauli(qubit).commutes_with(p_z)) {
-				auto new_path = paulis_.duplicate_pauliterm(i);
-				paulis_[i].apply_rz(qubit, theta, new_path);
-			}
-		}
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
+		Policy_t::apply_rz(paulis_, qubit, theta);
+	}
+
+	template <IsVariant DynamicPolicy>
+	void apply_rz(unsigned qubit, T theta, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_rz(qubit, theta, pol); }, rpol);
 	}
 
 	/**
@@ -173,18 +194,16 @@ class Observable {
 	 * target qubit, it will be split into two. If it has X or Y, its coefficient is
 	 * simply scaled. If it has I, there is no effect.
 	 */
-	void apply_amplitude_damping(unsigned qubit, T pn) {
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_amplitude_damping(unsigned qubit, T pn, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
-		const auto nb_terms = paulis_.nb_terms();
-		for (std::size_t i = 0; i < nb_terms; ++i) {
-			auto p = paulis_[i];
-			if (p.get_pauli(qubit) == p_z) {
-				auto new_path = paulis_.duplicate_pauliterm(i); // invalidates p
-				paulis_[i].apply_amplitude_damping_z(qubit, pn, new_path);
-			} else if (p.get_pauli(qubit) == p_x || p.get_pauli(qubit) == p_y) {
-				p.apply_amplitude_damping_xy(qubit, pn);
-			}
-		}
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
+		Policy_t::apply_amplitude_damping(paulis_, qubit, pn);
+	}
+
+	template <IsVariant DynamicPolicy>
+	void apply_amplitude_damping(unsigned qubit, T pn, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_amplitude_damping(qubit, pn, pol); }, rpol);
 	}
 	/** @} */
 
@@ -196,12 +215,15 @@ class Observable {
 	 * entirely of I and Z operators. These are the terms that are diagonal in the
 	 * computational basis.
 	 */
-	T expectation_value() const {
-		T ret = 0;
-		for (std::size_t i = 0; i < paulis_.nb_terms(); ++i) {
-			ret += paulis_[i].expectation_value();
-		}
-		return ret;
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
+	T expectation_value(ExecutionPolicy&& policy = ExecutionPolicy{}) const {
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
+		return Policy_t::expectation_value(paulis_);
+	}
+
+	template <IsVariant DynamicPolicy>
+	T expectation_value(DynamicPolicy&& rpol) const {
+		return std::visit([this](auto const& pol) { return this->expectation_value(pol); }, rpol);
 	}
 
 	/** @name Container Interface
@@ -257,9 +279,17 @@ class Observable {
 	 * This is a crucial optimization for reducing the complexity of the simulation.
 	 * It calls a high-performance, in-place merging algorithm.
 	 */
-	std::size_t merge() {
-		merger_(paulis_);
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
+	std::size_t merge(ExecutionPolicy&& policy = ExecutionPolicy{}) {
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
+		using Merger_t = Policy_t::template Merger<T>;
+		std::get<Merger_t>(merger_)(paulis_);
 		return paulis_.nb_terms();
+	}
+
+	template <IsVariant DynamicPolicy>
+	auto merge(DynamicPolicy&& rpol) {
+		return std::visit([this](auto const& pol) { return this->merge(pol); }, rpol);
 	}
 
 	/**
@@ -298,7 +328,7 @@ class Observable {
 
     private:
 	PauliTermContainer<T> paulis_;
-	Merger<T> merger_;
+	RuntimeMerger<T> merger_;
 
 	void check_invariant() const {
 		if (paulis_.nb_terms() == 0) {

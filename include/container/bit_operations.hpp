@@ -16,6 +16,26 @@
 #include <concepts>
 #include <bit>
 
+template <typename T>
+bool is_power_of_two(T k) {
+	return (k > 0) && ((k & (k - 1)) == 0);
+}
+
+template <typename size_type>
+constexpr size_type next_power_of_two(size_type n) {
+	if (n == 0)
+		return 1;
+	n--;
+	n |= n >> 1;
+	n |= n >> 2;
+	n |= n >> 4;
+	n |= n >> 8;
+	n |= n >> 16;
+	if constexpr (sizeof(size_type) > 4)
+		n |= n >> 32;
+	return ++n;
+}
+
 /**
  * @brief Creates a bitmask with a specified number of lower bits set to 1.
  * @tparam T The integer type for the mask.
@@ -27,64 +47,9 @@ template <typename T>
 constexpr T compute_mask(T nb_bits) {
 	T ret = 0;
 	for (T i = 0; i < nb_bits; ++i) {
-		ret |= (T{1} << i);
+		ret |= (T{ 1 } << i);
 	}
 	return ret;
-}
-
-/**
- * @brief Calculates the minimum number of underlying integers required to store a number of objects.
- * @tparam T A numeric type for the calculation.
- * @param nb_objs The total number of objects to store.
- * @param objs_per_underlying The number of objects that fit into a single underlying integer.
- * @return The smallest number of underlying integers needed.
- * @note This is effectively a ceiling division: `ceil(nb_objs / objs_per_underlying)`.
- */
-template <typename T>
-constexpr std::size_t minimum_size(std::size_t nb_objs, T objs_per_underlying) {
-	auto rem = nb_objs % objs_per_underlying;
-	auto quo = nb_objs / objs_per_underlying;
-	return quo + (1 * (rem > 0));
-}
-
-/**
- * @brief Computes a shifted mask for a specific object packed within an integer.
- * @tparam T The integer type of the mask.
- * @param idx The index of the object within a packed sequence.
- * @param mask The base mask for a single object (e.g., 0b11).
- * @param objs_per_underlying The number of objects that fit into a single underlying integer.
- * @param bits_per_obj The number of bits per object.
- * @return The `mask` shifted to the correct position for the object at `idx`.
- */
-template <typename T>
-constexpr T compute_mask_idx(std::size_t idx, T mask, T objs_per_underlying, T bits_per_obj) {
-	auto rem = idx % objs_per_underlying;
-	return mask << (rem * bits_per_obj);
-}
-
-/**
- * @brief Computes the index of the underlying integer that contains the object at a given index.
- * @tparam T An integer type for the calculation.
- * @param idx The absolute index of the object.
- * @param objs_per_underlying The number of objects per underlying integer.
- * @return The index into an array of underlying integers.
- */
-template <typename T>
-constexpr std::size_t compute_idx(std::size_t idx, T objs_per_underlying) {
-	return idx / objs_per_underlying;
-}
-
-/**
- * @brief Sets a value within a field of bits defined by a mask.
- * @tparam T The integer type.
- * @param out The integer to modify.
- * @param mask The mask defining the bit field to change (e.g., 0b001100).
- * @param masked_value The new value, already shifted to align with the mask.
- */
-template <typename T>
-constexpr void set_on_mask(T& out, T mask, T masked_value) {
-	out &= ~mask; // Set bits in the field to 0
-	out |= masked_value; // Set the new value
 }
 
 /**

@@ -36,14 +36,11 @@ jobs:
           version: 1.0
 
       - name: Install latest Clang (macOS)
-        if: runner.os == 'never' # runner.os == 'macOS'
+        if: runner.os == 'macOS'
         run: |
-          brew install llvm
-          echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
-          echo "LIBCXX_ENABLE_VENDOR_AVAILABILITY_ANNOTATIONS=ON" >> $GITHUB_ENV
-          echo 'LDFLAGS="-L/opt/homebrew/opt/llvm/lib"' >> $GITHUB_ENV
-          echo 'CPPFLAGS="-I/opt/homebrew/opt/llvm/include"' >> $GITHUB_ENV
-
+          brew install libomp
+          echo "OpenMP_ROOT=$(brew --prefix)/opt/libomp" >> $GITHUB_ENV
+          echo LDFLAGS="$LDFLAGS -L${OpenMP_ROOT}/lib" >> $GITHUB_ENV
 
       - name: Debug
         run: |
@@ -102,12 +99,6 @@ jobs:
       - name: Run tests to generate coverage data
         working-directory: ./build
         run: make coverage
-
-      - name: Generate Coverage Report
-        working-directory: ./build
-        run: |          
-          llvm-profdata merge -sparse *.profraw -o default.profdata
-          llvm-cov export -format=lcov UnitTest -instr-profile=default.profdata -sources ../include -sources ../src > coverage.info
 
       - name: Upload to Coveralls
         uses: coverallsapp/github-action@v2
