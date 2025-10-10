@@ -165,7 +165,7 @@ struct SequentialPolicy {
 	template <typename ObservableType, typename QC>
 	inline static std::vector<ObservableType> circuit_batched_run(QC& qc, std::vector<ObservableType> observables) {
 		for (std::size_t i = 0; i < observables.size(); ++i) {
-			auto res = qc.run(observables[i], SequentialPolicy{});
+			auto res = qc.run(std::move(observables[i]), SequentialPolicy{});
 			observables[i] = std::move(res);
 		}
 		return observables;

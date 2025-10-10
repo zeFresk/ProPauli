@@ -18,6 +18,7 @@ template <typename ExecutionPolicy>
 class ObservableTest : public testing::Test {
     public:
 	static constexpr auto policy = ExecutionPolicy{};
+	static constexpr auto rpolicy = RuntimePolicy{ policy };
 };
 
 template <typename T>
@@ -102,6 +103,34 @@ TYPED_TEST(ObservableTest, apply_pauli) {
 	}
 }
 
+TYPED_TEST(ObservableTest, apply_pauli_runtime) {
+	using enum Pauli_gates;
+	Observable obs{ "IXYZ", "ZXYI" };
+	Observable obs_cpy{ "IXYZ", "ZXYI" };
+	auto pt1 = obs_cpy.copy_term(0);
+	auto pt2 = obs_cpy.copy_term(1);
+
+	// I
+	for (std::size_t i = 0; i < 4; ++i) {
+		obs.apply_pauli(I, i, this->rpolicy);
+		EXPECT_EQ(obs[0], obs_cpy[0]);
+		EXPECT_EQ(obs[1], obs_cpy[1]);
+		EXPECT_EQ(obs.expectation_value(this->rpolicy), obs_cpy.expectation_value(this->rpolicy));
+	}
+
+	// X, Y, Z
+	for (auto g : { I, X, Y, Z }) {
+		for (std::size_t i = 0; i < 4; ++i) {
+			obs.apply_pauli(g, i, this->rpolicy);
+			pt1.apply_pauli(g, i);
+			pt2.apply_pauli(g, i);
+			EXPECT_EQ(obs[0], pt1);
+			EXPECT_EQ(obs[1], pt2);
+			EXPECT_EQ(obs.expectation_value(this->rpolicy), pt1.expectation_value() + pt2.expectation_value());
+		}
+	}
+}
+
 TYPED_TEST(ObservableTest, apply_clifford) {
 	using enum Clifford_Gates_1Q;
 	Observable obs{ "IXYZ", "ZXYI" };
@@ -118,6 +147,24 @@ TYPED_TEST(ObservableTest, apply_clifford) {
 		EXPECT_EQ(obs.expectation_value(this->policy), pt1.expectation_value() + pt2.expectation_value());
 	}
 }
+
+TYPED_TEST(ObservableTest, apply_clifford_runtime) {
+	using enum Clifford_Gates_1Q;
+	Observable obs{ "IXYZ", "ZXYI" };
+	Observable obs_cpy{ "IXYZ", "ZXYI" };
+	auto pt1 = obs_cpy.copy_term(0);
+	auto pt2 = obs_cpy.copy_term(1);
+
+	for (std::size_t i = 0; i < 4; ++i) {
+		obs.apply_clifford(H, i, this->rpolicy);
+		pt1.apply_clifford(H, i);
+		pt2.apply_clifford(H, i);
+		EXPECT_EQ(obs[0], pt1);
+		EXPECT_EQ(obs[1], pt2);
+		EXPECT_EQ(obs.expectation_value(this->rpolicy), pt1.expectation_value() + pt2.expectation_value());
+	}
+}
+
 TYPED_TEST(ObservableTest, apply_cx) {
 	Observable obs{ "IXYZ", "ZXYI" };
 	Observable obs_cpy{ "IXYZ", "ZXYI" };
@@ -137,6 +184,27 @@ TYPED_TEST(ObservableTest, apply_cx) {
 		}
 	}
 }
+
+TYPED_TEST(ObservableTest, apply_cx_runtime) {
+	Observable obs{ "IXYZ", "ZXYI" };
+	Observable obs_cpy{ "IXYZ", "ZXYI" };
+	auto pt1 = obs_cpy.copy_term(0);
+	auto pt2 = obs_cpy.copy_term(1);
+
+	for (std::size_t i = 0; i < 4; ++i) {
+		for (std::size_t j = 0; j < 4; ++j) {
+			if (i == j)
+				continue;
+			obs.apply_cx(i, j, this->rpolicy);
+			pt1.apply_cx(i, j);
+			pt2.apply_cx(i, j);
+			EXPECT_EQ(obs[0], pt1);
+			EXPECT_EQ(obs[1], pt2);
+			EXPECT_EQ(obs.expectation_value(this->rpolicy), pt1.expectation_value() + pt2.expectation_value());
+		}
+	}
+}
+
 TYPED_TEST(ObservableTest, apply_rz) {
 	Observable obs{ "IXYZZIXYYZXIZXIZI", "ZXYIXYZXZZZYYXXYY" };
 	Observable obs_cpy = obs;
@@ -170,6 +238,39 @@ TYPED_TEST(ObservableTest, apply_rz) {
 	}
 }
 
+TYPED_TEST(ObservableTest, apply_rz_runtime) {
+	Observable obs{ "IXYZZIXYYZXIZXIZI", "ZXYIXYZXZZZYYXXYY" };
+	Observable obs_cpy = obs;
+	PauliTerm<coeff_t> pt1_cpy = obs_cpy.copy_term(0);
+	PauliTerm<coeff_t> pt2_cpy = obs_cpy.copy_term(1);
+
+	const coeff_t theta = 1.41421356237;
+
+	for (std::size_t i = 0; i < pt1_cpy.size(); ++i) {
+		auto obs = obs_cpy;
+		auto pt1 = pt1_cpy;
+		auto pt2 = pt2_cpy;
+		std::vector<decltype(pt1)> pts;
+
+		if (!pt1[i].commutes_with(p_z)) {
+			pts.push_back(pt1.apply_rz(i, theta));
+		} else if (!pt2[i].commutes_with(p_z)) {
+			pts.push_back(pt2.apply_rz(i, theta));
+		}
+		auto expected_ev = std::accumulate(pts.cbegin(), pts.cend(), coeff_t{ 0. },
+						   [](auto acc, auto const& pt) { return acc + pt.expectation_value(); });
+
+		obs.apply_rz(i, theta, this->rpolicy);
+
+		for (auto const& pt : pts) { // find all terms inside observable
+			auto it = std::find(obs.begin(), obs.end(), pt);
+			ASSERT_NE(it, obs.end());
+			EXPECT_EQ(*it, pt);
+		}
+		EXPECT_EQ(obs.expectation_value(this->rpolicy), expected_ev);
+	}
+}
+
 TYPED_TEST(ObservableTest, apply_rz_inverse) {
 	Observable obs{ "IIXIIIIIIIII" };
 	auto before_ev = obs.expectation_value(this->policy);
@@ -180,10 +281,26 @@ TYPED_TEST(ObservableTest, apply_rz_inverse) {
 	EXPECT_EQ(before_ev, after_ev);
 }
 
+TYPED_TEST(ObservableTest, apply_rz_inverse_runtime) {
+	Observable obs{ "IIXIIIIIIIII" };
+	auto before_ev = obs.expectation_value(this->rpolicy);
+	EXPECT_TRUE(!obs[0].get_pauli(2).commutes_with(p_z));
+	obs.apply_rz(2, 0.125, this->rpolicy);
+	obs.apply_rz(2, -0.125, this->rpolicy);
+	auto after_ev = obs.expectation_value(this->rpolicy);
+	EXPECT_EQ(before_ev, after_ev);
+}
+
 TYPED_TEST(ObservableTest, expectation_value) {
 	EXPECT_EQ(Observable{ "ZI" }.expectation_value(this->policy), 1);
 	EXPECT_EQ(Observable{ "IX" }.expectation_value(this->policy), 0);
 	EXPECT_EQ(Observable{ "YZ" }.expectation_value(this->policy), 0);
+}
+
+TYPED_TEST(ObservableTest, expectation_value_runtime) {
+	EXPECT_EQ(Observable{ "ZI" }.expectation_value(this->rpolicy), 1);
+	EXPECT_EQ(Observable{ "IX" }.expectation_value(this->rpolicy), 0);
+	EXPECT_EQ(Observable{ "YZ" }.expectation_value(this->rpolicy), 0);
 }
 
 TYPED_TEST(ObservableTest, serialize) {
@@ -208,6 +325,15 @@ TYPED_TEST(ObservableTest, merge_simple) {
 	EXPECT_EQ(obs[0], PauliTerm<coeff_t>("IXYZ", 0.25));
 }
 
+TYPED_TEST(ObservableTest, merge_simple_runtime) {
+	Observable obs{ PauliTerm{ "IXYZ", coeff_t{ -0.25 } }, PauliTerm{ "IXYZ", coeff_t{ 0.5 } } };
+	obs.merge(this->rpolicy);
+	EXPECT_EQ(obs.size(), 1);
+	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
+	EXPECT_EQ(nb_elems_internal, 1);
+	EXPECT_EQ(obs[0], PauliTerm<coeff_t>("IXYZ", 0.25));
+}
+
 TYPED_TEST(ObservableTest, merge_long) {
 	Observable obs{ PauliTerm{ "XXXX", coeff_t{ -0.25 } } };
 	for (int i = 0; i < 8; ++i) {
@@ -217,6 +343,20 @@ TYPED_TEST(ObservableTest, merge_long) {
 	EXPECT_GT(std::distance(obs.cbegin(), obs.cend()), 2);
 
 	obs.merge(this->policy);
+
+	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
+	EXPECT_EQ(nb_elems_internal, 2);
+}
+
+TYPED_TEST(ObservableTest, merge_long_runtime) {
+	Observable obs{ PauliTerm{ "XXXX", coeff_t{ -0.25 } } };
+	for (int i = 0; i < 8; ++i) {
+		obs.apply_rz(0, 3.14 / 2, this->policy);
+	}
+
+	EXPECT_GT(std::distance(obs.cbegin(), obs.cend()), 2);
+
+	obs.merge(this->rpolicy);
 
 	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
 	EXPECT_EQ(nb_elems_internal, 2);
@@ -232,6 +372,22 @@ TYPED_TEST(ObservableTest, merge_long_twice) {
 		EXPECT_GT(std::distance(obs.cbegin(), obs.cend()), 2);
 
 		obs.merge(this->policy);
+
+		auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
+		EXPECT_EQ(nb_elems_internal, 2);
+	}
+}
+
+TYPED_TEST(ObservableTest, merge_long_twice_runtime) {
+	Observable obs{ PauliTerm{ "XXXX", coeff_t{ -0.25 } } };
+	for (std::size_t i = 0; i < 2; ++i) {
+		for (int i = 0; i < 8; ++i) {
+			obs.apply_rz(0, 3.14 / 2, this->rpolicy);
+		}
+
+		EXPECT_GT(std::distance(obs.cbegin(), obs.cend()), 2);
+
+		obs.merge(this->rpolicy);
 
 		auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());
 		EXPECT_EQ(nb_elems_internal, 2);
@@ -290,6 +446,22 @@ TYPED_TEST(ObservableTest, depolarizing_noise) {
 	EXPECT_FLOAT_EQ(obs[0].coefficient(), 1.f / (1 << obs[0].size()));
 }
 
+TYPED_TEST(ObservableTest, depolarizing_noise_runtime) {
+	// no effect on I
+	Observable iobs{ "IIII" };
+	for (unsigned i = 0; i < iobs[0].size(); ++i) {
+		iobs.apply_unital_noise(UnitalNoise::Depolarizing, i, 0.5, this->rpolicy);
+	}
+	EXPECT_FLOAT_EQ(iobs[0].coefficient(), 1);
+
+	// affects everything else
+	Observable obs{ "XYZ" };
+	for (unsigned i = 0; i < obs[0].size(); ++i) {
+		obs.apply_unital_noise(UnitalNoise::Depolarizing, i, 0.5, this->rpolicy);
+	}
+	EXPECT_FLOAT_EQ(obs[0].coefficient(), 1.f / (1 << obs[0].size()));
+}
+
 TYPED_TEST(ObservableTest, dephasing_noise) {
 	// no effect on I or Z
 	Observable iobs{ "IZZI" };
@@ -302,6 +474,22 @@ TYPED_TEST(ObservableTest, dephasing_noise) {
 	Observable obs{ "XYYX" };
 	for (unsigned i = 0; i < obs[0].size(); ++i) {
 		obs.apply_unital_noise(UnitalNoise::Dephasing, i, 0.5, this->policy);
+	}
+	EXPECT_FLOAT_EQ(obs[0].coefficient(), 1.f / (1 << obs[0].size()));
+}
+
+TYPED_TEST(ObservableTest, dephasing_noise_runtime) {
+	// no effect on I or Z
+	Observable iobs{ "IZZI" };
+	for (unsigned i = 0; i < iobs[0].size(); ++i) {
+		iobs.apply_unital_noise(UnitalNoise::Dephasing, i, 0.5, this->rpolicy);
+	}
+	EXPECT_FLOAT_EQ(iobs[0].coefficient(), 1);
+
+	// affects everything else
+	Observable obs{ "XYYX" };
+	for (unsigned i = 0; i < obs[0].size(); ++i) {
+		obs.apply_unital_noise(UnitalNoise::Dephasing, i, 0.5, this->rpolicy);
 	}
 	EXPECT_FLOAT_EQ(obs[0].coefficient(), 1.f / (1 << obs[0].size()));
 }
@@ -338,6 +526,38 @@ TYPED_TEST(ObservableTest, amplitude_damping) {
 	EXPECT_FLOAT_EQ((*zpt).coefficient(), std::pow(1 - p, zobs[0].size()));
 }
 
+TYPED_TEST(ObservableTest, amplitude_damping_runtime) {
+	static constexpr coeff_t p = 0.01;
+	// no effect on I
+	Observable iobs{ "IIII" };
+	for (unsigned i = 0; i < iobs[0].size(); ++i) {
+		iobs.apply_amplitude_damping(i, p, this->rpolicy);
+	}
+	EXPECT_EQ(std::distance(iobs.cbegin(), iobs.cend()), 1);
+	EXPECT_FLOAT_EQ(iobs[0].coefficient(), 1);
+
+	// XY no split + sqrt(1-p) coeff
+	Observable xyobs{ "XYXY" };
+	auto xy_ph = xyobs[0].phash();
+	for (unsigned i = 0; i < xyobs[0].size(); ++i) {
+		xyobs.apply_amplitude_damping(i, p, this->rpolicy);
+	}
+	EXPECT_EQ(std::distance(xyobs.cbegin(), xyobs.cend()), 1);
+	EXPECT_FLOAT_EQ(xyobs[0].coefficient(), std::pow(std::sqrt(1 - p), xyobs[0].size()));
+	EXPECT_EQ(xyobs[0].phash(), xy_ph);
+
+	// Z => split + (1-p) coefficient
+	Observable zobs{ "ZZZZ" };
+	auto z_ph = zobs[0].phash();
+	for (unsigned i = 0; i < zobs[0].size(); ++i) {
+		zobs.apply_amplitude_damping(i, p, this->rpolicy);
+	}
+	auto zpt = std::find_if(zobs.cbegin(), zobs.cend(), [=](auto const& pt) { return pt.phash() == z_ph; });
+	ASSERT_TRUE(zpt != zobs.cend());
+	EXPECT_EQ(std::distance(zobs.cbegin(), zobs.cend()), std::pow(2, zobs[0].size()));
+	EXPECT_FLOAT_EQ((*zpt).coefficient(), std::pow(1 - p, zobs[0].size()));
+}
+
 TYPED_TEST(ObservableTest, bad_init_throw) {
 	EXPECT_THROW({ Observable obs(""); }, std::invalid_argument);
 	EXPECT_THROW({ Observable obs{ std::initializer_list<std::string_view>{} }; }, std::invalid_argument);
@@ -364,4 +584,16 @@ TYPED_TEST(ObservableTest, bad_gate_target_throw) {
 	EXPECT_THROW({ obs.apply_pauli(Pauli_gates::X, 2, this->policy); }, std::invalid_argument);
 	EXPECT_THROW({ obs.apply_cx(2, 0, this->policy); }, std::invalid_argument);
 	EXPECT_THROW({ obs.apply_cx(1, 1, this->policy); }, std::invalid_argument);
+}
+
+TYPED_TEST(ObservableTest, bad_gate_target_throw_runtime) {
+	Observable obs{ "II" };
+	EXPECT_THROW({ obs.apply_unital_noise(UnitalNoise::Dephasing, 2, 0.1f, this->rpolicy); }, std::invalid_argument);
+	EXPECT_THROW({ obs.apply_amplitude_damping(2, 0.1f, this->rpolicy); }, std::invalid_argument);
+	EXPECT_THROW({ obs.apply_rz(2, 0.1f, this->rpolicy); }, std::invalid_argument);
+	EXPECT_THROW({ obs.apply_cx(0, 2, this->rpolicy); }, std::invalid_argument);
+	EXPECT_THROW({ obs.apply_clifford(Clifford_Gates_1Q::H, 2, this->rpolicy); }, std::invalid_argument);
+	EXPECT_THROW({ obs.apply_pauli(Pauli_gates::X, 2, this->rpolicy); }, std::invalid_argument);
+	EXPECT_THROW({ obs.apply_cx(2, 0, this->rpolicy); }, std::invalid_argument);
+	EXPECT_THROW({ obs.apply_cx(1, 1, this->rpolicy); }, std::invalid_argument);
 }

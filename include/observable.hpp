@@ -93,11 +93,16 @@ class Observable {
 	 * @param qubit The index of the qubit to apply the gate to.
 	 * @pre `qubit` must be a valid index less than `nb_qubits()`.
 	 */
-	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
 	void apply_pauli(Pauli_gates g, unsigned qubit, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		Policy_t::apply_pauli(paulis_, g, qubit);
+	}
+
+	template <IsVariant DynamicPolicy>
+	void apply_pauli(Pauli_gates g, unsigned qubit, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_pauli(g, qubit, pol); }, rpol);
 	}
 
 	/**
@@ -106,11 +111,16 @@ class Observable {
 	 * @param qubit The index of the qubit to apply the gate to.
 	 * @pre `qubit` must be a valid index less than `nb_qubits()`.
 	 */
-	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
 	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		Policy_t::apply_clifford(paulis_, g, qubit);
+	}
+
+	template <IsVariant DynamicPolicy>
+	void apply_clifford(Clifford_Gates_1Q g, unsigned qubit, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_clifford(g, qubit, pol); }, rpol);
 	}
 
 	/**
@@ -120,11 +130,16 @@ class Observable {
 	 * @param p The noise probability parameter.
 	 * @pre `qubit` must be a valid index less than `nb_qubits()`.
 	 */
-	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
 	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		Policy_t::apply_unital_noise(paulis_, n, qubit, p);
+	}
+
+	template <IsVariant DynamicPolicy>
+	void apply_unital_noise(UnitalNoise n, unsigned qubit, T p, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_unital_noise(n, qubit, p, pol); }, rpol);
 	}
 
 	/**
@@ -133,7 +148,7 @@ class Observable {
 	 * @param qubit_target The index of the target qubit.
 	 * @pre `qubit_control` and `qubit_target` must be valid and distinct qubit indices.
 	 */
-	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
 	void apply_cx(unsigned qubit_control, unsigned qubit_target, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit_control);
 		check_qubit(qubit_target);
@@ -145,6 +160,11 @@ class Observable {
 		Policy_t::apply_cx(paulis_, qubit_control, qubit_target);
 	}
 
+	template <IsVariant DynamicPolicy>
+	void apply_cx(unsigned qubit_control, unsigned qubit_target, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_cx(qubit_control, qubit_target, pol); }, rpol);
+	}
+
 	/**
 	 * @brief Applies a single-qubit Rz rotation gate to the observable.
 	 * @param qubit The index of the qubit to apply the rotation to.
@@ -154,11 +174,16 @@ class Observable {
 	 * output Pauli terms. This can increase the size of the observable, often
 	 * necessitating a subsequent `merge()` or `truncate()` call.
 	 */
-	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
 	void apply_rz(unsigned qubit, T theta, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		Policy_t::apply_rz(paulis_, qubit, theta);
+	}
+
+	template <IsVariant DynamicPolicy>
+	void apply_rz(unsigned qubit, T theta, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_rz(qubit, theta, pol); }, rpol);
 	}
 
 	/**
@@ -169,11 +194,16 @@ class Observable {
 	 * target qubit, it will be split into two. If it has X or Y, its coefficient is
 	 * simply scaled. If it has I, there is no effect.
 	 */
-	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
 	void apply_amplitude_damping(unsigned qubit, T pn, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		Policy_t::apply_amplitude_damping(paulis_, qubit, pn);
+	}
+
+	template <IsVariant DynamicPolicy>
+	void apply_amplitude_damping(unsigned qubit, T pn, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_amplitude_damping(qubit, pn, pol); }, rpol);
 	}
 	/** @} */
 
@@ -185,10 +215,15 @@ class Observable {
 	 * entirely of I and Z operators. These are the terms that are diagonal in the
 	 * computational basis.
 	 */
-	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
 	T expectation_value(ExecutionPolicy&& policy = ExecutionPolicy{}) const {
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		return Policy_t::expectation_value(paulis_);
+	}
+
+	template <IsVariant DynamicPolicy>
+	T expectation_value(DynamicPolicy&& rpol) const {
+		return std::visit([this](auto const& pol) { return this->expectation_value(pol); }, rpol);
 	}
 
 	/** @name Container Interface
@@ -244,12 +279,17 @@ class Observable {
 	 * This is a crucial optimization for reducing the complexity of the simulation.
 	 * It calls a high-performance, in-place merging algorithm.
 	 */
-	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
 	std::size_t merge(ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
-		using Merger_t = Policy_t:: template Merger<T>;
+		using Merger_t = Policy_t::template Merger<T>;
 		std::get<Merger_t>(merger_)(paulis_);
 		return paulis_.nb_terms();
+	}
+
+	template <IsVariant DynamicPolicy>
+	auto merge(DynamicPolicy&& rpol) {
+		return std::visit([this](auto const& pol) { return this->merge(pol); }, rpol);
 	}
 
 	/**
