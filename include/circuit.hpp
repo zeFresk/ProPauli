@@ -203,14 +203,12 @@ class Circuit {
 
 	template <typename Input, IsVariant DynamicPolicy>
 	auto run(Input&& input, DynamicPolicy&& rpol) {
-		return std::visit([input = std::forward<Input>(input),
-				   this](auto const& pol) { return this->run(std::forward<Input>(input), pol); },
-				  rpol);
+		return std::visit([&input, this](auto const& pol) { return this->run(input, pol); }, rpol);
 	}
 
 	template <typename ExecutionPolicy = DefaultExecutionPolicy>
 	std::vector<Coefficient_t> expectation_value(std::vector<Observable<Coefficient_t>> const& target_observables,
-								 ExecutionPolicy&& policy = ExecutionPolicy{}) {
+						     ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		return Policy_t::circuit_batched_evs(*this, target_observables);
 	}
@@ -222,8 +220,7 @@ class Circuit {
 
 	template <typename Input, IsVariant DynamicPolicy>
 	auto expectation_value(Input&& input, DynamicPolicy&& rpol) {
-		return std::visit([input = std::forward<Input>(input),
-				   this](auto const& pol) { return this->expectation_value(std::forward<Input>(input), pol); },
+		return std::visit([&input, this](auto const& pol) { return this->expectation_value(std::forward<Input>(input), pol); },
 				  rpol);
 	}
 

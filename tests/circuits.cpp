@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 #include "pauli.hpp"
+#include "policy.hpp"
 #include "scheduler.hpp"
 #include <cmath>
 
@@ -113,6 +114,7 @@ TEST(Circuit, add_operation_raw_throw_on_bad_gate) {
 template <typename T>
 struct CircuitRun : testing::Test {
 	static constexpr auto policy = T{};
+	static constexpr RuntimePolicy rpolicy{ policy };
 };
 
 template <typename T>
@@ -315,7 +317,7 @@ TYPED_TEST(CircuitRun, test_circuit1_batch) {
 	for (auto const [ob, ev] : truth_table) {
 		obses.push_back(Observable{ ob });
 	}
-	
+
 	auto res = qc.run(obses, this->policy);
 	EXPECT_EQ(res.size(), obses.size());
 
@@ -326,10 +328,356 @@ TYPED_TEST(CircuitRun, test_circuit1_batch) {
 	}
 }
 
+TYPED_TEST(CircuitRun, test_circuit1_expectation_value) {
+	Circuit qc{ 4 };
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+
+	qc.add_operation("Rz", 0, pi / 2.f);
+	qc.add_operation("Rz", 1, pi / 3.f);
+	qc.add_operation("Rz", 2, pi / 4.f);
+	qc.add_operation("Rz", 3, pi / 5.f);
+
+	qc.add_operation("cx", 0, 1);
+	qc.add_operation("cx", 2, 3);
+	qc.add_operation("cx", 1, 2);
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+
+	std::array<std::tuple<std::string_view, coeff_t>, 4> truth_table = { {
+		{ "ZIII", p1_to_ev(0.500000f) },
+		{ "IZII", p1_to_ev(0.356999f) },
+		{ "IIZI", p1_to_ev(0.213950f) },
+		{ "IIIZ", p1_to_ev(0.095499f) },
+		//{ "ZZZZ", 0.5f },
+	} };
+	for (auto const [ob, ev] : truth_table) {
+		auto ev_r = qc.expectation_value(Observable{ ob }, this->policy);
+		EXPECT_NEAR(ev_r, ev, 1e-4f);
+	}
+}
+TYPED_TEST(CircuitRun, test_circuit1_batch_ev) {
+	Circuit qc{ 4 };
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+
+	qc.add_operation("Rz", 0, pi / 2.f);
+	qc.add_operation("Rz", 1, pi / 3.f);
+	qc.add_operation("Rz", 2, pi / 4.f);
+	qc.add_operation("Rz", 3, pi / 5.f);
+
+	qc.add_operation("cx", 0, 1);
+	qc.add_operation("cx", 2, 3);
+	qc.add_operation("cx", 1, 2);
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+
+	std::array<std::tuple<std::string_view, coeff_t>, 4> truth_table = { {
+		{ "ZIII", p1_to_ev(0.500000f) },
+		{ "IZII", p1_to_ev(0.356999f) },
+		{ "IIZI", p1_to_ev(0.213950f) },
+		{ "IIIZ", p1_to_ev(0.095499f) },
+		//{ "ZZZZ", 0.5f },
+	} };
+	std::vector<Observable<coeff_t>> obses;
+	for (auto const [ob, ev] : truth_table) {
+		obses.push_back(Observable{ ob });
+	}
+
+	auto res = qc.expectation_value(obses, this->policy);
+	EXPECT_EQ(res.size(), obses.size());
+
+	for (std::size_t i = 0; i < res.size(); ++i) {
+		auto exp = std::get<1>(truth_table[i]);
+		auto rev = res[i];
+		EXPECT_NEAR(rev, exp, 1e-4f);
+	}
+}
+
 TYPED_TEST(CircuitRun, bad_observable_throw) {
 	Circuit qc{ 4 };
 	Observable bad_obs_small{ "II" };
 	Observable bad_obs_big{ "IIZZZ" };
 	EXPECT_THROW({ auto res = qc.run(bad_obs_small, this->policy); }, std::invalid_argument);
 	EXPECT_THROW({ auto res = qc.run(bad_obs_big, this->policy); }, std::invalid_argument);
+}
+
+TYPED_TEST(CircuitRun, simple_run_runtime) {
+	Circuit qc{ 1 };
+	qc.add_operation("I", 0);
+	auto res = qc.run({ "I" }, this->rpolicy);
+	EXPECT_FLOAT_EQ(res.expectation_value(), 1.f);
+}
+
+TYPED_TEST(CircuitRun, qc_match_observable_result_1_runtime) {
+	Circuit qc{ 4,
+		    std::make_unique<NeverTruncator<>>(),
+		    {},
+		    std::make_unique<AlwaysBeforeSplittingPolicy>(),
+		    std::make_unique<AlwaysAfterSplittingPolicy>() };
+	Observable obs{ "IIII" };
+	auto evolved_obs = obs;
+
+	EXPECT_EQ(qc.run(obs, this->rpolicy), evolved_obs);
+	for (unsigned i = 0; i < qc.nb_qubits(); ++i) {
+		qc.add_operation("H", i);
+		evolved_obs.apply_clifford(Clifford_Gates_1Q::H, i);
+	}
+	EXPECT_EQ(qc.run(obs, this->rpolicy), evolved_obs);
+	for (auto [control, target] : std::array<std::tuple<unsigned, unsigned>, 3>{ { { 0, 1 }, { 2, 3 }, { 1, 2 } } }) {
+		qc.add_operation("cx", control, target);
+		evolved_obs.apply_cx(control, target);
+	}
+	EXPECT_EQ(qc.run(obs, this->rpolicy), evolved_obs);
+	for (unsigned i = 0; i < qc.nb_qubits(); ++i) {
+		coeff_t theta = (3.14f / 2.f) - i;
+		qc.add_operation("rz", 0, theta);
+		evolved_obs.apply_rz(0, theta);
+	}
+	EXPECT_EQ(qc.run(obs, this->rpolicy), evolved_obs);
+	for (unsigned i = 0; i < qc.nb_qubits(); ++i) {
+		qc.add_operation("Z", i);
+		evolved_obs.apply_pauli(Pauli_gates::Z, i);
+	}
+	EXPECT_EQ(qc.run(obs, this->rpolicy), evolved_obs);
+	for (unsigned i = 0; i < qc.nb_qubits(); ++i) {
+		coeff_t n = 0.0001;
+		qc.add_operation("DEPOLARIZING", i, n);
+		evolved_obs.apply_unital_noise(UnitalNoise::Depolarizing, i, n);
+	}
+	EXPECT_EQ(qc.run(obs, this->rpolicy), evolved_obs);
+	for (unsigned i = 0; i < qc.nb_qubits(); ++i) {
+		coeff_t n = 0.0001;
+		qc.add_operation("AMPLITUDEDAMPING", i, n);
+		evolved_obs.apply_amplitude_damping(i, n);
+	}
+	EXPECT_EQ(qc.run(obs, this->rpolicy), evolved_obs);
+}
+
+TYPED_TEST(CircuitRun, qc_merge_works_with_scheduler_runtime) {
+	Circuit qc{
+		1, std::make_unique<NeverTruncator<>>(), {}, std::make_unique<AlwaysAfterSplittingPolicy>(), std::make_unique<NeverPolicy>()
+	};
+	for (unsigned i = 0; i < 4; ++i) {
+		qc.add_operation("rz", 0, 1.f);
+		qc.add_operation("rz", 0, -1.f);
+		EXPECT_EQ(qc.run({ "Z" }, this->rpolicy).size(), 1);
+	}
+}
+
+TYPED_TEST(CircuitRun, qc_truncate_works_with_scheduler_runtime) {
+	Circuit qc{ 1,
+		    std::make_unique<CoefficientTruncator<>>(0.001f),
+		    {},
+		    std::make_unique<AlwaysAfterSplittingPolicy>(),
+		    std::make_unique<AlwaysAfterSplittingPolicy>() };
+	for (unsigned i = 0; i < 4; ++i) {
+		auto noise = 0.00001f;
+		qc.add_operation("AMPLITUDEDAMPING", 0, noise);
+		EXPECT_EQ(qc.run({ "Z" }, this->rpolicy), Observable<coeff_t>("Z", std::pow(1.f - noise, i + 1)));
+	}
+}
+
+TYPED_TEST(CircuitRun, qc_update_truncator_runtime) {
+	Circuit qc{ 4,
+		    std::make_unique<NeverTruncator<>>(),
+		    {},
+		    std::make_unique<AlwaysAfterSplittingPolicy>(),
+		    std::make_unique<AlwaysAfterSplittingPolicy>() };
+
+	// no truncation
+	for (unsigned i = 0; i < 4; ++i) {
+		auto noise = 0.00001f;
+		qc.add_operation("AMPLITUDEDAMPING", i, noise);
+	}
+	auto res = qc.run({ "ZZZZ" }, this->rpolicy);
+	EXPECT_EQ(res.size(), std::pow(2, 4));
+
+	// with truncation
+	qc.set_truncator(std::make_unique<CoefficientTruncator<>>(0.01f));
+}
+
+TYPED_TEST(CircuitRun, test_circuit1_runtime) {
+	/* qreg q[4]; creg c[4];
+	h q[0];
+	h q[1];
+	h q[2];
+	h q[3];
+	rz(pi / 2) q[0];
+	rz(pi / 3) q[1];
+	rz(pi / 4) q[2];
+	rz(pi / 5) q[3];
+	cx q[0], q[1];
+	cx q[2], q[3];
+	cx q[1], q[2];
+	h q[0];
+	h q[1];
+	h q[2];
+	h q[3];*/
+	Circuit qc{ 4 };
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+
+	qc.add_operation("Rz", 0, pi / 2.f);
+	qc.add_operation("Rz", 1, pi / 3.f);
+	qc.add_operation("Rz", 2, pi / 4.f);
+	qc.add_operation("Rz", 3, pi / 5.f);
+
+	qc.add_operation("cx", 0, 1);
+	qc.add_operation("cx", 2, 3);
+	qc.add_operation("cx", 1, 2);
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+
+	std::array<std::tuple<std::string_view, coeff_t>, 4> truth_table = { {
+		{ "ZIII", p1_to_ev(0.500000f) },
+		{ "IZII", p1_to_ev(0.356999f) },
+		{ "IIZI", p1_to_ev(0.213950f) },
+		{ "IIIZ", p1_to_ev(0.095499f) },
+		//{ "ZZZZ", 0.5f },
+	} };
+	for (auto const [ob, ev] : truth_table) {
+		auto res = qc.run(Observable{ ob }, this->rpolicy);
+		EXPECT_NEAR(res.expectation_value(), ev, 1e-4f);
+	}
+}
+
+TYPED_TEST(CircuitRun, test_circuit1_batch_runtime) {
+	/* qreg q[4]; creg c[4];
+	h q[0];
+	h q[1];
+	h q[2];
+	h q[3];
+	rz(pi / 2) q[0];
+	rz(pi / 3) q[1];
+	rz(pi / 4) q[2];
+	rz(pi / 5) q[3];
+	cx q[0], q[1];
+	cx q[2], q[3];
+	cx q[1], q[2];
+	h q[0];
+	h q[1];
+	h q[2];
+	h q[3];*/
+	Circuit qc{ 4 };
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+
+	qc.add_operation("Rz", 0, pi / 2.f);
+	qc.add_operation("Rz", 1, pi / 3.f);
+	qc.add_operation("Rz", 2, pi / 4.f);
+	qc.add_operation("Rz", 3, pi / 5.f);
+
+	qc.add_operation("cx", 0, 1);
+	qc.add_operation("cx", 2, 3);
+	qc.add_operation("cx", 1, 2);
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+
+	std::array<std::tuple<std::string_view, coeff_t>, 4> truth_table = { {
+		{ "ZIII", p1_to_ev(0.500000f) },
+		{ "IZII", p1_to_ev(0.356999f) },
+		{ "IIZI", p1_to_ev(0.213950f) },
+		{ "IIIZ", p1_to_ev(0.095499f) },
+		//{ "ZZZZ", 0.5f },
+	} };
+	std::vector<Observable<coeff_t>> obses;
+	for (auto const [ob, ev] : truth_table) {
+		obses.push_back(Observable{ ob });
+	}
+
+	auto res = qc.run(obses, this->rpolicy);
+	EXPECT_EQ(res.size(), obses.size());
+
+	for (std::size_t i = 0; i < res.size(); ++i) {
+		auto exp = std::get<1>(truth_table[i]);
+		auto rev = res[i].expectation_value();
+		EXPECT_NEAR(rev, exp, 1e-4f);
+	}
+}
+
+TYPED_TEST(CircuitRun, test_circuit1_expectation_value_runtime) {
+	Circuit qc{ 4 };
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+
+	qc.add_operation("Rz", 0, pi / 2.f);
+	qc.add_operation("Rz", 1, pi / 3.f);
+	qc.add_operation("Rz", 2, pi / 4.f);
+	qc.add_operation("Rz", 3, pi / 5.f);
+
+	qc.add_operation("cx", 0, 1);
+	qc.add_operation("cx", 2, 3);
+	qc.add_operation("cx", 1, 2);
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+
+	std::array<std::tuple<std::string_view, coeff_t>, 4> truth_table = { {
+		{ "ZIII", p1_to_ev(0.500000f) },
+		{ "IZII", p1_to_ev(0.356999f) },
+		{ "IIZI", p1_to_ev(0.213950f) },
+		{ "IIIZ", p1_to_ev(0.095499f) },
+		//{ "ZZZZ", 0.5f },
+	} };
+	for (auto const [ob, ev] : truth_table) {
+		auto ev_r = qc.expectation_value(Observable{ ob }, this->rpolicy);
+		EXPECT_NEAR(ev_r, ev, 1e-4f);
+	}
+}
+TYPED_TEST(CircuitRun, test_circuit1_batch_ev_runtime) {
+	Circuit qc{ 4 };
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+
+	qc.add_operation("Rz", 0, pi / 2.f);
+	qc.add_operation("Rz", 1, pi / 3.f);
+	qc.add_operation("Rz", 2, pi / 4.f);
+	qc.add_operation("Rz", 3, pi / 5.f);
+
+	qc.add_operation("cx", 0, 1);
+	qc.add_operation("cx", 2, 3);
+	qc.add_operation("cx", 1, 2);
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+
+	std::array<std::tuple<std::string_view, coeff_t>, 4> truth_table = { {
+		{ "ZIII", p1_to_ev(0.500000f) },
+		{ "IZII", p1_to_ev(0.356999f) },
+		{ "IIZI", p1_to_ev(0.213950f) },
+		{ "IIIZ", p1_to_ev(0.095499f) },
+		//{ "ZZZZ", 0.5f },
+	} };
+	std::vector<Observable<coeff_t>> obses;
+	for (auto const [ob, ev] : truth_table) {
+		obses.push_back(Observable{ ob });
+	}
+
+	auto res = qc.expectation_value(obses, this->rpolicy);
+	EXPECT_EQ(res.size(), obses.size());
+
+	for (std::size_t i = 0; i < res.size(); ++i) {
+		auto exp = std::get<1>(truth_table[i]);
+		auto rev = res[i];
+		EXPECT_NEAR(rev, exp, 1e-4f);
+	}
+}
+
+TYPED_TEST(CircuitRun, bad_observable_throw_runtime) {
+	Circuit qc{ 4 };
+	Observable bad_obs_small{ "II" };
+	Observable bad_obs_big{ "IIZZZ" };
+	EXPECT_THROW({ auto res = qc.run(bad_obs_small, this->rpolicy); }, std::invalid_argument);
+	EXPECT_THROW({ auto res = qc.run(bad_obs_big, this->rpolicy); }, std::invalid_argument);
 }
