@@ -34,7 +34,11 @@ using DefaultExecutionPolicy = SequentialPolicy;
 #else
 static constexpr auto available_policies = std::make_tuple(seq);
 using RuntimePolicy = std::variant<SequentialPolicy>;
+
 using DefaultExecutionPolicy = SequentialPolicy;
+
+template <typename T>
+using RuntimeMerger = std::tuple<SequentialMerger<T>>;
 #endif
 
 #endif
