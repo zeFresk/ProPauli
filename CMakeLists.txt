@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 set(CMAKE_VERBOSE_MAKEFILE OFF CACHE BOOL "Explicit Makefile")
 set(COVERAGE OFF CACHE BOOL "Build for coverage")
 set(COVERAGE_HTML_DIR "${CMAKE_BINARY_DIR}/coverage_html")
+set(COVERAGE_LCOV_FILE "${CMAKE_BINARY_DIR}/coverage.info")
 set(SANITIZE OFF CACHE BOOL "Build with sanitizers")
 set(BENCHMARK OFF CACHE BOOL "Build benchmarks")
 set(TEST OFF CACHE BOOL "Build tests")
@@ -148,6 +149,7 @@ if (COVERAGE)
 					COMMAND llvm-profdata merge -sparse ${TARGET_NAME}.profraw -o ${TARGET_NAME}.profdata
 					COMMAND llvm-cov report $<TARGET_FILE:${TARGET_NAME}> -instr-profile=${TARGET_NAME}.profdata ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/include
 					COMMAND llvm-cov show $<TARGET_FILE:${TARGET_NAME}> -instr-profile=${TARGET_NAME}.profdata -format=html -output-dir=${COVERAGE_HTML_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include
+					COMMAND llvm-cov export $<TARGET_FILE:${TARGET_NAME}> -instr-profile=${TARGET_NAME}.profdata -format=lcov ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include > ${COVERAGE_LCOV_FILE}
 					DEPENDS ${TARGET_NAME}
 	)
 	elseif(CMAKE_COMPILER_IS_GNUCXX)
