@@ -46,8 +46,15 @@ class MyCustomWeightTruncator : public Truncator<coeff_t> {
 	MyCustomWeightTruncator(std::size_t weight_to_remove) : weight_to_remove_(weight_to_remove) {}
 	~MyCustomWeightTruncator() override {}
 
-	std::size_t truncate(PauliTermContainer<coeff_t>& paulis) override {
-		return std::erase_if(paulis, [this](const auto& pt) { return pt.pauli_weight() == weight_to_remove_; });
+	std::size_t truncate(PauliTermContainer<coeff_t>& paulis, coeff_t& error) override {
+		return std::erase_if(paulis, [&, this](const auto& pt) {
+			if (pt.pauli_weight() == weight_to_remove_) {
+				error += std::abs(pt.coefficient());
+				return true;
+			} else {
+				return false;
+			}
+		});
 	}
 
     private:
@@ -70,7 +77,8 @@ TEST(Readme, custom_truncator_class) {
 
 TEST(Readme, custom_truncator_predicate) {
 	auto predicate = [](const auto& pt) { return pt.pauli_weight() == 2; };
-	Circuit qc{ 4, std::make_shared<PredicateTruncator<decltype(predicate)>>(predicate) };
+	auto trunc = std::make_shared<PredicateTruncator<decltype(predicate)>>(predicate);
+	Circuit qc{ 4, trunc };
 
 	qc.add_operation("H", 0);
 	qc.add_operation("H", 1);

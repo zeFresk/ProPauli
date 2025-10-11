@@ -1,3 +1,4 @@
+#include "pauli.hpp"
 #include "truncate.hpp"
 
 #include "gtest/gtest.h"
@@ -20,10 +21,12 @@ TEST(Truncator, CoefficientTruncator) {
 	std::vector<PauliTerm<coeff_t>> pts_data = { { "I", 0.99 }, { "Y", 0.01 }, { "X", 0.5 } };
 	PauliTermContainer<coeff_t> pts{ pts_data };
 	auto ept = PauliTerm<coeff_t>{ "I", 0.99 };
-	auto removed = ct.truncate(pts);
+	coeff_t error = 0;
+	auto removed = ct.truncate(pts, error);
 	EXPECT_EQ(removed, 1);
 	EXPECT_EQ(pts.nb_terms(), 2);
 	EXPECT_EQ(pts[0], ept);
+	EXPECT_FLOAT_EQ(error, 0.01f);
 
 	pts[0].set_coefficient(0.01f);
 
@@ -31,10 +34,12 @@ TEST(Truncator, CoefficientTruncator) {
 	nopt.set_pauli(0, p_z);
 	nopt.set_coefficient(0.0f);
 
-	removed = ct.truncate(pts);
+	error = 0;
+	removed = ct.truncate(pts, error);
 	EXPECT_EQ(removed, 2);
 	EXPECT_EQ(pts.nb_terms(), 1);
 	EXPECT_EQ(pts[0], PauliTerm<coeff_t>("X", 0.5));
+	EXPECT_FLOAT_EQ(error, 0.01f);
 }
 
 TEST(Truncator, WeightTruncator) {
@@ -42,10 +47,12 @@ TEST(Truncator, WeightTruncator) {
 	std::vector<PauliTerm<coeff_t>> pts_data = { { "IIII", 0.5 }, { "YYYY", 0.5 } };
 	PauliTermContainer<coeff_t> pts{ pts_data };
 	auto ept = pts[0];
-	auto removed = wt.truncate(pts);
+	coeff_t error = 0;
+	auto removed = wt.truncate(pts, error);
 	EXPECT_EQ(removed, 1);
 	EXPECT_EQ(pts.nb_terms(), 1);
 	EXPECT_EQ(pts[0], ept);
+	EXPECT_FLOAT_EQ(error, 0.5f);
 }
 
 TEST(Truncator, KeepNTruncator_basic_positive) {
@@ -57,10 +64,12 @@ TEST(Truncator, KeepNTruncator_basic_positive) {
 	EXPECT_EQ(pts_data.size(), pts.nb_terms());
 	EXPECT_EQ(expected_in.size(), keep_n);
 
-	auto removed = nt.truncate(pts);
+	coeff_t error = 0;
+	auto removed = nt.truncate(pts, error);
 
 	EXPECT_EQ(pts.nb_terms(), keep_n);
 	EXPECT_EQ(removed, pts_data.size() - keep_n);
+	EXPECT_FLOAT_EQ(error, 0.1f + 0.2f);
 	for (auto const& needle : expected_in) {
 		EXPECT_TRUE(is_in(pts, needle));
 	}
@@ -75,10 +84,12 @@ TEST(Truncator, KeepNTruncator_basic_negative) {
 	EXPECT_EQ(pts_data.size(), pts.nb_terms());
 	EXPECT_EQ(expected_in.size(), keep_n);
 
-	auto removed = nt.truncate(pts);
+	coeff_t error = 0;
+	auto removed = nt.truncate(pts, error);
 
 	EXPECT_EQ(pts.nb_terms(), keep_n);
 	EXPECT_EQ(removed, pts_data.size() - keep_n);
+	EXPECT_FLOAT_EQ(error, 0.1f + 0.2f);
 	for (auto const& needle : expected_in) {
 		EXPECT_TRUE(is_in(pts, needle));
 	}
@@ -93,9 +104,11 @@ TEST(Truncator, KeepNTruncator_basic_mixed_signs) {
 	EXPECT_EQ(pts_data.size(), pts.nb_terms());
 	EXPECT_EQ(expected_in.size(), keep_n);
 
-	auto removed = nt.truncate(pts);
+	coeff_t error = 0;
+	auto removed = nt.truncate(pts, error);
 
 	EXPECT_EQ(pts.nb_terms(), keep_n);
+	EXPECT_FLOAT_EQ(error, 0.1f + 0.2f);
 	EXPECT_EQ(removed, pts_data.size() - keep_n);
 	for (auto const& needle : expected_in) {
 		EXPECT_TRUE(is_in(pts, needle));
@@ -142,9 +155,11 @@ TEST(Truncator, KeepNTruncator_edge_case) {
 	EXPECT_EQ(pts_data.size(), pts.nb_terms());
 	EXPECT_EQ(expected_in.size(), keep_n);
 
-	auto removed = nt.truncate(pts);
+	coeff_t error = 0;
+	auto removed = nt.truncate(pts, error);
 
 	EXPECT_EQ(pts.nb_terms(), keep_n);
+	EXPECT_FLOAT_EQ(error, 0.1f + 0.11f + 0.4f);
 	EXPECT_EQ(removed, pts_data.size() - keep_n);
 	for (auto const& needle : expected_in) {
 		EXPECT_TRUE(is_in(pts, needle));
@@ -180,7 +195,8 @@ TEST(Truncator, KeepNTruncator_random) {
 		EXPECT_EQ(coeffs_only.size(), kn);
 		EXPECT_EQ(coeffs_only, ground_truth_coeffs) << "Isolation test failed: The bug might be in the truncate logic itself!";
 
-		kt.truncate(ptc);
+		coeff_t error = 0;
+		kt.truncate(ptc, error);
 
 		std::sort(data.begin(), data.end(),
 			  [](auto const& lhs, auto const& rhs) { return abs(lhs.coefficient()) < abs(rhs.coefficient()); });
@@ -233,7 +249,8 @@ TEST(Truncator, KeepNTruncator_random_large) {
 		EXPECT_EQ(coeffs_only.size(), kn);
 		EXPECT_EQ(coeffs_only, ground_truth_coeffs) << "Isolation test failed: The bug might be in the truncate logic itself!";
 
-		kt.truncate(ptc);
+		coeff_t error = 0;
+		kt.truncate(ptc, error);
 
 		std::sort(data.begin(), data.end(),
 			  [](auto const& lhs, auto const& rhs) { return abs(lhs.coefficient()) < abs(rhs.coefficient()); });
@@ -264,10 +281,12 @@ TEST(Truncator, MultiTruncator) {
 	std::vector<PauliTerm<coeff_t>> pts_data = { { "IIII", 0.49 }, { "YYYY", 0.49 }, { "IIIX", 0.02 } };
 	PauliTermContainer<coeff_t> pts{ pts_data };
 	auto ept = pts[0];
-	auto removed = mt.truncate(pts);
+	coeff_t error = 0;
+	auto removed = mt.truncate(pts, error);
 	EXPECT_EQ(removed, 2);
 	EXPECT_EQ(pts.nb_terms(), 1);
 	EXPECT_EQ(pts[0], ept);
+	EXPECT_FLOAT_EQ(error, 0.49f + 0.02f);
 }
 
 TEST(Truncator, polymorphism) {
@@ -278,10 +297,11 @@ TEST(Truncator, polymorphism) {
 
 	std::vector<PauliTerm<coeff_t>> pts_data = { { "IIII", 0.49 }, { "YYYY", 0.49 }, { "IIIX", 0.02 } };
 	PauliTermContainer<coeff_t> pts{ pts_data };
-	ptr->truncate(pts);
-	ptr2->truncate(pts);
-	ptr3->truncate(pts);
-	ptr4->truncate(pts);
+	coeff_t error = 0;
+	ptr->truncate(pts, error);
+	ptr2->truncate(pts, error);
+	ptr3->truncate(pts, error);
+	ptr4->truncate(pts, error);
 }
 
 template <typename T = coeff_t>
@@ -290,8 +310,9 @@ class DeleteFirstTruncator : public Truncator<T> {
 	DeleteFirstTruncator() {}
 	~DeleteFirstTruncator() override {}
 
-	std::size_t truncate(PauliTermContainer<T>& paulis) override {
+	std::size_t truncate(PauliTermContainer<T>& paulis, T& error) override {
 		if (paulis.nb_terms() >= 1) {
+			error += paulis[0].coefficient();
 			paulis.remove_pauliterm(0);
 			return 1;
 		} else {
@@ -304,7 +325,8 @@ TEST(Truncator, CustomTruncator) {
 	DeleteFirstTruncator dft{};
 	std::vector<PauliTerm<coeff_t>> pts_data = { { "IIII", 0.5 }, { "YYYY", 0.5 } };
 	PauliTermContainer<coeff_t> pts{ pts_data };
-	auto removed = dft.truncate(pts);
+	coeff_t error = 0;
+	auto removed = dft.truncate(pts, error);
 	EXPECT_EQ(removed, 1);
 	EXPECT_EQ(pts.nb_terms(), 1);
 	EXPECT_EQ(pts[0], PauliTerm("YYYY", 0.5f));
@@ -317,8 +339,10 @@ TEST(Truncator, multiple_truncators_at_runtime) {
 
 	std::vector<PauliTerm<coeff_t>> pts_data = { { "IIII", 0.49 }, { "YYYY", 0.49 }, { "IIIX", 0.02 }, { "IIIX", 0.3 } };
 	PauliTermContainer<coeff_t> pts{ pts_data };
-	auto removed = runtime_mt.truncate(pts);
+	coeff_t error = 0;
+	auto removed = runtime_mt.truncate(pts, error);
 	EXPECT_EQ(removed, 3);
 	EXPECT_EQ(pts.nb_terms(), 1);
 	EXPECT_EQ(pts[0], PauliTerm("IIIX", 0.3f));
+	EXPECT_FLOAT_EQ(error, 0.02f + 0.49f + 0.49f);
 }

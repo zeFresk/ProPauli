@@ -33,6 +33,8 @@ T ExpressionTree<T>::evaluate_node(NodePtr<T> const& node, std::unordered_map<st
 					return -v;
 				case UnaryOp<T>::Op::Sqrt:
 					return sqrt(v);
+				case UnaryOp<T>::Op::Abs:
+					return abs(v);
 				}
 			} else if constexpr (std::is_same_v<VisitedType, BinaryOp<T>>) {
 				auto lhs_v = evaluate_node(n.lhs, variables);

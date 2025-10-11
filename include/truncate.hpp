@@ -118,7 +118,7 @@ class Truncator {
 	 * @param paulis The container of Pauli terms to truncate.
 	 * @return The number of terms removed.
 	 */
-	virtual std::size_t truncate(PauliTermContainer<T>& paulis) = 0;
+	virtual std::size_t truncate(PauliTermContainer<T>& paulis, T& error_acc) = 0;
 
 	using Coefficient_t = T;
 };
@@ -145,7 +145,16 @@ class PredicateTruncator : public Truncator<T> {
 	template <typename... Args, std::enable_if_t<std::is_constructible_v<P, Args...>, bool> = true>
 	PredicateTruncator(Args&&... args) : pred{ P(std::forward<Args>(args)...) } {}
 
-	std::size_t truncate(PauliTermContainer<T>& paulis) override { return std::erase_if(paulis, pred); }
+	std::size_t truncate(PauliTermContainer<T>& paulis, T& error_acc) override {
+		return std::erase_if(paulis, [&](auto const& pt) {
+			if (pred(pt)) {
+				error_acc += abs(pt.coefficient());
+				return true;
+			} else {
+				return false;
+			}
+		});
+	}
 };
 
 /**
@@ -183,15 +192,17 @@ class Truncators : public Truncator<T> {
 	std::tuple<Ts...> truncators;
 
 	template <typename P, std::size_t... Is>
-	std::size_t truncate_impl(P&& paulis, std::index_sequence<Is...>) {
-		return (std::get<Is>(truncators).truncate(paulis) + ... + 0);
+	std::size_t truncate_impl(P&& paulis, T& error_acc, std::index_sequence<Is...>) {
+		return (std::get<Is>(truncators).truncate(paulis, error_acc) + ... + 0);
 	}
 
     public:
 	Truncators(Ts&&... truncs) : truncators(std::forward<Ts>(truncs)...) {}
 	~Truncators() override = default;
 
-	std::size_t truncate(PauliTermContainer<T>& paulis) override { return truncate_impl(paulis, std::index_sequence_for<Ts...>{}); }
+	std::size_t truncate(PauliTermContainer<T>& paulis, T& error_acc) override {
+		return truncate_impl(paulis, error_acc, std::index_sequence_for<Ts...>{});
+	}
 };
 
 template <typename T>
@@ -252,10 +263,10 @@ class RuntimeMultiTruncators : public Truncator<T> {
 	RuntimeMultiTruncators(Iter&& begin, Iter&& end) : truncs(begin, end) {}
 	~RuntimeMultiTruncators() override = default;
 
-	std::size_t truncate(PauliTermContainer<T>& paulis) override {
+	std::size_t truncate(PauliTermContainer<T>& paulis, T& error_acc) override {
 		std::size_t ret = 0;
 		for (const auto& trunc : truncs) {
-			ret += trunc->truncate(paulis);
+			ret += trunc->truncate(paulis, error_acc);
 		}
 		return ret;
 	}
@@ -290,7 +301,7 @@ class KeepNTruncator : public Truncator<T> {
 	KeepNTruncator(KeepNTruncator const&) = default;
 	KeepNTruncator(KeepNTruncator&&) noexcept = default;
 
-	std::size_t truncate(PauliTermContainer<T>& paulis) override {
+	std::size_t truncate(PauliTermContainer<T>& paulis, T& error_acc) override {
 		if (paulis.nb_terms() <= nb_terms) {
 			return 0;
 		}
@@ -301,6 +312,10 @@ class KeepNTruncator : public Truncator<T> {
 		// This means we need to find the element that belongs at index `nb_terms - 1`.
 		selection_by_swap(paulis, 0, paulis.nb_terms() - 1, nb_terms - 1,
 				  [](auto const& a, auto const& b) { return std::abs(a.coefficient()) > std::abs(b.coefficient()); });
+
+		for (std::size_t i = nb_terms; i < initial_size; ++i) {
+			error_acc += abs(paulis[i].coefficient());
+		}
 
 		paulis.erase_to_end(nb_terms);
 

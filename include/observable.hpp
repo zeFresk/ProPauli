@@ -51,7 +51,7 @@ class Observable {
 	 * @snippet tests/snippets/observable.cpp observable_from_string
 	 */
 	Observable(std::string_view pauli_string, typename std::enable_if_t<std::is_constructible_v<T, coeff_t>, T> coeff = T{ 1 })
-		: paulis_{ PauliTerm<T>(pauli_string, coeff) } {
+		: paulis_{ PauliTerm<T>(pauli_string, coeff) }, error_truncate{ T{ 0 } } {
 		check_invariant();
 	}
 
@@ -60,14 +60,18 @@ class Observable {
 	 * @param pauli_string_list An initializer list of Pauli strings. Each will have a coefficient of 1.
 	 * @snippet tests/snippets/observable.cpp observable_from_string_list
 	 */
-	Observable(std::initializer_list<std::string_view> pauli_string_list) : paulis_{ pauli_string_list } { check_invariant(); }
+	Observable(std::initializer_list<std::string_view> pauli_string_list) : paulis_{ pauli_string_list }, error_truncate{ T{ 0 } } {
+		check_invariant();
+	}
 
 	/**
 	 * @brief Constructs an observable from a list of PauliTerm objects.
 	 * @param paulis_list An initializer list of `PauliTerm` objects.
 	 * @snippet tests/snippets/observable.cpp observable_from_pauli_terms
 	 */
-	Observable(std::initializer_list<PauliTerm<T>> paulis_list) : paulis_{ paulis_list } { check_invariant(); }
+	Observable(std::initializer_list<PauliTerm<T>> paulis_list) : paulis_{ paulis_list }, error_truncate{ T{ 0 } } {
+		check_invariant();
+	}
 
 	/**
 	 * @brief Constructs an observable from a range of PauliTerm-like objects.
@@ -77,7 +81,7 @@ class Observable {
 	 * @snippet tests/snippets/observable.cpp observable_from_iterators
 	 */
 	template <PauliTermIterator Iter>
-	Observable(Iter&& begin, Iter&& end) : paulis_{ begin, end } {
+	Observable(Iter&& begin, Iter&& end) : paulis_{ begin, end }, error_truncate{ T{ 0 } } {
 		check_invariant();
 	}
 	/** @} */
@@ -301,7 +305,7 @@ class Observable {
 	 */
 	template <typename TruncatorImpl>
 	std::size_t truncate(TruncatorImpl&& truncator) {
-		auto ret = truncator.truncate(paulis_);
+		auto ret = truncator.truncate(paulis_, error_truncate);
 		if (paulis_.nb_terms() == 0) {
 			const auto warn_env = std::getenv("WARN_EMPTY_TREE");
 			if (warn_env == nullptr || strcmp(warn_env, "0") != 0) {
@@ -311,6 +315,10 @@ class Observable {
 			}
 		}
 		return ret;
+	}
+
+	T const& truncate_error() const {
+		return error_truncate;
 	}
 
 	friend bool operator==(Observable const& lhs, Observable const& rhs) {
@@ -329,6 +337,7 @@ class Observable {
     private:
 	PauliTermContainer<T> paulis_;
 	RuntimeMerger<T> merger_;
+	T error_truncate;
 
 	void check_invariant() const {
 		if (paulis_.nb_terms() == 0) {

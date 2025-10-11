@@ -18,4 +18,9 @@ constexpr auto sqrt(T&& v) {
 	return std::sqrt(v);
 }
 
+template <typename T>
+constexpr auto abs(T&& v) {
+	return std::abs(v);
+}
+
 #endif

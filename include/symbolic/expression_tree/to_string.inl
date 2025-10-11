@@ -29,6 +29,8 @@ std::string ExpressionTree<T>::to_string_node(NodePtr<T> const& node, std::strin
 						return "sin(" + v_str + ")";
 					case UnaryOp<T>::Op::Sqrt:
 						return "sqrt(" + v_str + ")";
+					case UnaryOp<T>::Op::Abs:
+						return "abs(" + v_str + ")";
 					default:
 						break;
 					}

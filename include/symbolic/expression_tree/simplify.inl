@@ -38,10 +38,13 @@ NodePtr<T> ExpressionTree<T>::simplify_node(NodePtr<T> const& node) const {
 						return std::make_shared<const ExpressionNode<T>>(Constant<T>{ -c->value });
 					case UnaryOp<T>::Op::Sqrt:
 						return std::make_shared<const ExpressionNode<T>>(Constant<T>{ sqrt(c->value) });
+					case UnaryOp<T>::Op::Abs:
+						return std::make_shared<const ExpressionNode<T>>(Constant<T>{ abs(c->value) });
 					}
 				}
 				if (auto const* inner_op = std::get_if<UnaryOp<T>>(&s_exp->node_type)) {
-					if (n.operation == UnaryOp<T>::Op::Minus && inner_op->operation == UnaryOp<T>::Op::Minus)
+					if ((n.operation == UnaryOp<T>::Op::Minus && inner_op->operation == UnaryOp<T>::Op::Minus) ||
+					    (n.operation == UnaryOp<T>::Op::Abs && inner_op->operation == UnaryOp<T>::Op::Abs))
 						return inner_op->exp;
 				}
 				if (s_exp != n.exp)

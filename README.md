@@ -93,25 +93,10 @@ Users can define their own truncation logic by inheriting from the `Truncator` c
 
 ```cpp
 // A custom truncator that removes Pauli terms with a specific weight
-class MyCustomWeightTruncator : public Truncator<coeff_t> {
-public:
-    MyCustomWeightTruncator(std::size_t weight_to_remove) : weight_to_remove_(weight_to_remove) {}
-    ~MyCustomWeightTruncator() override {}
+auto predicate = [](const auto& pt) { return pt.pauli_weight() == 2; };
+auto trunc = std::make_shared<PredicateTruncator<decltype(predicate)>>(predicate);
 
-    std::size_t truncate(PauliTermContainer<coeff_t>& paulis) override {
-        return std::erase_if(paulis, [this](const auto& pt) {
-            return pt.pauli_weight() == weight_to_remove_;
-        });
-    }
-private:
-    std::size_t weight_to_remove_;
-};
-
-Circuit qc{ 4, std::make_shared<MyCustomWeightTruncator>(2) };
-
-// NOTE: The same effect can be achieved using a lambda with PredicateTruncator
-// auto predicate = [](const auto& pt) { return pt.pauli_weight() == 2; };
-// Circuit qc{ 4, std::make_shared<PredicateTruncator<decltype(predicate)>>(predicate) };
+Circuit qc{ 4, trunc };
 
 qc.add_operation("H", 0);
 qc.add_operation("H", 1);

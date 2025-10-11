@@ -24,7 +24,7 @@ struct Variable {
 
 template <typename T>
 struct UnaryOp {
-	enum class Op { Cos, Sin, Minus, Sqrt } operation;
+	enum class Op { Cos, Sin, Minus, Sqrt, Abs } operation;
 	NodePtr<T> exp;
 };
 

@@ -36,19 +36,6 @@ void large_circuit_snippet() {
 	//! [large_circuit_truncation]
 }
 
-class MyCustomWeightTruncator : public Truncator<coeff_t> {
-    public:
-	MyCustomWeightTruncator(std::size_t weight_to_remove) : weight_to_remove_(weight_to_remove) {}
-	~MyCustomWeightTruncator() override {}
-
-	std::size_t truncate(PauliTermContainer<coeff_t>& paulis) override {
-		return std::erase_if(paulis, [this](const auto& pt) { return pt.pauli_weight() == weight_to_remove_; });
-	}
-
-    private:
-	std::size_t weight_to_remove_;
-};
-
 void custom_truncator_snippet() {
 	//! [custom_truncator]
 	// A custom truncator that removes Pauli terms with a specific weight
