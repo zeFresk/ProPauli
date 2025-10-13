@@ -321,6 +321,10 @@ class Observable {
 		return error_truncate;
 	}
 
+	void set_truncate_error(T const& new_error) {
+		error_truncate = new_error;
+	}
+
 	friend bool operator==(Observable const& lhs, Observable const& rhs) {
 		return lhs.size() == rhs.size() && lhs.paulis_ == rhs.paulis_;
 	}

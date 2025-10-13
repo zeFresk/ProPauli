@@ -190,7 +190,9 @@ class Circuit {
 		if (obs.size() > 0) {
 			return obs;
 		} else {
-			return Observable<Coefficient_t>(std::string(target_observable[0].size(), 'I'), 0.f);
+			auto ret = Observable<Coefficient_t>(std::string(target_observable[0].size(), 'I'), 0.f);
+			ret.set_truncate_error(obs.truncate_error());
+			return ret;
 		}
 	}
 
@@ -207,15 +209,16 @@ class Circuit {
 	}
 
 	template <typename ExecutionPolicy = DefaultExecutionPolicy>
-	std::vector<Coefficient_t> expectation_value(std::vector<Observable<Coefficient_t>> const& target_observables,
+	auto expectation_value(std::vector<Observable<Coefficient_t>> const& target_observables,
 						     ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		return Policy_t::circuit_batched_evs(*this, target_observables);
 	}
 
 	template <typename ExecutionPolicy = DefaultExecutionPolicy>
-	Coefficient_t expectation_value(Observable<Coefficient_t> const& target_observable, ExecutionPolicy&& policy = ExecutionPolicy{}) {
-		return run(target_observable, std::forward<ExecutionPolicy>(policy)).expectation_value();
+	std::pair<Coefficient_t, Coefficient_t> expectation_value(Observable<Coefficient_t> const& target_observable, ExecutionPolicy&& policy = ExecutionPolicy{}) {
+		auto res = run(target_observable, std::forward<ExecutionPolicy>(policy));
+		return {res.expectation_value(), res.truncate_error()};
 	}
 
 	template <typename Input, IsVariant DynamicPolicy>
