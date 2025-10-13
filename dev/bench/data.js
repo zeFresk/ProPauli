@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1760125359339,
+  "lastUpdate": 1760358123453,
   "repoUrl": "https://github.com/zeFresk/ProPauli",
   "entries": {
     "C++ Benchmark": [
@@ -26484,6 +26484,420 @@ window.BENCHMARK_DATA = {
             "value": 373748.40117208974,
             "unit": "ns/iter",
             "extra": "iterations: 1877\ncpu: 373709.9371337185 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "8807862+zeFresk@users.noreply.github.com",
+            "name": "zeFresk",
+            "username": "zeFresk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f5444fb3f6c7b85aee6b9640ed9aeb34275b6f1f",
+          "message": "Merge pull request #20 from zeFresk/error_trunc\n\nTracking of truncation error",
+          "timestamp": "2025-10-13T14:19:11+02:00",
+          "tree_id": "86ff5a9472e7e10c4720c81a56151dd52df2b564",
+          "url": "https://github.com/zeFresk/ProPauli/commit/f5444fb3f6c7b85aee6b9640ed9aeb34275b6f1f"
+        },
+        "date": 1760358122259,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "Circuit_init/1",
+            "value": 66.00914838398941,
+            "unit": "ns/iter",
+            "extra": "iterations: 10775455\ncpu: 66.00468305050691 ns\nthreads: 1"
+          },
+          {
+            "name": "Circuit_init/1024",
+            "value": 65.08192812815618,
+            "unit": "ns/iter",
+            "extra": "iterations: 10716881\ncpu: 65.07537780815146 ns\nthreads: 1"
+          },
+          {
+            "name": "Circuit_add_pauli_string",
+            "value": 32.70159330793778,
+            "unit": "ns/iter",
+            "extra": "iterations: 21291741\ncpu: 32.69868668795094 ns\nthreads: 1"
+          },
+          {
+            "name": "Circuit_add_random_gate",
+            "value": 51.82171650759821,
+            "unit": "ns/iter",
+            "extra": "iterations: 13542684\ncpu: 51.81753188658924 ns\nthreads: 1"
+          },
+          {
+            "name": "Circuit_run_paulis/1/1",
+            "value": 66.93416419466513,
+            "unit": "ns/iter",
+            "extra": "iterations: 10468574\ncpu: 66.92740911990495 ns\nthreads: 1"
+          },
+          {
+            "name": "Circuit_run_paulis/1/1024",
+            "value": 11994.978960183762,
+            "unit": "ns/iter",
+            "extra": "iterations: 58318\ncpu: 11992.194176755034 ns\nthreads: 1"
+          },
+          {
+            "name": "Circuit_ZZ_feature_map/GlobalObservable/8",
+            "value": 1857.627189202832,
+            "unit": "ns/iter",
+            "extra": "iterations: 377135\ncpu: 1857.2267357842686 ns\nthreads: 1"
+          },
+          {
+            "name": "Circuit_ZZ_feature_map/ZLocal/8",
+            "value": 1947.4458977086636,
+            "unit": "ns/iter",
+            "extra": "iterations: 370354\ncpu: 1947.0682941185996 ns\nthreads: 1"
+          },
+          {
+            "name": "Circuit_Efficient_SU2/GlobalObservable/8",
+            "value": 43387081.4999997,
+            "unit": "ns/iter",
+            "extra": "iterations: 16\ncpu: 43385313.9375 ns\nthreads: 1"
+          },
+          {
+            "name": "Circuit_Efficient_SU2/withCoefficientTruncation01/8",
+            "value": 913043.3722871484,
+            "unit": "ns/iter",
+            "extra": "iterations: 1797\ncpu: 912914.2109070675 ns\nthreads: 1"
+          },
+          {
+            "name": "Circuit_Efficient_SU2/withWeightTruncation4/8",
+            "value": 428.20668377292236,
+            "unit": "ns/iter",
+            "extra": "iterations: 1621240\ncpu: 428.0847727665244 ns\nthreads: 1"
+          },
+          {
+            "name": "Circuit_Efficient_SU2/withMultiTruncation6001/8",
+            "value": 439.47173201529426,
+            "unit": "ns/iter",
+            "extra": "iterations: 1596718\ncpu: 439.45777776664414 ns\nthreads: 1"
+          },
+          {
+            "name": "Circuit_Efficient_SU2/withMultiTruncation6001/64",
+            "value": 660.7336829319107,
+            "unit": "ns/iter",
+            "extra": "iterations: 1204429\ncpu: 660.5609504586815 ns\nthreads: 1"
+          },
+          {
+            "name": "MaxCutQAOAN4P1/run",
+            "value": 15959.373248581338,
+            "unit": "ns/iter",
+            "extra": "iterations: 43893\ncpu: 15955.0993324676 ns\nthreads: 1"
+          },
+          {
+            "name": "MaxCutQAOAN4P1/ev",
+            "value": 180.00953768138262,
+            "unit": "ns/iter",
+            "extra": "iterations: 3885221\ncpu: 179.99207097871678 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_init_from_string/1",
+            "value": 16.241452789318686,
+            "unit": "ns/iter",
+            "extra": "iterations: 44028077\ncpu: 16.23915257529871 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_init_from_string/1024",
+            "value": 6306.814467054033,
+            "unit": "ns/iter",
+            "extra": "iterations: 108951\ncpu: 6306.328285192441 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_apply_pauli/1",
+            "value": 3.749696750493709,
+            "unit": "ns/iter",
+            "extra": "iterations: 187115721\ncpu: 3.749348479382976 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_apply_pauli/1024",
+            "value": 3.7435114324425625,
+            "unit": "ns/iter",
+            "extra": "iterations: 186976361\ncpu: 3.7432315681873902 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_apply_clifford/1",
+            "value": 5.105370273259991,
+            "unit": "ns/iter",
+            "extra": "iterations: 138046439\ncpu: 5.104649291243208 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_apply_clifford/1024",
+            "value": 4.091867428302685,
+            "unit": "ns/iter",
+            "extra": "iterations: 170970912\ncpu: 4.091132484571429 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_apply_unital_noise/1",
+            "value": 4.052377717486937,
+            "unit": "ns/iter",
+            "extra": "iterations: 172725167\ncpu: 4.052207695940452 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_apply_unital_noise/1024",
+            "value": 4.0549225039850745,
+            "unit": "ns/iter",
+            "extra": "iterations: 172718946\ncpu: 4.054365743987336 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_apply_rz_once/1",
+            "value": 72.67331630513057,
+            "unit": "ns/iter",
+            "extra": "iterations: 9638519\ncpu: 72.66461465708608 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_apply_rz_once/1024",
+            "value": 141.5309346553827,
+            "unit": "ns/iter",
+            "extra": "iterations: 4935969\ncpu: 141.52009058403726 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_apply_rz_ntimes/1024/16",
+            "value": 2671966.72302162,
+            "unit": "ns/iter",
+            "extra": "iterations: 278\ncpu: 2671477.406474831 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_ev_after_nrz/1024/16",
+            "value": 134028.88033536164,
+            "unit": "ns/iter",
+            "extra": "iterations: 5248\ncpu: 134014.8864329271 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_merge_after_nrz/8/16",
+            "value": 1368323.933723205,
+            "unit": "ns/iter",
+            "extra": "iterations: 513\ncpu: 1368283.19493177 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_merge_after_nrz/1024/1",
+            "value": 314.1382686347349,
+            "unit": "ns/iter",
+            "extra": "iterations: 2227895\ncpu: 314.1123149879154 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_merge_after_nrz/1024/8",
+            "value": 42796.75655377542,
+            "unit": "ns/iter",
+            "extra": "iterations: 14114\ncpu: 42793.10953663063 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_truncate_coeff_after_nrz/8/16",
+            "value": 425579.8010594404,
+            "unit": "ns/iter",
+            "extra": "iterations: 1699\ncpu: 425540.5668040014 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_truncate_coeff_after_nrz/1024/1",
+            "value": 146.56993016146922,
+            "unit": "ns/iter",
+            "extra": "iterations: 4774585\ncpu: 146.5620364911287 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_truncate_coeff_after_nrz/1024/8",
+            "value": 33238.575301348115,
+            "unit": "ns/iter",
+            "extra": "iterations: 20989\ncpu: 33236.60993853941 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_truncate_weight10_after_nrz/8/16",
+            "value": 275857.72555204947,
+            "unit": "ns/iter",
+            "extra": "iterations: 2536\ncpu: 275845.33911671885 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_truncate_weight10_after_nrz/1024/1",
+            "value": 382.0415347857403,
+            "unit": "ns/iter",
+            "extra": "iterations: 1832777\ncpu: 382.0079660536998 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_truncate_weight10_after_nrz/1024/8",
+            "value": 55139.05915670311,
+            "unit": "ns/iter",
+            "extra": "iterations: 12712\ncpu: 55134.683134046914 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_truncate_keepn1024_after_nrz/8/16",
+            "value": 562160.270999982,
+            "unit": "ns/iter",
+            "extra": "iterations: 1000\ncpu: 562090.965000003 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_truncate_keepn1024_after_nrz/1024/1",
+            "value": 145.66338810207694,
+            "unit": "ns/iter",
+            "extra": "iterations: 4805965\ncpu: 145.65032038310716 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_truncate_keepn1024_after_nrz/1024/8",
+            "value": 32145.529905899253,
+            "unit": "ns/iter",
+            "extra": "iterations: 21785\ncpu: 32144.45522148252 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_appy_amplitude_damping_i/1",
+            "value": 8.425012191839654,
+            "unit": "ns/iter",
+            "extra": "iterations: 83063756\ncpu: 8.423677614578441 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_appy_amplitude_damping_i/1024",
+            "value": 8.416466839727132,
+            "unit": "ns/iter",
+            "extra": "iterations: 83159041\ncpu: 8.415893420415903 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_appy_amplitude_damping_xy/1",
+            "value": 8.432819087118324,
+            "unit": "ns/iter",
+            "extra": "iterations: 82849678\ncpu: 8.431357572687245 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_appy_amplitude_damping_xy/1024",
+            "value": 8.424977618853363,
+            "unit": "ns/iter",
+            "extra": "iterations: 83233002\ncpu: 8.424306538889413 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_appy_amplitude_damping_z/1",
+            "value": 57.934250439923375,
+            "unit": "ns/iter",
+            "extra": "iterations: 12073115\ncpu: 57.9323461260827 ns\nthreads: 1"
+          },
+          {
+            "name": "Observable_appy_amplitude_damping_z/1024",
+            "value": 119.73956183492628,
+            "unit": "ns/iter",
+            "extra": "iterations: 5833281\ncpu: 119.73746250180581 ns\nthreads: 1"
+          },
+          {
+            "name": "pauli_empty_benchmark",
+            "value": 0.6234152580418144,
+            "unit": "ns/iter",
+            "extra": "iterations: 1124189251\ncpu: 0.6233568310465937 ns\nthreads: 1"
+          },
+          {
+            "name": "pauli_commutes",
+            "value": 1.0654775874272238,
+            "unit": "ns/iter",
+            "extra": "iterations: 657124135\ncpu: 1.0653781313328337 ns\nthreads: 1"
+          },
+          {
+            "name": "pauli_apply_pauli",
+            "value": 0.7257821417423864,
+            "unit": "ns/iter",
+            "extra": "iterations: 967177826\ncpu: 0.7257501579652659 ns\nthreads: 1"
+          },
+          {
+            "name": "pauli_apply_clifford",
+            "value": 0.8792682042480494,
+            "unit": "ns/iter",
+            "extra": "iterations: 802175031\ncpu: 0.8791629990288314 ns\nthreads: 1"
+          },
+          {
+            "name": "pauli_apply_cx",
+            "value": 6.520273994234745,
+            "unit": "ns/iter",
+            "extra": "iterations: 107160211\ncpu: 6.5200167812286 ns\nthreads: 1"
+          },
+          {
+            "name": "pauli_equality",
+            "value": 0.8469830198111943,
+            "unit": "ns/iter",
+            "extra": "iterations: 826834034\ncpu: 0.8469347356352328 ns\nthreads: 1"
+          },
+          {
+            "name": "pauli_weight",
+            "value": 0.8215495314771023,
+            "unit": "ns/iter",
+            "extra": "iterations: 852426375\ncpu: 0.8215275905793049 ns\nthreads: 1"
+          },
+          {
+            "name": "pauli_apply_unital_noise",
+            "value": 0.7142151042761757,
+            "unit": "ns/iter",
+            "extra": "iterations: 980896948\ncpu: 0.7141992840617927 ns\nthreads: 1"
+          },
+          {
+            "name": "MergeMaxCutQAOAN32P3/alwayafter_merge_alwaysafter_keepn50k_run",
+            "value": 286215536.5000092,
+            "unit": "ns/iter",
+            "extra": "iterations: 2\ncpu: 286202997.49999845 ns\nthreads: 1"
+          },
+          {
+            "name": "MergeMaxCutQAOAN32P3/alwayafter_merge_alwaysafter_keepn10k_run_one_by_one_ev",
+            "value": 1849933449.9999804,
+            "unit": "ns/iter",
+            "extra": "iterations: 1\ncpu: 1849761772.0000007 ns\nthreads: 1"
+          },
+          {
+            "name": "SymbolicMaxCutQAOAN4P3/run",
+            "value": 848838.8715151511,
+            "unit": "ns/iter",
+            "extra": "iterations: 825\ncpu: 848764.9260606066 ns\nthreads: 1"
+          },
+          {
+            "name": "SymbolicMaxCutQAOAN4P3/ev",
+            "value": 7908.210713444348,
+            "unit": "ns/iter",
+            "extra": "iterations: 89159\ncpu: 7907.84203501606 ns\nthreads: 1"
+          },
+          {
+            "name": "SymbolicMaxCutQAOAN4P3/ev_evaluate",
+            "value": 20943247.4848482,
+            "unit": "ns/iter",
+            "extra": "iterations: 33\ncpu: 20942661.909090832 ns\nthreads: 1"
+          },
+          {
+            "name": "SymbolicMaxCutQAOAN4P3/ev_simplify",
+            "value": 501444282.499989,
+            "unit": "ns/iter",
+            "extra": "iterations: 2\ncpu: 501351540.0000017 ns\nthreads: 1"
+          },
+          {
+            "name": "SymbolicMaxCutQAOAN4P3/ev_optimize",
+            "value": 535486015.0000036,
+            "unit": "ns/iter",
+            "extra": "iterations: 1\ncpu: 535445041.9999992 ns\nthreads: 1"
+          },
+          {
+            "name": "SymbolicMaxCutQAOAN4P3/ev_simplified_evaluate",
+            "value": 27919295.833333045,
+            "unit": "ns/iter",
+            "extra": "iterations: 24\ncpu: 27917797.00000004 ns\nthreads: 1"
+          },
+          {
+            "name": "SymbolicMaxCutQAOAN4P3/ev_optimized_evaluate",
+            "value": 202901.0240649444,
+            "unit": "ns/iter",
+            "extra": "iterations: 3449\ncpu: 202873.79646274183 ns\nthreads: 1"
+          },
+          {
+            "name": "Memory_vector_int_resize64x2p16",
+            "value": 267220.84738955926,
+            "unit": "ns/iter",
+            "extra": "iterations: 2739\ncpu: 267107.8101496912 ns\nthreads: 1"
+          },
+          {
+            "name": "Memory_vector_Pauli_resize64x2p16",
+            "value": 290503.11389802303,
+            "unit": "ns/iter",
+            "extra": "iterations: 2432\ncpu: 290463.86924342095 ns\nthreads: 1"
+          },
+          {
+            "name": "Memory_PauliTermContainer_insert64x2p16",
+            "value": 352498.06451613293,
+            "unit": "ns/iter",
+            "extra": "iterations: 1984\ncpu: 352464.7726814461 ns\nthreads: 1"
           }
         ]
       }
