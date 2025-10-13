@@ -210,15 +210,16 @@ class Circuit {
 
 	template <typename ExecutionPolicy = DefaultExecutionPolicy>
 	auto expectation_value(std::vector<Observable<Coefficient_t>> const& target_observables,
-						     ExecutionPolicy&& policy = ExecutionPolicy{}) {
+			       ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		return Policy_t::circuit_batched_evs(*this, target_observables);
 	}
 
 	template <typename ExecutionPolicy = DefaultExecutionPolicy>
-	std::pair<Coefficient_t, Coefficient_t> expectation_value(Observable<Coefficient_t> const& target_observable, ExecutionPolicy&& policy = ExecutionPolicy{}) {
+	std::pair<Coefficient_t, Coefficient_t> expectation_value(Observable<Coefficient_t> const& target_observable,
+								  ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		auto res = run(target_observable, std::forward<ExecutionPolicy>(policy));
-		return {res.expectation_value(), res.truncate_error()};
+		return { res.expectation_value(), res.truncate_error() };
 	}
 
 	template <typename Input, IsVariant DynamicPolicy>
@@ -227,6 +228,78 @@ class Circuit {
 				  rpol);
 	}
 
+	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	std::pair<Observable<Coefficient_t>, Observable<Coefficient_t>>
+	run_kn_split_err(Observable<Coefficient_t> const& target_observable, std::size_t kn, ExecutionPolicy&& policy = ExecutionPolicy{}) {
+		if (target_observable.nb_qubits() != nb_qubits()) {
+			throw std::invalid_argument("Number of qubits of the circuit doesn't match observable.");
+		}
+
+		auto obs = target_observable;
+		Observable<Coefficient_t> err_obs{};
+		SimulationState state(nb_splitting_gates());
+		KeepNSplitter<Coefficient_t> splitter{ kn };
+		bool init = false;
+
+		for (auto const& qop : std::ranges::reverse_view{ operations_ }) {
+			auto op_t = qop.operation_type();
+
+			// schedule
+			if (merge_policy_->should_apply(state, op_t, Timing::After)) {
+				auto before_nb = obs.size();
+				auto removed = obs.merge(policy);
+				state.register_merge(CompressionResult{ before_nb, removed });
+			}
+
+			if (truncate_policy_->should_apply(state, op_t, Timing::After)) {
+				auto before_nb = obs.size();
+				auto rem_obs = obs.truncate_split(splitter);
+				auto diff = rem_obs.size();
+				if (!init) {
+					init = true;
+					err_obs = std::move(rem_obs);
+				} else {
+					err_obs.concat(rem_obs);
+				}
+				state.register_truncate(CompressionResult{ before_nb, diff });
+			}
+
+			if (obs.size() == 0) { // maximally mixed state
+				break;
+			}
+			qop(obs, policy);
+			if (init) {
+				qop(err_obs, policy);
+			}
+
+			if (op_t == OperationType::BasicGate) {
+				state.register_basic_gate(obs.size());
+			} else if (op_t == OperationType::SplittingGate) {
+				state.register_splitting_gate(obs.size());
+			}
+
+			// schedule
+			if (merge_policy_->should_apply(state, op_t, Timing::After)) {
+				auto before_nb = obs.size();
+				auto removed = obs.merge(policy);
+				state.register_merge(CompressionResult{ before_nb, removed });
+			}
+			if (truncate_policy_->should_apply(state, op_t, Timing::After)) {
+				auto before_nb = obs.size();
+				auto rem_obs = obs.truncate_split(splitter);
+				auto diff = rem_obs.size();
+				if (!init) {
+					init = true;
+					err_obs = std::move(rem_obs);
+				} else {
+					err_obs.concat(rem_obs);
+				}
+				state.register_truncate(CompressionResult{ before_nb, diff });
+			}
+		}
+
+		return { obs, err_obs };
+	}
 	/**
 	 * @brief Counts the number of gates in the circuit that can split an observable.
 	 * @return The total number of splitting gates (e.g., Rz, AmplitudeDamping).

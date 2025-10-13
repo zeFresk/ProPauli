@@ -400,6 +400,15 @@ class PauliTermContainer {
 		assert(idx < nb_terms());
 		raw_coefficients.resize(idx);
 	}
+
+	void concat(PauliTermContainer const& oth) {
+		raw_bits.resize(nb_terms() * nb_underlying_per_pt);
+		raw_bits.reserve(raw_bits.size() + oth.raw_bits.size());
+		std::copy(oth.raw_bits.begin(), oth.raw_bits.end(), std::back_inserter(raw_bits));
+		raw_coefficients.reserve(raw_coefficients.size() + oth.raw_coefficients.size());
+		std::copy(oth.raw_coefficients.begin(), oth.raw_coefficients.end(), std::back_inserter(raw_coefficients));
+	}
+
 	/** @} */
 
 // The implementation of the custom iterators is injected here.

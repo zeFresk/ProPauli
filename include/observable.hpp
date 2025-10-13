@@ -230,6 +230,29 @@ class Observable {
 		return std::visit([this](auto const& pol) { return this->expectation_value(pol); }, rpol);
 	}
 
+	struct EVData {
+		T expectation_value = T{ 0 };
+		T truncation_error = T{ 0 };
+		float positive_ratio = 0;
+		float nonzero_ratio = 0;
+	};
+
+	EVData ev_detailed() const requires(!Symbolic<T>) {
+		std::size_t nb_pos = 0;
+		std::size_t nb_nz = 0;
+		T ev = 0;
+
+		for (std::size_t i = 0; i < size(); ++i) {
+			auto pt = paulis_[i];
+			nb_pos += pt.coefficient() > T{ 0 };
+			auto sev = pt.expectation_value;
+			nb_nz += sev > T{ 0 };
+			ev += sev;
+		}
+		return EVData{ ev, truncate_error(), static_cast<float>(nb_pos) / static_cast<float>(size()),
+			       static_cast<float>(nb_nz) / static_cast<float>(size()) };
+	}
+
 	/** @name Container Interface
 	 * Methods to interact with the Observable like a container.
 	 * @{
@@ -317,13 +340,22 @@ class Observable {
 		return ret;
 	}
 
-	T const& truncate_error() const {
-		return error_truncate;
+	template <typename Splitter>
+	Observable<T> truncate_split(Splitter&& splitter) {
+		auto cpy = *this;
+		auto ptc_split = splitter.truncate_split(paulis_, error_truncate);
+		cpy.paulis_ = std::move(ptc_split);
+		return cpy;
 	}
 
-	void set_truncate_error(T const& new_error) {
-		error_truncate = new_error;
+	void concat(Observable const& oth) {
+		error_truncate += oth.error_truncate;
+		paulis_.concat(oth.paulis_);
 	}
+
+	T const& truncate_error() const { return error_truncate; }
+
+	void set_truncate_error(T const& new_error) { error_truncate = new_error; }
 
 	friend bool operator==(Observable const& lhs, Observable const& rhs) {
 		return lhs.size() == rhs.size() && lhs.paulis_ == rhs.paulis_;
