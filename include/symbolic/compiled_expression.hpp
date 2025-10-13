@@ -22,7 +22,7 @@ struct CompiledVariable {
 };
 
 struct CompiledUnaryOp {
-	enum class Op { Cos, Sin, Minus, Sqrt } operation;
+	enum class Op { Cos, Sin, Minus, Sqrt, Abs } operation;
 	std::size_t node_index;
 };
 
@@ -85,6 +85,8 @@ class CompiledExpression {
 						case CompiledUnaryOp::Op::Sin:
 							results[i] = sin(results[node.node_index]);
 							break;
+						case CompiledUnaryOp::Op::Abs:
+							results[i] = abs(results[node.node_index]);
 						}
 					} else if constexpr (std::is_same_v<CompiledBinaryOp, n_t>) {
 						switch (node.operation) {

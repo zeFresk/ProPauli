@@ -7,7 +7,8 @@ void truncate_snippets() {
 	//! [coefficient_truncator]
 	// Create a truncator that removes terms with coefficient magnitude < 0.1
 	CoefficientTruncator<float> coeff_trunc(0.1f);
-	auto removed_by_coeff = coeff_trunc.truncate(observable);
+	float error = 0;
+	auto removed_by_coeff = coeff_trunc.truncate(observable, error);
 	// `observable` now contains {"+0.5XX", "-0.8II", "+0.2ZZZ"}
 	std::cout << "Removed by coefficient truncator: " << removed_by_coeff << std::endl;
 	//! [coefficient_truncator]
@@ -15,7 +16,8 @@ void truncate_snippets() {
 	//! [weight_truncator]
 	// Create a truncator that removes terms with Pauli weight >= 3
 	WeightTruncator<> weight_trunc(3);
-	auto removed_by_weight = weight_trunc.truncate(observable);
+	float error_w = 0;
+	auto removed_by_weight = weight_trunc.truncate(observable, error_w);
 	// `observable` now contains {"+0.5XX", "-0.8II"}
 	std::cout << "Removed by weight truncator: " << removed_by_weight << std::endl;
 	//! [weight_truncator]
@@ -23,7 +25,8 @@ void truncate_snippets() {
 	//! [never_truncator]
 	// A truncator that does nothing
 	NeverTruncator<> no_op_trunc;
-	auto removed_by_never = no_op_trunc.truncate(observable);
+	float error_n = 0;
+	auto removed_by_never = no_op_trunc.truncate(observable, error_n);
 	// `observable` is unchanged
 	std::cout << "Removed by never truncator: " << removed_by_never << std::endl;
 	//! [never_truncator]
@@ -35,7 +38,8 @@ void truncate_snippets() {
 	// Combine the coefficient and weight truncators at compile time for efficiency.
 	// They are applied sequentially.
 	auto combined_trunc = combine_truncators(CoefficientTruncator<float>(0.1f), WeightTruncator<>(3));
-	auto removed_by_combined = combined_trunc->truncate(observable);
+	float error_c = 0;
+	auto removed_by_combined = combined_trunc->truncate(observable, error_c);
 	// `observable` is now {"+0.5XX", "-0.8II"}
 	std::cout << "Removed by combined (compile-time) truncator: " << removed_by_combined << std::endl;
 	//! [combine_truncators]
@@ -51,7 +55,8 @@ void truncate_snippets() {
 
 	// Create a runtime combiner from the list.
 	RuntimeMultiTruncators<float> runtime_trunc(trunc_list);
-	auto removed_by_runtime = runtime_trunc.truncate(observable);
+	float error_r = 0;
+	auto removed_by_runtime = runtime_trunc.truncate(observable, error_r);
 	// `observable` is now {"+0.5XX", "-0.8II"}
 	std::cout << "Removed by runtime truncator: " << removed_by_runtime << std::endl;
 	//! [runtime_multi_truncator]

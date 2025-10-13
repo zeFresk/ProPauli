@@ -354,7 +354,7 @@ TYPED_TEST(CircuitRun, test_circuit1_expectation_value) {
 		//{ "ZZZZ", 0.5f },
 	} };
 	for (auto const [ob, ev] : truth_table) {
-		auto ev_r = qc.expectation_value(Observable{ ob }, this->policy);
+		auto [ev_r, err] = qc.expectation_value(Observable{ ob }, this->policy);
 		EXPECT_NEAR(ev_r, ev, 1e-4f);
 	}
 }
@@ -393,7 +393,7 @@ TYPED_TEST(CircuitRun, test_circuit1_batch_ev) {
 
 	for (std::size_t i = 0; i < res.size(); ++i) {
 		auto exp = std::get<1>(truth_table[i]);
-		auto rev = res[i];
+		auto [rev, err] = res[i];
 		EXPECT_NEAR(rev, exp, 1e-4f);
 	}
 }
@@ -630,7 +630,7 @@ TYPED_TEST(CircuitRun, test_circuit1_expectation_value_runtime) {
 		//{ "ZZZZ", 0.5f },
 	} };
 	for (auto const [ob, ev] : truth_table) {
-		auto ev_r = qc.expectation_value(Observable{ ob }, this->rpolicy);
+		auto [ev_r, err_r] = qc.expectation_value(Observable{ ob }, this->rpolicy);
 		EXPECT_NEAR(ev_r, ev, 1e-4f);
 	}
 }
@@ -669,7 +669,7 @@ TYPED_TEST(CircuitRun, test_circuit1_batch_ev_runtime) {
 
 	for (std::size_t i = 0; i < res.size(); ++i) {
 		auto exp = std::get<1>(truth_table[i]);
-		auto rev = res[i];
+		auto [rev, err] = res[i];
 		EXPECT_NEAR(rev, exp, 1e-4f);
 	}
 }

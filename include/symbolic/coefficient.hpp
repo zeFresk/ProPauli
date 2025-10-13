@@ -40,7 +40,7 @@ class SymbolicCoefficient {
 	 * @brief Constructs a symbolic coefficient from a constant value.
 	 * @param v The constant value.
 	 */
-	SymbolicCoefficient(T const v = T{0}) : et(ExpressionTree<T>(std::make_shared<const ExpressionNode<T>>(Constant<T>{ v }))) {}
+	SymbolicCoefficient(T const v = T{ 0 }) : et(ExpressionTree<T>(std::make_shared<const ExpressionNode<T>>(Constant<T>{ v }))) {}
 
 	/**
 	 * @brief Constructs a symbolic coefficient from a variable.
@@ -205,6 +205,11 @@ class SymbolicCoefficient {
 		return SymbolicCoefficient(ExpressionTree<T>(new_root));
 	}
 
+	SymbolicCoefficient abs() const {
+		auto new_root = std::make_shared<const ExpressionNode<T>>(UnaryOp<T>{ UnaryOp<T>::Op::Abs, et.get_root() });
+		return SymbolicCoefficient(ExpressionTree<T>(new_root));
+	}
+
 	friend SymbolicCoefficient operator+(SymbolicCoefficient lhs, SymbolicCoefficient const& rhs) { return lhs += rhs; }
 	friend SymbolicCoefficient operator+(T v, SymbolicCoefficient const& rhs) { return rhs + v; }
 	friend SymbolicCoefficient operator*(SymbolicCoefficient lhs, SymbolicCoefficient const& rhs) { return lhs *= rhs; }
@@ -224,6 +229,7 @@ class SymbolicCoefficient {
 	friend SymbolicCoefficient cos(SymbolicCoefficient x) { return x.cos(); }
 	friend SymbolicCoefficient sin(SymbolicCoefficient x) { return x.sin(); }
 	friend SymbolicCoefficient sqrt(SymbolicCoefficient x) { return x.sqrt(); }
+	friend SymbolicCoefficient abs(SymbolicCoefficient x) { return x.abs(); }
 
 	friend std::ostream& operator<<(std::ostream& os, SymbolicCoefficient const& sc) { return os << sc.et; }
 
