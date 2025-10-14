@@ -236,7 +236,7 @@ class Circuit {
 		}
 
 		auto obs = target_observable;
-		Observable<Coefficient_t> err_obs{"I"};
+		Observable<Coefficient_t> err_obs{ "I" };
 		SimulationState state(nb_splitting_gates());
 		KeepNSplitter<Coefficient_t> splitter{ kn };
 		bool init = false;
@@ -261,6 +261,8 @@ class Circuit {
 				} else {
 					err_obs.concat(rem_obs);
 				}
+				if (err_obs.size() > 0)
+					err_obs.merge(policy);
 				state.register_truncate(CompressionResult{ before_nb, diff });
 			}
 
@@ -294,6 +296,9 @@ class Circuit {
 				} else {
 					err_obs.concat(rem_obs);
 				}
+
+				if (err_obs.size() > 0)
+					err_obs.merge(policy);
 				state.register_truncate(CompressionResult{ before_nb, diff });
 			}
 		}

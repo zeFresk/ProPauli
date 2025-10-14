@@ -345,7 +345,7 @@ class Observable {
 
 	template <typename Splitter>
 	Observable<T> truncate_split(Splitter&& splitter) {
-		auto cpy = *this;
+		auto cpy = Observable{"I"};
 		auto ptc_split = splitter.truncate_split(paulis_, error_truncate);
 		nb_truncated += ptc_split.nb_terms();
 		cpy.paulis_ = std::move(ptc_split);
