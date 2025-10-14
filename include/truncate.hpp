@@ -324,7 +324,7 @@ class KeepNTruncator : public Truncator<T> {
 		return initial_size - paulis.nb_terms();
 	}
 
-    private:
+    protected:
 	/**
 	 * @brief The main Quickselect routine with a cutoff for small partitions.
 	 */
@@ -406,23 +406,25 @@ class KeepNTruncator : public Truncator<T> {
 template <typename T>
 class KeepNSplitter : public KeepNTruncator<T> {
     public:
-	PauliTermContainer<T> truncate_split(PauliTermContainer<T>& paulis, T& error_acc) override {
+	KeepNSplitter(std::size_t kn) : KeepNTruncator<T>{ kn } {}
+
+	PauliTermContainer<T> truncate_split(PauliTermContainer<T>& paulis, T& error_acc) {
 		if (paulis.nb_terms() <= this->nb_terms) {
-			return 0;
+			return PauliTermContainer<T>{ paulis.nb_qubits() };
 		}
 
 		const auto initial_size = paulis.nb_terms();
 
 		// We need to ensure the N largest elements are in the first N positions.
 		// This means we need to find the element that belongs at index `nb_terms - 1`.
-		selection_by_swap(paulis, 0, paulis.nb_terms() - 1, this->nb_terms - 1,
-				  [](auto const& a, auto const& b) { return std::abs(a.coefficient()) > std::abs(b.coefficient()); });
+		this->selection_by_swap(paulis, 0, paulis.nb_terms() - 1, this->nb_terms - 1,
+					[](auto const& a, auto const& b) { return std::abs(a.coefficient()) > std::abs(b.coefficient()); });
 
 		for (std::size_t i = this->nb_terms; i < initial_size; ++i) {
 			error_acc += abs(paulis[i].coefficient());
 		}
 
-		PauliTermContainer<T> ret{paulis.begin() + this->nb_terms, paulis.end()};
+		PauliTermContainer<T> ret{ paulis.cbegin() + this->nb_terms, paulis.cend() };
 
 		paulis.erase_to_end(this->nb_terms);
 

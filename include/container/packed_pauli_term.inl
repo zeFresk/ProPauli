@@ -15,6 +15,7 @@ class ReadOnlyNonOwningPauliTermPacked {
 	std::size_t idx;
 
     public:
+	friend PauliTermContainer<T, Underlying>;
 	/**
 	 * @brief Constructs a read-only view.
 	 * @param ptc_ The parent container.

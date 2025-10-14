@@ -236,7 +236,7 @@ class Circuit {
 		}
 
 		auto obs = target_observable;
-		Observable<Coefficient_t> err_obs{};
+		Observable<Coefficient_t> err_obs{"I"};
 		SimulationState state(nb_splitting_gates());
 		KeepNSplitter<Coefficient_t> splitter{ kn };
 		bool init = false;

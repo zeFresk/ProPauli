@@ -378,7 +378,7 @@ class PauliTermContainer {
 
 	void _batch_allocate(std::size_t nb_new_terms) {
 		resize_paulis_terms(nb_terms() + nb_new_terms);
-		raw_coefficients.resize(nb_terms() + nb_new_terms, T{0});
+		raw_coefficients.resize(nb_terms() + nb_new_terms, T{ 0 });
 	}
 
 	/**
@@ -424,6 +424,18 @@ class PauliTermContainer {
 	auto begin() const { return cbegin(); }
 	auto end() const { return cend(); }
 	/** @} */
+
+	PauliTermContainer(ReadOnlyNonOwningIterator begin, ReadOnlyNonOwningIterator end) {
+		set_qubits((*begin).size());
+		auto dist = (*end).idx - (*begin).idx;
+		raw_bits.resize(dist * nb_underlying_per_pt);
+		raw_coefficients.resize(dist);
+		auto in_arr = (*begin).ptc.get();
+		std::copy(in_arr.raw_bits.begin() + ((*begin).idx * nb_underlying_per_pt),
+			  in_arr.raw_bits.begin() + ((*end).idx * nb_underlying_per_pt), raw_bits.begin());
+		std::copy(in_arr.raw_coefficients.begin() + (*begin).idx, in_arr.raw_coefficients.begin() + (*end).idx,
+			  raw_coefficients.begin());
+	}
 
 	/** @name Comparison
 	 * @{

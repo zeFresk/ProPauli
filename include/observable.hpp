@@ -51,7 +51,7 @@ class Observable {
 	 * @snippet tests/snippets/observable.cpp observable_from_string
 	 */
 	Observable(std::string_view pauli_string, typename std::enable_if_t<std::is_constructible_v<T, coeff_t>, T> coeff = T{ 1 })
-		: paulis_{ PauliTerm<T>(pauli_string, coeff) }, error_truncate{ T{ 0 } } {
+		: paulis_{ PauliTerm<T>(pauli_string, coeff) }, error_truncate{ T{ 0 } }, nb_truncated{ 0 } {
 		check_invariant();
 	}
 
@@ -60,7 +60,8 @@ class Observable {
 	 * @param pauli_string_list An initializer list of Pauli strings. Each will have a coefficient of 1.
 	 * @snippet tests/snippets/observable.cpp observable_from_string_list
 	 */
-	Observable(std::initializer_list<std::string_view> pauli_string_list) : paulis_{ pauli_string_list }, error_truncate{ T{ 0 } } {
+	Observable(std::initializer_list<std::string_view> pauli_string_list)
+		: paulis_{ pauli_string_list }, error_truncate{ T{ 0 } }, nb_truncated{ 0 } {
 		check_invariant();
 	}
 
@@ -69,7 +70,7 @@ class Observable {
 	 * @param paulis_list An initializer list of `PauliTerm` objects.
 	 * @snippet tests/snippets/observable.cpp observable_from_pauli_terms
 	 */
-	Observable(std::initializer_list<PauliTerm<T>> paulis_list) : paulis_{ paulis_list }, error_truncate{ T{ 0 } } {
+	Observable(std::initializer_list<PauliTerm<T>> paulis_list) : paulis_{ paulis_list }, error_truncate{ T{ 0 } }, nb_truncated{ 0 } {
 		check_invariant();
 	}
 
@@ -81,7 +82,7 @@ class Observable {
 	 * @snippet tests/snippets/observable.cpp observable_from_iterators
 	 */
 	template <PauliTermIterator Iter>
-	Observable(Iter&& begin, Iter&& end) : paulis_{ begin, end }, error_truncate{ T{ 0 } } {
+	Observable(Iter&& begin, Iter&& end) : paulis_{ begin, end }, error_truncate{ T{ 0 } }, nb_truncated{ 0 } {
 		check_invariant();
 	}
 	/** @} */
@@ -233,6 +234,7 @@ class Observable {
 	struct EVData {
 		T expectation_value = T{ 0 };
 		T truncation_error = T{ 0 };
+		std::size_t nb_truncated = 0;
 		float positive_ratio = 0;
 		float nonzero_ratio = 0;
 	};
@@ -245,11 +247,11 @@ class Observable {
 		for (std::size_t i = 0; i < size(); ++i) {
 			auto pt = paulis_[i];
 			nb_pos += pt.coefficient() > T{ 0 };
-			auto sev = pt.expectation_value;
+			auto sev = pt.expectation_value();
 			nb_nz += sev > T{ 0 };
 			ev += sev;
 		}
-		return EVData{ ev, truncate_error(), static_cast<float>(nb_pos) / static_cast<float>(size()),
+		return EVData{ ev, truncate_error(), nb_truncated, static_cast<float>(nb_pos) / static_cast<float>(size()),
 			       static_cast<float>(nb_nz) / static_cast<float>(size()) };
 	}
 
@@ -337,6 +339,7 @@ class Observable {
 					<< std::endl;
 			}
 		}
+		nb_truncated += ret;
 		return ret;
 	}
 
@@ -344,6 +347,7 @@ class Observable {
 	Observable<T> truncate_split(Splitter&& splitter) {
 		auto cpy = *this;
 		auto ptc_split = splitter.truncate_split(paulis_, error_truncate);
+		nb_truncated += ptc_split.nb_terms();
 		cpy.paulis_ = std::move(ptc_split);
 		return cpy;
 	}
@@ -374,6 +378,7 @@ class Observable {
 	PauliTermContainer<T> paulis_;
 	RuntimeMerger<T> merger_;
 	T error_truncate;
+	std::size_t nb_truncated;
 
 	void check_invariant() const {
 		if (paulis_.nb_terms() == 0) {

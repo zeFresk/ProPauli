@@ -634,6 +634,7 @@ TYPED_TEST(CircuitRun, test_circuit1_expectation_value_runtime) {
 		EXPECT_NEAR(ev_r, ev, 1e-4f);
 	}
 }
+
 TYPED_TEST(CircuitRun, test_circuit1_batch_ev_runtime) {
 	Circuit qc{ 4 };
 
@@ -671,6 +672,46 @@ TYPED_TEST(CircuitRun, test_circuit1_batch_ev_runtime) {
 		auto exp = std::get<1>(truth_table[i]);
 		auto [rev, err] = res[i];
 		EXPECT_NEAR(rev, exp, 1e-4f);
+	}
+}
+
+TYPED_TEST(CircuitRun, test_circuit1_splitter) {
+	Circuit qc{ 4 };
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+
+	qc.add_operation("Rz", 0, pi / 2.f);
+	qc.add_operation("Rz", 1, pi / 3.f);
+	qc.add_operation("Rz", 2, pi / 4.f);
+	qc.add_operation("Rz", 3, pi / 5.f);
+
+	qc.add_operation("cx", 0, 1);
+	qc.add_operation("cx", 2, 3);
+	qc.add_operation("cx", 1, 2);
+
+	for (unsigned i = 0; i < 4; ++i)
+		qc.add_operation("H", i);
+
+	std::array<std::tuple<std::string_view, coeff_t>, 4> truth_table = { {
+		{ "ZIII", p1_to_ev(0.500000f) },
+		{ "IZII", p1_to_ev(0.356999f) },
+		{ "IIZI", p1_to_ev(0.213950f) },
+		{ "IIIZ", p1_to_ev(0.095499f) },
+		//{ "ZZZZ", 0.5f },
+	} };
+
+	for (auto const& [o_str, ev] : truth_table) {
+		auto o = Observable{o_str};
+		auto [res, splt] = qc.run_kn_split_err(o, 1, this->rpolicy);
+		auto res_evd = res.ev_detailed();
+		auto splt_evd = splt.ev_detailed();
+
+		EXPECT_GT(res_evd.nb_truncated, 0);
+		EXPECT_GT(res_evd.truncation_error, 0.f);
+		EXPECT_GE(splt.size(), 1);
+		EXPECT_GT(res_evd.truncation_error, std::abs(splt_evd.expectation_value));
+		EXPECT_NEAR(res_evd.expectation_value + splt_evd.expectation_value, ev, 1e-4f);
 	}
 }
 
