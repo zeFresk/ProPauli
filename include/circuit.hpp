@@ -305,6 +305,84 @@ class Circuit {
 
 		return { obs, err_obs };
 	}
+
+	template <typename ExecutionPolicy = DefaultExecutionPolicy>
+	std::pair<Observable<Coefficient_t>, Observable<Coefficient_t>>
+	run_rdkn_split_err(Observable<Coefficient_t> const& target_observable, std::size_t kn, ExecutionPolicy&& policy = ExecutionPolicy{}) {
+		if (target_observable.nb_qubits() != nb_qubits()) {
+			throw std::invalid_argument("Number of qubits of the circuit doesn't match observable.");
+		}
+
+		auto obs = target_observable;
+		Observable<Coefficient_t> err_obs{ "I" };
+		SimulationState state(nb_splitting_gates());
+		RandomKeepNSplitter<Coefficient_t> splitter{ kn };
+		bool init = false;
+
+		for (auto const& qop : std::ranges::reverse_view{ operations_ }) {
+			auto op_t = qop.operation_type();
+
+			// schedule
+			if (merge_policy_->should_apply(state, op_t, Timing::After)) {
+				auto before_nb = obs.size();
+				auto removed = obs.merge(policy);
+				state.register_merge(CompressionResult{ before_nb, removed });
+			}
+
+			if (truncate_policy_->should_apply(state, op_t, Timing::After)) {
+				auto before_nb = obs.size();
+				auto rem_obs = obs.truncate_split(splitter);
+				auto diff = rem_obs.size();
+				if (!init) {
+					init = true;
+					err_obs = std::move(rem_obs);
+				} else {
+					err_obs.concat(rem_obs);
+				}
+				if (err_obs.size() > 0)
+					err_obs.merge(policy);
+				state.register_truncate(CompressionResult{ before_nb, diff });
+			}
+
+			if (obs.size() == 0) { // maximally mixed state
+				break;
+			}
+			qop(obs, policy);
+			if (init) {
+				qop(err_obs, policy);
+			}
+
+			if (op_t == OperationType::BasicGate) {
+				state.register_basic_gate(obs.size());
+			} else if (op_t == OperationType::SplittingGate) {
+				state.register_splitting_gate(obs.size());
+			}
+
+			// schedule
+			if (merge_policy_->should_apply(state, op_t, Timing::After)) {
+				auto before_nb = obs.size();
+				auto removed = obs.merge(policy);
+				state.register_merge(CompressionResult{ before_nb, removed });
+			}
+			if (truncate_policy_->should_apply(state, op_t, Timing::After)) {
+				auto before_nb = obs.size();
+				auto rem_obs = obs.truncate_split(splitter);
+				auto diff = rem_obs.size();
+				if (!init) {
+					init = true;
+					err_obs = std::move(rem_obs);
+				} else {
+					err_obs.concat(rem_obs);
+				}
+
+				if (err_obs.size() > 0)
+					err_obs.merge(policy);
+				state.register_truncate(CompressionResult{ before_nb, diff });
+			}
+		}
+
+		return { obs, err_obs };
+	}
 	/**
 	 * @brief Counts the number of gates in the circuit that can split an observable.
 	 * @return The total number of splitting gates (e.g., Rz, AmplitudeDamping).

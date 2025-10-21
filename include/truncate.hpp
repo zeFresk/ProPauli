@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
+#include <random>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -427,6 +428,38 @@ class KeepNSplitter : public KeepNTruncator<T> {
 		PauliTermContainer<T> ret{ paulis.cbegin() + this->nb_terms, paulis.cend() };
 
 		paulis.erase_to_end(this->nb_terms);
+
+		assert(paulis.nb_terms() == this->nb_terms);
+		return ret;
+	}
+};
+
+#include <pcg_random.hpp>
+
+template <typename T>
+class RandomKeepNSplitter {
+	std::size_t nb_terms;
+	pcg32 rng;
+
+    public:
+	RandomKeepNSplitter(std::size_t kn) : nb_terms{ kn }, rng{ pcg_extras::seed_seq_from<std::random_device>{} } {}
+
+	PauliTermContainer<T> truncate_split(PauliTermContainer<T>& paulis, T& error_acc) {
+		if (paulis.nb_terms() <= this->nb_terms) {
+			return PauliTermContainer<T>{ paulis.nb_qubits() };
+		}
+
+		const auto initial_size = paulis.nb_terms();
+		const auto nb_truncated = initial_size - nb_terms;
+		PauliTermContainer<T> ret{ paulis.nb_qubits() };
+		ret._batch_allocate(nb_truncated);
+
+		for (std::size_t i = 0; i < nb_truncated; ++i) {
+			auto rd_idx = rng(initial_size - i);
+			ret[i].fast_copy_content(paulis[rd_idx]);
+			error_acc += abs(paulis[rd_idx].coefficient());
+			paulis.remove_pauliterm(rd_idx);
+		}
 
 		assert(paulis.nb_terms() == this->nb_terms);
 		return ret;

@@ -75,6 +75,17 @@ FetchContent_MakeAvailable(xxhash)
 
 target_link_libraries(propaulib PUBLIC xxhash)
 
+FetchContent_Declare(
+		pcg-cpp
+		GIT_REPOSITORY https://github.com/imneme/pcg-cpp.git
+		GIT_TAG        master
+)
+FetchContent_MakeAvailable(pcg-cpp)
+add_library(PcgCppHeaders INTERFACE)
+target_include_directories(PcgCppHeaders INTERFACE "${pcg-cpp_SOURCE_DIR}/include")
+
+target_link_libraries(propaulib PUBLIC PcgCppHeaders)
+
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
 	target_link_libraries(propaulib PUBLIC OpenMP::OpenMP_CXX)
