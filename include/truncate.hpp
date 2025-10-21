@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
+#include <random>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -284,6 +285,7 @@ class RuntimeMultiTruncators : public Truncator<T> {
  */
 template <typename T = coeff_t>
 class KeepNTruncator : public Truncator<T> {
+    protected:
 	// A cutoff for switching to the more efficient insertion sort on small partitions.
 	// A value between 8 and 24 is typical.
 	static constexpr std::size_t INSERTION_SORT_CUTOFF = 16;
@@ -323,7 +325,7 @@ class KeepNTruncator : public Truncator<T> {
 		return initial_size - paulis.nb_terms();
 	}
 
-    private:
+    protected:
 	/**
 	 * @brief The main Quickselect routine with a cutoff for small partitions.
 	 */
@@ -399,6 +401,68 @@ class KeepNTruncator : public Truncator<T> {
 				--j;
 			}
 		}
+	}
+};
+
+template <typename T>
+class KeepNSplitter : public KeepNTruncator<T> {
+    public:
+	KeepNSplitter(std::size_t kn) : KeepNTruncator<T>{ kn } {}
+
+	PauliTermContainer<T> truncate_split(PauliTermContainer<T>& paulis, T& error_acc) {
+		if (paulis.nb_terms() <= this->nb_terms) {
+			return PauliTermContainer<T>{ paulis.nb_qubits() };
+		}
+
+		const auto initial_size = paulis.nb_terms();
+
+		// We need to ensure the N largest elements are in the first N positions.
+		// This means we need to find the element that belongs at index `nb_terms - 1`.
+		this->selection_by_swap(paulis, 0, paulis.nb_terms() - 1, this->nb_terms - 1,
+					[](auto const& a, auto const& b) { return std::abs(a.coefficient()) > std::abs(b.coefficient()); });
+
+		for (std::size_t i = this->nb_terms; i < initial_size; ++i) {
+			error_acc += abs(paulis[i].coefficient());
+		}
+
+		PauliTermContainer<T> ret{ paulis.cbegin() + this->nb_terms, paulis.cend() };
+
+		paulis.erase_to_end(this->nb_terms);
+
+		assert(paulis.nb_terms() == this->nb_terms);
+		return ret;
+	}
+};
+
+#include <pcg_random.hpp>
+
+template <typename T>
+class RandomKeepNSplitter {
+	std::size_t nb_terms;
+	pcg32 rng;
+
+    public:
+	RandomKeepNSplitter(std::size_t kn) : nb_terms{ kn }, rng{ pcg_extras::seed_seq_from<std::random_device>{} } {}
+
+	PauliTermContainer<T> truncate_split(PauliTermContainer<T>& paulis, T& error_acc) {
+		if (paulis.nb_terms() <= this->nb_terms) {
+			return PauliTermContainer<T>{ paulis.nb_qubits() };
+		}
+
+		const auto initial_size = paulis.nb_terms();
+		const auto nb_truncated = initial_size - nb_terms;
+		PauliTermContainer<T> ret{ paulis.nb_qubits() };
+		ret._batch_allocate(nb_truncated);
+
+		for (std::size_t i = 0; i < nb_truncated; ++i) {
+			auto rd_idx = rng(initial_size - i);
+			ret[i].fast_copy_content(paulis[rd_idx]);
+			error_acc += abs(paulis[rd_idx].coefficient());
+			paulis.remove_pauliterm(rd_idx);
+		}
+
+		assert(paulis.nb_terms() == this->nb_terms);
+		return ret;
 	}
 };
 

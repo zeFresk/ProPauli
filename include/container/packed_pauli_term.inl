@@ -15,6 +15,7 @@ class ReadOnlyNonOwningPauliTermPacked {
 	std::size_t idx;
 
     public:
+	friend PauliTermContainer<T, Underlying>;
 	/**
 	 * @brief Constructs a read-only view.
 	 * @param ptc_ The parent container.
@@ -301,9 +302,14 @@ class NonOwningPauliTermPacked {
 	 * @pre Both views must belong to the same parent container.
 	 */
 	void fast_copy_content(NonOwningPauliTermPacked const& nopt) {
-		assert(&nopt.ptc.get() == &ptc.get());
 		set_coefficient(nopt.coefficient());
-		ptc.get().copy_fast(nopt.idx, idx);
+
+		const auto nb_underlying = nopt.ptc.get().nb_underlying_per_pt;
+		assert(nb_underlying == ptc.get().nb_underlying_per_pt);
+		const auto input_it = nopt.ptc.get().raw_bits.begin() + (nopt.idx * nb_underlying);
+		const auto input_end_it = input_it + nb_underlying;
+		const auto output_it = ptc.get().raw_bits.begin() + (idx * nb_underlying);
+		std::copy(input_it, input_end_it, output_it);
 	}
 	/** @} */
 

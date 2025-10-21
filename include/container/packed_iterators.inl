@@ -196,6 +196,43 @@ class ReadOnlyNonOwningIterator {
 		return ret;
 	}
 
+	ReadOnlyNonOwningIterator& operator--() {
+		--idx;
+		return *this;
+	}
+
+	/**
+	 * @brief Advances the iterator to the next element (postfix increment).
+	 * @return A copy of the iterator before it was incremented.
+	 */
+	ReadOnlyNonOwningIterator operator--(int) {
+		ReadOnlyNonOwningIterator ret = *this;
+		--(*this);
+		return ret;
+	}
+
+	ReadOnlyNonOwningIterator& operator+=(std::size_t x) {
+		idx += x;
+		return *this;
+	}
+
+	ReadOnlyNonOwningIterator operator+(std::size_t x) {
+		auto ret = *this;
+		ret += x;
+		return ret;
+	}
+
+	ReadOnlyNonOwningIterator& operator-=(std::size_t x) {
+		idx -= x;
+		return *this;
+	}
+
+	ReadOnlyNonOwningIterator operator-(std::size_t x) {
+		auto ret = *this;
+		ret -= x;
+		return ret;
+	}
+
 	/**
 	 * @brief Compares two iterators for equality.
 	 * @return `true` if they belong to the same container and point to the same index.
@@ -207,4 +244,12 @@ class ReadOnlyNonOwningIterator {
 	 * @brief Compares two iterators for inequality.
 	 */
 	friend bool operator!=(ReadOnlyNonOwningIterator const& lhs, ReadOnlyNonOwningIterator const& rhs) { return !(lhs == rhs); }
+
+	friend std::ptrdiff_t operator-(ReadOnlyNonOwningIterator const& lhs, ReadOnlyNonOwningIterator const& rhs) {
+		return lhs.idx - rhs.idx;
+	}
+
+	friend bool operator<(ReadOnlyNonOwningIterator const& lhs, ReadOnlyNonOwningIterator const& rhs) { return lhs.idx < rhs.idx; }
+	friend bool operator<=(ReadOnlyNonOwningIterator const& lhs, ReadOnlyNonOwningIterator const& rhs) { return lhs.idx <= rhs.idx; }
+	friend bool operator>=(ReadOnlyNonOwningIterator const& lhs, ReadOnlyNonOwningIterator const& rhs) { return lhs.idx >= rhs.idx; }
 };
