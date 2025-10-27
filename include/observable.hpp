@@ -191,18 +191,17 @@ class Observable {
 	}
 
 	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
-	void apply_rg(unsigned qubit, std::vector<Pauli> const& axis, T theta, ExecutionPolicy&& policy = ExecutionPolicy{}) {
+	void apply_rg(std::vector<Pauli> const& axis, T theta, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		if (axis.size() != nb_qubits()) {
 			throw std::invalid_argument{"Rotation axis length doesn't match observable size!"};
 		}
-		check_qubit(qubit);
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
-		Policy_t::apply_rg(paulis_, qubit, axis, theta);
+		Policy_t::apply_rg(paulis_, axis, theta);
 	}
 
 	template <IsVariant DynamicPolicy>
-	void apply_rg(unsigned qubit, std::vector<Pauli> const& axis, T theta, DynamicPolicy&& rpol) {
-		return std::visit([&, this](auto const& pol) { return this->apply_rg(qubit, axis, theta, pol); }, rpol);
+	void apply_rg(std::vector<Pauli> const& axis, T theta, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_rg(axis, theta, pol); }, rpol);
 	}
 
 	/**

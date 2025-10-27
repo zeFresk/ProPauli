@@ -272,7 +272,7 @@ struct OpenMPPolicy {
 	}
 
 	template <typename PTC, typename T>
-	inline static void apply_rg(PTC& paulis, std::vector<Pauli> const& axis, unsigned qubit, T theta) {
+	inline static void apply_rg(PTC& paulis, std::vector<Pauli> const& axis, T theta) {
 		const auto nb_terms = paulis.nb_terms();
 
 		std::vector<std::size_t> allocated_per_thread(omp_get_max_threads(), 0);
@@ -306,11 +306,11 @@ struct OpenMPPolicy {
 			#pragma omp for schedule(static)
 			for (std::size_t i = 0; i < nb_terms; ++i) {
 				auto p = paulis[i];
-				if (!paulis[i].commutes_with(p_z)) {
+				if (!paulis[i].commutes_with(axis)) {
 					const auto tmp_pt_idx = start_idx + k_idx;
 					auto new_path = paulis[tmp_pt_idx];
 					new_path.fast_copy_content(p);
-					p.apply_rg(qubit, axis, theta, new_path);
+					p.apply_rg(axis, theta, new_path);
 					k_idx++;
 				}
 			}

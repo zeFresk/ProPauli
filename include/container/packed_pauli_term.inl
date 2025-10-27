@@ -368,8 +368,7 @@ class NonOwningPauliTermPacked {
 			output.set_coefficient(output.coefficient() * sin_theta);
 		}
 	}
-	void apply_rg(unsigned qubit, std::vector<Pauli> axis, T theta, NonOwningPauliTermPacked& output) {
-		assert(qubit < size());
+	void apply_rg(std::vector<Pauli> axis, T theta, NonOwningPauliTermPacked& output) {
 		assert(!commutes_with(axis));
 
 		const auto cos_teta = cos(theta);
@@ -381,8 +380,8 @@ class NonOwningPauliTermPacked {
 		const auto len = output.size();
 		for (std::size_t i = 0; i < len; ++i) {
 			Pauli res_p = axis[i];
-			i_pow += res_p.multiply_right(output[i]);
-			output[i] = res_p;
+			i_pow += res_p.multiply_right(output.get_pauli(i));
+			output.set_pauli(i, res_p);
 		}
 
 		T const sign = (((i_pow % 4) + 4) % 4 == 2) ? T{-1} : T{1};
