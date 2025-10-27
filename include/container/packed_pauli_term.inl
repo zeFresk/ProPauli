@@ -76,6 +76,14 @@ class ReadOnlyNonOwningPauliTermPacked {
 	 */
 	std::size_t phash() const noexcept { return ptc.get().fast_phash(idx); }
 
+	bool commutes_with(std::vector<Pauli> const& axis) const {
+		bool commutes = true;
+		for (std::size_t i = 0; i < size(); ++i) {
+			commutes ^= !get_pauli(i).commutes_with(axis[i]);
+		}
+		return commutes;
+	}
+
 	/** @name Comparison
 	 * @{
 	 */
@@ -230,6 +238,14 @@ class NonOwningPauliTermPacked {
 	 */
 	std::size_t phash() const noexcept { return ptc.get().fast_phash(idx); }
 
+	bool commutes_with(std::vector<Pauli> const& axis) const {
+		bool commutes = true;
+		for (std::size_t i = 0; i < size(); ++i) {
+			commutes ^= !get_pauli(i).commutes_with(axis[i]);
+		}
+		return commutes;
+	}
+	
 	/** @name Comparison
 	 * @{
 	 */
@@ -351,6 +367,26 @@ class NonOwningPauliTermPacked {
 			output.set_pauli(qubit, p_x);
 			output.set_coefficient(output.coefficient() * sin_theta);
 		}
+	}
+	void apply_rg(unsigned qubit, std::vector<Pauli> axis, T theta, NonOwningPauliTermPacked& output) {
+		assert(qubit < size());
+		assert(!commutes_with(axis));
+
+		const auto cos_teta = cos(theta);
+		const auto sin_theta = sin(theta);
+
+		set_coefficient(coefficient() * cos_teta);
+
+		int i_pow = 1;
+		const auto len = output.size();
+		for (std::size_t i = 0; i < len; ++i) {
+			Pauli res_p = axis[i];
+			i_pow += res_p.multiply_right(output[i]);
+			output[i] = res_p;
+		}
+
+		T const sign = (((i_pow % 4) + 4) % 4 == 2) ? T{-1} : T{1};
+		output.set_coefficient(output.coefficient() * sin_theta * sign);
 	}
 	void apply_amplitude_damping_xy([[maybe_unused]] unsigned qubit, T p) {
 		assert(qubit < size());

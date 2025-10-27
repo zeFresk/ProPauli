@@ -33,11 +33,10 @@ consteval std::array<char, static_cast<std::size_t>(Pauli_enum::Count)> init_pau
 	return ret;
 }
 
-consteval std::array<std::array<Pauli_enum, static_cast<std::size_t>(Clifford_Gates_1Q::Count)>,
-		     static_cast<std::size_t>(Pauli_enum::Count)>
-init_clifford_array_map() {
-	std::array<std::array<Pauli_enum, static_cast<std::size_t>(Clifford_Gates_1Q::Count)>,
-		   static_cast<std::size_t>(Pauli_enum::Count)>
+consteval
+	std::array<std::array<Pauli_enum, static_cast<std::size_t>(Clifford_Gates_1Q::Count)>, static_cast<std::size_t>(Pauli_enum::Count)>
+	init_clifford_array_map() {
+	std::array<std::array<Pauli_enum, static_cast<std::size_t>(Clifford_Gates_1Q::Count)>, static_cast<std::size_t>(Pauli_enum::Count)>
 		ret;
 	// H Gate
 	ret[std::to_underlying(Pauli_enum::I)][std::to_underlying(Clifford_Gates_1Q::H)] = Pauli_enum::I;
@@ -49,12 +48,9 @@ init_clifford_array_map() {
 }
 
 template <typename T>
-consteval std::array<std::array<T, static_cast<std::size_t>(Clifford_Gates_1Q::Count)>,
-		     static_cast<std::size_t>(Pauli_enum::Count)>
+consteval std::array<std::array<T, static_cast<std::size_t>(Clifford_Gates_1Q::Count)>, static_cast<std::size_t>(Pauli_enum::Count)>
 init_clifford_array_coeff() {
-	std::array<std::array<T, static_cast<std::size_t>(Clifford_Gates_1Q::Count)>,
-		   static_cast<std::size_t>(Pauli_enum::Count)>
-		ret;
+	std::array<std::array<T, static_cast<std::size_t>(Clifford_Gates_1Q::Count)>, static_cast<std::size_t>(Pauli_enum::Count)> ret;
 	// H Gate
 	ret[std::to_underlying(Pauli_enum::I)][std::to_underlying(Clifford_Gates_1Q::H)] = T{ 1 };
 	ret[std::to_underlying(Pauli_enum::X)][std::to_underlying(Clifford_Gates_1Q::H)] = T{ 1 };
@@ -65,12 +61,9 @@ init_clifford_array_coeff() {
 }
 
 template <typename T>
-consteval std::array<std::array<T, static_cast<std::size_t>(Pauli_gates::Count)>,
-		     static_cast<std::size_t>(Pauli_enum::Count)>
+consteval std::array<std::array<T, static_cast<std::size_t>(Pauli_gates::Count)>, static_cast<std::size_t>(Pauli_enum::Count)>
 init_pauli_array_coeff() {
-	std::array<std::array<T, static_cast<std::size_t>(Pauli_gates::Count)>,
-		   static_cast<std::size_t>(Pauli_enum::Count)>
-		ret;
+	std::array<std::array<T, static_cast<std::size_t>(Pauli_gates::Count)>, static_cast<std::size_t>(Pauli_enum::Count)> ret;
 	// I Gate
 	ret[std::to_underlying(Pauli_enum::I)][std::to_underlying(Pauli_gates::I)] = T{ 1 };
 	ret[std::to_underlying(Pauli_enum::X)][std::to_underlying(Pauli_gates::I)] = T{ 1 };
@@ -99,9 +92,7 @@ consteval std::array<std::array<std::pair<Pauli_enum, Pauli_enum>, static_cast<s
 		     static_cast<std::size_t>(Pauli_enum::Count)>
 init_cx_array_map() {
 	using enum Pauli_enum;
-	std::array<std::array<std::pair<Pauli_enum, Pauli_enum>, static_cast<std::size_t>(Count)>,
-		   static_cast<std::size_t>(Count)>
-		ret;
+	std::array<std::array<std::pair<Pauli_enum, Pauli_enum>, static_cast<std::size_t>(Count)>, static_cast<std::size_t>(Count)> ret;
 	ret[std::to_underlying(I)][std::to_underlying(I)] = { I, I };
 	ret[std::to_underlying(I)][std::to_underlying(X)] = { I, X };
 	ret[std::to_underlying(I)][std::to_underlying(Y)] = { Z, Y };
@@ -126,12 +117,9 @@ init_cx_array_map() {
 }
 
 template <typename T>
-consteval std::array<std::array<T, static_cast<std::size_t>(UnitalNoise::Count)>,
-		     static_cast<std::size_t>(Pauli_enum::Count)>
+consteval std::array<std::array<T, static_cast<std::size_t>(UnitalNoise::Count)>, static_cast<std::size_t>(Pauli_enum::Count)>
 init_unital_noise_array_coeff() {
-	std::array<std::array<T, static_cast<std::size_t>(UnitalNoise::Count)>,
-		   static_cast<std::size_t>(Pauli_enum::Count)>
-		ret;
+	std::array<std::array<T, static_cast<std::size_t>(UnitalNoise::Count)>, static_cast<std::size_t>(Pauli_enum::Count)> ret;
 	// Depolarizing
 	ret[std::to_underlying(Pauli_enum::I)][std::to_underlying(UnitalNoise::Depolarizing)] = T{ 0 };
 	ret[std::to_underlying(Pauli_enum::X)][std::to_underlying(UnitalNoise::Depolarizing)] = T{ 1 };
@@ -146,17 +134,48 @@ init_unital_noise_array_coeff() {
 	return ret;
 }
 
+consteval std::array<std::array<Pauli_enum, static_cast<std::size_t>(Pauli_enum::Count)>, static_cast<std::size_t>(Pauli_enum::Count)>
+init_pauli_product_map() {
+	using enum Pauli_enum;
+	std::array<std::array<Pauli_enum, static_cast<std::size_t>(Count)>, static_cast<std::size_t>(Count)> ret{};
+
+	// Row-major: [p1][p2] -> p1 * p2
+	ret[std::to_underlying(I)] = { I, X, Y, Z };
+	ret[std::to_underlying(X)] = { X, I, Z, Y };
+	ret[std::to_underlying(Y)] = { Y, Z, I, X };
+	ret[std::to_underlying(Z)] = { Z, Y, X, I };
+	return ret;
+}
+
+consteval std::array<std::array<int, static_cast<std::size_t>(Pauli_enum::Count)>, static_cast<std::size_t>(Pauli_enum::Count)>
+init_pauli_product_phase_map() {
+	using enum Pauli_enum;
+	std::array<std::array<int, static_cast<std::size_t>(Count)>, static_cast<std::size_t>(Count)> ret{};
+
+	// Phase encoded as power of i: 0 for 1, 1 for i, -1 for -i
+	// Row-major: [p1][p2] -> phase(p1 * p2)
+	// Products with I or with self have phase 1 (i^0)
+	ret[std::to_underlying(X)][std::to_underlying(Y)] = 1; // XY = iZ
+	ret[std::to_underlying(Y)][std::to_underlying(X)] = -1; // YX = -iZ
+	ret[std::to_underlying(Y)][std::to_underlying(Z)] = 1; // YZ = iX
+	ret[std::to_underlying(Z)][std::to_underlying(Y)] = -1; // ZY = -iX
+	ret[std::to_underlying(Z)][std::to_underlying(X)] = 1; // ZX = iY
+	ret[std::to_underlying(X)][std::to_underlying(Z)] = -1; // XZ = -iY
+	return ret;
+}
+
 static constexpr auto pauli_char_map = init_pauli_str_map();
 static constexpr auto clifford_gates_map = init_clifford_array_map();
 static constexpr auto clifford_gates_coeff = init_clifford_array_coeff<coeff_t>();
 static constexpr auto pauli_gates_coeff = init_pauli_array_coeff<coeff_t>();
 static constexpr auto cx_map = init_cx_array_map();
 static constexpr auto unital_noise_map_coeff = init_unital_noise_array_coeff<coeff_t>();
+static constexpr auto pauli_product_map = init_pauli_product_map();
+static constexpr auto pauli_product_phase_map = init_pauli_product_phase_map();
 
 enum class QGate : array_underlying_type { I, X, Y, Z, H, Rz, Cx, AmplitudeDamping, Depolarizing, Dephasing, Count };
-static_assert(std::to_underlying(QGate::Count) ==
-	      (std::to_underlying(Pauli_gates::Count) + std::to_underlying(Clifford_Gates_1Q::Count) +
-	       std::to_underlying(UnitalNoise::Count) + 1 + 1 + 1));
+static_assert(std::to_underlying(QGate::Count) == (std::to_underlying(Pauli_gates::Count) + std::to_underlying(Clifford_Gates_1Q::Count) +
+						   std::to_underlying(UnitalNoise::Count) + 1 + 1 + 1));
 
 /**
  * @brief Represents a single Pauli operator (I, X, Y, or Z).
@@ -237,9 +256,7 @@ class Pauli {
 	 * @param p The other Pauli operator.
 	 * @return True if they commute, false otherwise.
 	 */
-	bool commutes_with(Pauli p) const {
-		return pauli_gates_coeff[std::to_underlying(p_)][std::to_underlying(p.p_)] > 0;
-	}
+	bool commutes_with(Pauli p) const { return pauli_gates_coeff[std::to_underlying(p_)][std::to_underlying(p.p_)] > 0; }
 
 	/**
 	 * @brief Calculates the Pauli weight of the operator.
@@ -252,9 +269,7 @@ class Pauli {
 	 * @param g The Pauli gate to apply.
 	 * @return A coefficient (+1 or -1) resulting from the application. The operator itself is not modified.
 	 */
-	coeff_t apply_pauli(Pauli_gates g) const {
-		return pauli_gates_coeff[std::to_underlying(p_)][std::to_underlying(g)];
-	}
+	coeff_t apply_pauli(Pauli_gates g) const { return pauli_gates_coeff[std::to_underlying(p_)][std::to_underlying(g)]; }
 
 	/**
 	 * @brief Applies a unital noise channel to this operator.
@@ -288,10 +303,22 @@ class Pauli {
 		target.p_ = res.second;
 
 		// map ? map here (based on condition, 2 elems map) implies 2.57ns => 3.73ns
-		return (p_ == Pauli_enum::X && target.p_ == Pauli_enum::Z) ||
-				       (p_ == Pauli_enum::Y && target.p_ == Pauli_enum::Y) ?
+		return (p_ == Pauli_enum::X && target.p_ == Pauli_enum::Z) || (p_ == Pauli_enum::Y && target.p_ == Pauli_enum::Y) ?
 			       coeff_t{ -1 } :
 			       coeff_t{ 1 };
+	}
+
+	/**
+	 * @brief Computes the algebraic product with another Pauli, modifying this one in place.
+	 * this -> this * other
+	 * @param other The Pauli operator to multiply by.
+	 * @return The phase of the product, encoded as a power of i (1 for i, -1 for -i, 0 for 1).
+	 */
+	int multiply_right(Pauli const& other) {
+		auto const p1 = std::to_underlying(p_);
+		auto const p2 = std::to_underlying(other.p_);
+		p_ = pauli_product_map[p1][p2];
+		return pauli_product_phase_map[p1][p2];
 	}
 
 	/**

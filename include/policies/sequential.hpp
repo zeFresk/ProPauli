@@ -154,6 +154,34 @@ struct SequentialPolicy {
 		}
 	}
 
+	template <typename PTC, typename T>
+	inline static void apply_rg(PTC& paulis, std::vector<Pauli> const& axis, unsigned qubit, T theta) {
+		const auto nb_terms = paulis.nb_terms();
+
+		// compute number of required nb_term
+		std::size_t total_to_allocate = 0;
+		for (std::size_t i = 0; i < nb_terms; ++i) {
+			if (!paulis[i].commutes_with(axis)) {
+				total_to_allocate++;
+			}
+		}
+
+		// pre-alloc is mandatory to not invalidate terms while allocating
+		paulis._batch_allocate(total_to_allocate);
+
+		std::size_t k_idx = 0; // allocated index
+		for (std::size_t i = 0; i < nb_terms; ++i) {
+			auto p = paulis[i];
+			if (!paulis[i].commutes_with(axis)) {
+				const auto tmp_pt_idx = nb_terms + k_idx;
+				auto new_path = paulis[tmp_pt_idx];
+				new_path.fast_copy_content(p);
+				p.apply_rg(qubit, axis, theta, new_path);
+				k_idx++;
+			}
+		}
+	}
+
 	template <typename PTC>
 	inline static auto expectation_value(PTC const& paulis) -> decltype(paulis[0].expectation_value()) {
 		decltype(paulis[0].expectation_value()) ret = 0;

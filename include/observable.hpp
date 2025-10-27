@@ -190,6 +190,21 @@ class Observable {
 		return std::visit([&, this](auto const& pol) { return this->apply_rz(qubit, theta, pol); }, rpol);
 	}
 
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_rg(unsigned qubit, std::vector<Pauli> const& axis, T theta, ExecutionPolicy&& policy = ExecutionPolicy{}) {
+		if (axis.size() != nb_qubits()) {
+			throw std::invalid_argument{"Rotation axis length doesn't match observable size!"};
+		}
+		check_qubit(qubit);
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
+		Policy_t::apply_rg(paulis_, qubit, axis, theta);
+	}
+
+	template <IsVariant DynamicPolicy>
+	void apply_rg(unsigned qubit, std::vector<Pauli> const& axis, T theta, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_rg(qubit, axis, theta, pol); }, rpol);
+	}
+
 	/**
 	 * @brief Applies an amplitude damping noise channel.
 	 * @param qubit The index of the qubit to apply the channel to.
