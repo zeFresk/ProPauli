@@ -173,7 +173,7 @@ TYPED_TEST(ObservableTest, apply_rz) {
 	}
 }
 
-TYPED_TEST(ObservableTest, apply_rg_rz) {
+TYPED_TEST(ObservableTest, apply_rp_rz) {
 	Observable obs{ "IXYZZIXYYZXIZXIZI", "ZXYIXYZXZZZYYXXYY" };
 	Observable obs_cpy = obs;
 	PauliTerm<coeff_t> pt1_cpy = obs_cpy.copy_term(0);
@@ -197,7 +197,7 @@ TYPED_TEST(ObservableTest, apply_rg_rz) {
 
 		std::vector<Pauli> axis(obs.nb_qubits(), p_i);
 		axis[i] = p_z;
-		obs.apply_rg(axis, theta, this->policy);
+		obs.apply_rp(axis, theta, this->policy);
 
 		for (auto const& pt : pts) { // find all terms inside observable
 			auto it = std::find(obs.begin(), obs.end(), pt);
@@ -208,7 +208,7 @@ TYPED_TEST(ObservableTest, apply_rg_rz) {
 	}
 }
 
-TYPED_TEST(ObservableTest, apply_rg_rzz) {
+TYPED_TEST(ObservableTest, apply_rp_rzz) {
 	Observable obs{ "IXYZZIXYYZXIZXIZI", "ZXYIXYZXZZZYYXXYY" };
 	Observable obs_cpy = obs;
 
@@ -225,7 +225,7 @@ TYPED_TEST(ObservableTest, apply_rg_rzz) {
 		std::vector<Pauli> axis(obs.nb_qubits(), p_i);
 		axis[i] = p_z;
 		axis[i + 1] = p_z; // Rz_iz_i+1(theta)
-		obs.apply_rg(axis, theta, this->policy);
+		obs.apply_rp(axis, theta, this->policy);
 
 		EXPECT_EQ(obs.expectation_value(), cpy.expectation_value());
 		ASSERT_EQ(obs.size(), cpy.size());
@@ -237,7 +237,7 @@ TYPED_TEST(ObservableTest, apply_rg_rzz) {
 	}
 }
 
-TYPED_TEST(ObservableTest, apply_rg_exp_ixzyx) {
+TYPED_TEST(ObservableTest, apply_rp_exp_ixzyx) {
 	Observable obs{ "ZIII", "IZII", "IIZI", "IIIZ" };
 	Observable cpy = obs;
 	coeff_t theta = 2; // NOTE: Rp(theta) = exp(-iP * (theta/2))
@@ -263,7 +263,7 @@ TYPED_TEST(ObservableTest, apply_rg_exp_ixzyx) {
 	cpy.merge(this->policy);
 
 	std::vector<Pauli> axis{ { p_x, p_z, p_y, p_x } }; // XZYX
-	obs.apply_rg(axis, theta, this->policy);
+	obs.apply_rp(axis, theta, this->policy);
 	obs.merge(this->policy);
 
 	EXPECT_NEAR(obs.expectation_value(), cpy.expectation_value(), 1e-6f);

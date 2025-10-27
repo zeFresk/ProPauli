@@ -368,7 +368,7 @@ class NonOwningPauliTermPacked {
 			output.set_coefficient(output.coefficient() * sin_theta);
 		}
 	}
-	void apply_rg(std::vector<Pauli> axis, T theta, NonOwningPauliTermPacked& output) {
+	void apply_rp(std::vector<Pauli> axis, T theta, NonOwningPauliTermPacked& output) {
 		assert(!commutes_with(axis));
 
 		const auto cos_teta = cos(theta);

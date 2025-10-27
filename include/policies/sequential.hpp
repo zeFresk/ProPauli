@@ -155,7 +155,7 @@ struct SequentialPolicy {
 	}
 
 	template <typename PTC, typename T>
-	inline static void apply_rg(PTC& paulis, std::vector<Pauli> const& axis, T theta) {
+	inline static void apply_rp(PTC& paulis, std::vector<Pauli> const& axis, T theta) {
 		const auto nb_terms = paulis.nb_terms();
 
 		// compute number of required nb_term
@@ -176,7 +176,7 @@ struct SequentialPolicy {
 				const auto tmp_pt_idx = nb_terms + k_idx;
 				auto new_path = paulis[tmp_pt_idx];
 				new_path.fast_copy_content(p);
-				p.apply_rg(axis, theta, new_path);
+				p.apply_rp(axis, theta, new_path);
 				k_idx++;
 			}
 		}

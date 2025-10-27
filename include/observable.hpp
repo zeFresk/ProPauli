@@ -191,34 +191,34 @@ class Observable {
 	}
 
 	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
-	void apply_rg(std::vector<Pauli> const& axis, T theta, ExecutionPolicy&& policy = ExecutionPolicy{}) {
+	void apply_rp(std::vector<Pauli> const& axis, T theta, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		if (axis.size() != nb_qubits()) {
 			throw std::invalid_argument{ "Rotation axis length doesn't match observable size!" };
 		}
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
-		Policy_t::apply_rg(paulis_, axis, theta);
+		Policy_t::apply_rp(paulis_, axis, theta);
 	}
 
 	template <IsVariant DynamicPolicy>
-	void apply_rg(std::vector<Pauli> const& axis, T theta, DynamicPolicy&& rpol) {
-		return std::visit([&, this](auto const& pol) { return this->apply_rg(axis, theta, pol); }, rpol);
+	void apply_rp(std::vector<Pauli> const& axis, T theta, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_rp(axis, theta, pol); }, rpol);
 	}
 
 	template <typename Policy>
 	void apply_exp_iht(std::vector<Pauli> const& axis, T t, Policy&& pol) {
-		apply_rg(axis, t * 2, std::forward<Policy>(pol));
+		apply_rp(axis, t * 2, std::forward<Policy>(pol));
 	}
 
-		/**
-		 * @brief Applies an amplitude damping noise channel.
-		 * @param qubit The index of the qubit to apply the channel to.
-		 * @param pn The noise probability parameter.
-		 * @note This can be a **splitting** operation. If a term has a Z operator on the
-		 * target qubit, it will be split into two. If it has X or Y, its coefficient is
-		 * simply scaled. If it has I, there is no effect.
-		 */
-		template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
-		void apply_amplitude_damping(unsigned qubit, T pn, ExecutionPolicy&& policy = ExecutionPolicy{}) {
+	/**
+	 * @brief Applies an amplitude damping noise channel.
+	 * @param qubit The index of the qubit to apply the channel to.
+	 * @param pn The noise probability parameter.
+	 * @note This can be a **splitting** operation. If a term has a Z operator on the
+	 * target qubit, it will be split into two. If it has X or Y, its coefficient is
+	 * simply scaled. If it has I, there is no effect.
+	 */
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_amplitude_damping(unsigned qubit, T pn, ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		check_qubit(qubit);
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		Policy_t::apply_amplitude_damping(paulis_, qubit, pn);
