@@ -432,7 +432,6 @@ TYPED_TEST(CircuitRun, exp_iXXXXt) {
 		{ "IZII", -0.4161468365471419f },
 		{ "IIZI", -0.4161468365471419f },
 		{ "IIIZ", -0.4161468365471419f },
-		//{ "ZZZZ", 0.5f },
 	} };
 	std::vector<Observable<coeff_t>> obses;
 	for (auto const [ob, ev] : truth_table) {
