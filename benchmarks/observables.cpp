@@ -374,11 +374,32 @@ static void Observable_appy_amplitude_damping_z(benchmark::State& state) {
 	}
 }
 
+static void Observable_apply_rp_12times(benchmark::State& state) {
+	static constexpr coeff_t theta = 2.f;
+	std::vector<Pauli> H;
+	std::generate_n(std::back_inserter(H), state.range(0), [=]() { return random_pauli(); });
+	std::vector<Observable<coeff_t>> obses;
+	std::generate_n(std::back_inserter(obses), 1024, [&]() { return Observable{ random_pauli_string(state.range(0)) }; });
+
+	std::size_t i = 0;
+	for (auto _ : state) {
+		state.PauseTiming();
+		auto obs = obses[i];
+		i = (i + 1) % 1024;
+		state.ResumeTiming();
+
+		for (std::size_t j = 0; j < 12; ++j) {
+			obs.apply_rp(H, theta);
+		}
+	}
+}
+
 BENCHMARK(Observable_init_from_string)->Arg(1)->Arg(1024);
 BENCHMARK(Observable_apply_pauli)->Arg(1)->Arg(1024);
 BENCHMARK(Observable_apply_clifford)->Arg(1)->Arg(1024);
 BENCHMARK(Observable_apply_unital_noise)->Arg(1)->Arg(1024);
 BENCHMARK(Observable_apply_rz_once)->Arg(1)->Arg(1024);
+BENCHMARK(Observable_apply_rp_12times)->Arg(8)->Arg(64)->Arg(1024);
 BENCHMARK(Observable_apply_rz_ntimes)->Args({ 1024, 16 });
 BENCHMARK(Observable_ev_after_nrz)->Args({ 1024, 16 });
 BENCHMARK(Observable_merge_after_nrz)->Args({ 8, 16 })->Args({ 1024, 1 })->Args({ 1024, 8 });
