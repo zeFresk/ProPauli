@@ -1,4 +1,5 @@
 #include "pauli.hpp"
+#include "pauli_axis.hpp"
 #include "policies/sequential.hpp"
 #include "truncate.hpp"
 #include <benchmark/benchmark.h>
@@ -376,8 +377,9 @@ static void Observable_appy_amplitude_damping_z(benchmark::State& state) {
 
 static void Observable_apply_rp_12times(benchmark::State& state) {
 	static constexpr coeff_t theta = 2.f;
-	std::vector<Pauli> H;
-	std::generate_n(std::back_inserter(H), state.range(0), [=]() { return random_pauli(); });
+	std::vector<Pauli> Hp;
+	std::generate_n(std::back_inserter(Hp), state.range(0), [=]() { return random_pauli(); });
+	PauliAxis<> H{Hp.begin(), Hp.end()};
 	std::vector<Observable<coeff_t>> obses;
 	std::generate_n(std::back_inserter(obses), 1024, [&]() { return Observable{ random_pauli_string(state.range(0)) }; });
 

@@ -3,6 +3,7 @@
 
 #include "container/bit_operations.hpp"
 #include "pauli.hpp"
+#include "pauli_axis.hpp"
 #include "policies/sequential.hpp"
 #include "symbolic/coefficient.hpp"
 #include <cmath>
@@ -272,7 +273,7 @@ struct OpenMPPolicy {
 	}
 
 	template <typename PTC, typename T>
-	inline static void apply_rp(PTC& paulis, std::vector<Pauli> const& axis, T theta) {
+	inline static void apply_rp(PTC& paulis, PauliAxis<> const& axis, T theta) {
 		const auto nb_terms = paulis.nb_terms();
 
 		std::vector<std::size_t> allocated_per_thread(omp_get_max_threads(), 0);
@@ -285,7 +286,7 @@ struct OpenMPPolicy {
 			// compute number of required nb_term
 			#pragma omp for reduction(+ : total_to_allocate) schedule(static)
 			for (std::size_t i = 0; i < nb_terms; ++i) {
-				if (!paulis[i].commutes_with(axis)) {
+				if (!paulis[i].commutes_with(axis.raw_bits())) {
 					allocated_per_thread[tid]++;
 					total_to_allocate++;
 				}
@@ -306,7 +307,7 @@ struct OpenMPPolicy {
 			#pragma omp for schedule(static)
 			for (std::size_t i = 0; i < nb_terms; ++i) {
 				auto p = paulis[i];
-				if (!paulis[i].commutes_with(axis)) {
+				if (!paulis[i].commutes_with(axis.raw_bits())) {
 					const auto tmp_pt_idx = start_idx + k_idx;
 					auto new_path = paulis[tmp_pt_idx];
 					new_path.fast_copy_content(p);

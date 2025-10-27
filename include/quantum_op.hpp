@@ -67,7 +67,7 @@ class QuantumOp {
 	QGate gate; /**< The specific gate or noise channel identifier. */
 	unsigned qubit0;
 	unsigned qubit1;
-	std::vector<Pauli> axis;
+	PauliAxis<> axis;
 	T parameter;
 
     public:
@@ -96,9 +96,9 @@ class QuantumOp {
 	}
 
 	template <typename Real>
-	QuantumOp(QGate qg, std::vector<Pauli> pauli_axis, Real&& v)
+	QuantumOp(QGate qg, std::vector<Pauli> const& pauli_axis, Real&& v)
 		requires(std::is_floating_point_v<std::remove_cvref_t<Real>> || Symbolic<std::remove_cvref_t<Real>>)
-		: gate(qg), axis(std::move(pauli_axis)), parameter(std::move(v)) {}
+		: gate(qg), axis(pauli_axis.begin(), pauli_axis.end()), parameter(std::move(v)) {}
 
 	template <typename ExecutionPolicy = DefaultExecutionPolicy>
 	[[gnu::always_inline]] inline void operator()(ObservableType& obs, ExecutionPolicy&& policy = ExecutionPolicy{}) const {

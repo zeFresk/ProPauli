@@ -275,45 +275,6 @@ TYPED_TEST(ObservableTest, apply_rp_exp_ixzyx) {
 	}
 }
 
-TYPED_TEST(ObservableTest, apply_exp_ixzyx) {
-	Observable obs{ "ZIII", "IZII", "IIZI", "IIIZ" };
-	Observable cpy = obs;
-	coeff_t t = 1; // NOTE: Rp(theta) = exp(-iP * (theta/2))
-
-	// transpiled circuit for exp(-iHt) with t=1 and H=XZYX (inversed)
-	cpy.apply_clifford(Clifford_Gates_1Q::H, 3, this->policy);
-	cpy.apply_cx(3, 2, this->policy);
-	cpy.apply_rz(1, 1.5707963267948966, this->policy);
-	cpy.apply_clifford(Clifford_Gates_1Q::H, 1, this->policy);
-	cpy.apply_rz(1, 1.5707963267948966, this->policy);
-	cpy.apply_cx(2, 1, this->policy);
-	cpy.apply_clifford(Clifford_Gates_1Q::H, 0, this->policy);
-	cpy.apply_cx(1, 0, this->policy);
-	cpy.apply_rz(0, 2.0, this->policy);
-	cpy.apply_cx(1, 0, this->policy);
-	cpy.apply_cx(2, 1, this->policy);
-	cpy.apply_cx(3, 2, this->policy);
-	cpy.apply_clifford(Clifford_Gates_1Q::H, 3, this->policy);
-	cpy.apply_rz(1, -1.5707963267948966, this->policy);
-	cpy.apply_clifford(Clifford_Gates_1Q::H, 1, this->policy);
-	cpy.apply_rz(1, -1.5707963267948966, this->policy);
-	cpy.apply_clifford(Clifford_Gates_1Q::H, 0, this->policy);
-	cpy.merge(this->policy);
-
-	std::vector<Pauli> axis{ { p_x, p_z, p_y, p_x } }; // XZYX
-	obs.apply_exp_iht(axis, t, this->policy);
-	obs.merge(this->policy);
-
-	EXPECT_NEAR(obs.expectation_value(), cpy.expectation_value(), 1e-6f);
-	ASSERT_LE(obs.size(), cpy.size());
-	for (std::size_t j = 0; j < obs.size(); ++j) { // find all terms inside observable
-		auto h = obs[j].phash();
-		auto it = std::find_if(cpy.begin(), cpy.end(), [=](auto const& p) { return p.phash() == h; });
-		ASSERT_NE(it, obs.end());
-	}
-}
-
-
 TYPED_TEST(ObservableTest, apply_rz_inverse) {
 	Observable obs{ "IIXIIIIIIIII" };
 	auto before_ev = obs.expectation_value(this->policy);

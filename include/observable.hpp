@@ -12,6 +12,7 @@
  */
 
 #include "pauli.hpp"
+#include "pauli_axis.hpp"
 #include "pauli_term.hpp"
 #include "pauli_term_container.hpp"
 #include "symbolic/coefficient.hpp"
@@ -191,8 +192,8 @@ class Observable {
 	}
 
 	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
-	void apply_rp(std::vector<Pauli> const& axis, T theta, ExecutionPolicy&& policy = ExecutionPolicy{}) {
-		if (axis.size() != nb_qubits()) {
+	void apply_rp(PauliAxis<> const& axis, T theta, ExecutionPolicy&& policy = ExecutionPolicy{}) {
+		if (axis.nb_qubits() != nb_qubits()) {
 			throw std::invalid_argument{ "Rotation axis length doesn't match observable size!" };
 		}
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
@@ -200,13 +201,8 @@ class Observable {
 	}
 
 	template <IsVariant DynamicPolicy>
-	void apply_rp(std::vector<Pauli> const& axis, T theta, DynamicPolicy&& rpol) {
+	void apply_rp(PauliAxis<> const& axis, T theta, DynamicPolicy&& rpol) {
 		return std::visit([&, this](auto const& pol) { return this->apply_rp(axis, theta, pol); }, rpol);
-	}
-
-	template <typename Policy>
-	void apply_exp_iht(std::vector<Pauli> const& axis, T t, Policy&& pol) {
-		apply_rp(axis, t * 2, std::forward<Policy>(pol));
 	}
 
 	/**
