@@ -79,6 +79,14 @@ class NoiseModel {
 		apply_noise_after(qc, cg, qubit);
 	}
 
+	template <typename C, typename Real>
+	void apply_noise_after(C& qc, QGate cg, [[maybe_unused]] std::vector<Pauli> const& axis, [[maybe_unused]] Real theta)
+		requires(std::is_floating_point_v<Real> || Symbolic<Real>) {
+		for (std::size_t i = 0; i < qc.nb_qubits(); ++i) {
+			apply_noise_after(qc, cg, i);
+		}
+	}
+
 	/**
 	 * @brief Adds a unital noise channel to be applied after a specific gate type.
 	 * @param g The gate type after which the noise should be applied.

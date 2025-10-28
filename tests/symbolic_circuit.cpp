@@ -88,8 +88,17 @@ TEST(SymbolicCircuit, run_rz_var) {
 	qc.add_operation("H", 1);
 
 	auto res = qc.run(So_t{ "IZ", "ZI" });
-	EXPECT_NEAR(res.expectation_value().evaluate({ { "a", 3.14159 / 3.f }, { "b", 3.14159 / 4.f } }), 1.207108,
-		    1e-4f);
+	EXPECT_NEAR(res.expectation_value().evaluate({ { "a", 3.14159 / 3.f }, { "b", 3.14159 / 4.f } }), 1.207108, 1e-4f);
+}
+
+TEST(SymbolicCircuit, run_rp_var) {
+	Sc_t qc{ 4 };
+	std::vector<Pauli> H{ { p_x, p_x, p_x, p_x } };
+
+	qc.eiht(H, Variable("t"));
+
+	auto res = qc.run(So_t{ "ZIII" });
+	EXPECT_NEAR(res.expectation_value().evaluate({ { "t", 1.f } }), -0.4161468365471419f, 1e-4f);
 }
 
 TEST(SymbolicCircuit, run_unital_noise_const) {
@@ -167,6 +176,5 @@ TEST(SymbolicCircuit, noise_model_var) {
 	sqc.add_operation("cx", 0, 1);
 
 	auto res = sqc.run({ "ZZ" });
-	EXPECT_NEAR(res.expectation_value().evaluate({ { "p_ad", 0.1f }, { "p_deph", 0.01f }, { "p_depo", 0.01f } }),
-		    0.0100, 1e-5f);
+	EXPECT_NEAR(res.expectation_value().evaluate({ { "p_ad", 0.1f }, { "p_deph", 0.01f }, { "p_depo", 0.01f } }), 0.0100, 1e-5f);
 }

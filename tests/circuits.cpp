@@ -397,6 +397,60 @@ TYPED_TEST(CircuitRun, test_circuit1_batch_ev) {
 		EXPECT_NEAR(rev, exp, 1e-4f);
 	}
 }
+TYPED_TEST(CircuitRun, exp_iXXXXt) {
+	Circuit qc{ 4 };
+	Circuit qc_rp{ 4 };
+	Circuit qc_eiht{ 4 };
+	std::vector<Pauli> H{ { p_x, p_x, p_x, p_x } };
+	coeff_t t = 1;
+
+	// transpiled circuit for t = 1
+	qc.add_operation("h", 0);
+	qc.add_operation("h", 1);
+	qc.add_operation("h", 2);
+	qc.add_operation("h", 3);
+	qc.add_operation("cx", 3, 2);
+	qc.add_operation("cx", 2, 1);
+	qc.add_operation("cx", 1, 0);
+	qc.add_operation("rz", 0, 2.0);
+	qc.add_operation("cx", 1, 0);
+	qc.add_operation("h", 0);
+	qc.add_operation("cx", 2, 1);
+	qc.add_operation("h", 1);
+	qc.add_operation("cx", 3, 2);
+	qc.add_operation("h", 2);
+	qc.add_operation("h", 3);
+
+	// using Rp with p = H and theta = 2t
+	qc_rp.add_operation("rp", H, t * 2);
+
+	// using eiht helper
+	qc_eiht.eiht(H, t);
+
+	std::array<std::tuple<std::string_view, coeff_t>, 4> truth_table = { {
+		{ "ZIII", -0.4161468365471419f },
+		{ "IZII", -0.4161468365471419f },
+		{ "IIZI", -0.4161468365471419f },
+		{ "IIIZ", -0.4161468365471419f },
+	} };
+	std::vector<Observable<coeff_t>> obses;
+	for (auto const [ob, ev] : truth_table) {
+		obses.push_back(Observable{ ob });
+	}
+
+	auto res_qc = qc.expectation_value(obses, this->policy);
+	auto res_rp = qc_rp.expectation_value(obses, this->policy);
+	auto res_eiht = qc_eiht.expectation_value(obses, this->policy);
+	ASSERT_EQ(res_rp, res_eiht);
+	EXPECT_EQ(res_qc, res_rp);
+	EXPECT_EQ(res_qc, res_eiht);
+
+	for (std::size_t i = 0; i < res_rp.size(); ++i) {
+		auto exp = std::get<1>(truth_table[i]);
+		auto [rev, err] = res_rp[i];
+		EXPECT_NEAR(rev, exp, 1e-4f);
+	}
+}
 
 TYPED_TEST(CircuitRun, bad_observable_throw) {
 	Circuit qc{ 4 };

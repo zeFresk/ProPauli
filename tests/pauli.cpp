@@ -115,9 +115,7 @@ TEST(Pauli, apply_hadamard) {
 	// https://arxiv.org/pdf/2505.21606
 
 	using enum Pauli_enum;
-	std::array<std::tuple<Pauli, coeff_t, Pauli>, 4> truth_table = {
-		{ { I, 1, I }, { X, 1, Z }, { Y, -1, Y }, { Z, 1, X } }
-	};
+	std::array<std::tuple<Pauli, coeff_t, Pauli>, 4> truth_table = { { { I, 1, I }, { X, 1, Z }, { Y, -1, Y }, { Z, 1, X } } };
 	for (auto [in_pauli, out_coeff, out_pauli] : truth_table) {
 		auto c = in_pauli.apply_clifford(Clifford_Gates_1Q::H);
 		EXPECT_EQ(in_pauli, out_pauli);
@@ -157,9 +155,7 @@ TEST(Pauli, apply_cx) {
 
 TEST(Pauli, serialize) {
 	using enum Pauli_enum;
-	std::array<std::tuple<std::string_view, Pauli>, 4> truth_table{
-		{ { "I", I }, { "X", X }, { "Y", Y }, { "Z", Z } }
-	};
+	std::array<std::tuple<std::string_view, Pauli>, 4> truth_table{ { { "I", I }, { "X", X }, { "Y", Y }, { "Z", Z } } };
 
 	for (auto const [expected_str, p] : truth_table) {
 		std::stringstream ss;
@@ -190,4 +186,43 @@ TEST(Pauli, dephasing_noise) {
 	EXPECT_FLOAT_EQ(p_x.apply_unital_noise(Dephasing, 0.01), 0.99);
 	EXPECT_FLOAT_EQ(p_y.apply_unital_noise(Dephasing, 0.01), 0.99);
 	EXPECT_EQ(p_z.apply_unital_noise(Dephasing, 0.01), 1.);
+}
+
+TEST(Pauli, MultiplyRight) {
+	using enum Pauli_enum;
+
+	std::array<std::tuple<Pauli, Pauli, Pauli, int>, 16> truth_table{ {
+		// Products with Identity
+		{ I, I, I, 0 },
+		{ I, X, X, 0 },
+		{ I, Y, Y, 0 },
+		{ I, Z, Z, 0 },
+		{ X, I, X, 0 },
+		{ Y, I, Y, 0 },
+		{ Z, I, Z, 0 },
+
+		// Products of a Pauli with itself (squaring)
+		{ X, X, I, 0 },
+		{ Y, Y, I, 0 },
+		{ Z, Z, I, 0 },
+
+		// Cyclic and anti-cyclic products
+		{ X, Y, Z, 1 }, // XY = iZ
+		{ Y, X, Z, -1 }, // YX = -iZ
+		{ Y, Z, X, 1 }, // YZ = iX
+		{ Z, Y, X, -1 }, // ZY = -iX
+		{ Z, X, Y, 1 }, // ZX = iY
+		{ X, Z, Y, -1 } // XZ = -iY
+	} };
+
+	for (auto const& [p1_start, p2, expected_pauli, expected_phase] : truth_table) {
+		Pauli p1 = p1_start; // Create a mutable copy to test in-place modification
+		int phase = p1.multiply_right(p2);
+
+		// Assert that the object was correctly modified in-place
+		ASSERT_EQ(p1, expected_pauli);
+
+		// Assert that the correct phase was returned
+		ASSERT_EQ(phase, expected_phase);
+	}
 }

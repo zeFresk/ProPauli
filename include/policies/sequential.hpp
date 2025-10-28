@@ -2,6 +2,7 @@
 #define PP_INCLUDE_POLICY_SEQ_HPP
 
 #include "pauli.hpp"
+#include "pauli_axis.hpp"
 #include "pauli_term_container.hpp"
 #include "container/dirty_set.hpp"
 #include <algorithm>
@@ -150,6 +151,33 @@ struct SequentialPolicy {
 				k_idx++;
 			} else if (p.get_pauli(qubit) == p_x || p.get_pauli(qubit) == p_y) {
 				p.apply_amplitude_damping_xy(qubit, pn);
+			}
+		}
+	}
+
+	template <typename PTC, typename T>
+	inline static void apply_rp(PTC& paulis, PauliAxis<> const& axis, T theta) {
+		const auto nb_terms = paulis.nb_terms();
+
+		// compute number of required nb_term
+		std::size_t total_to_allocate = 0;
+		for (std::size_t i = 0; i < nb_terms; ++i) {
+			if (!paulis[i].commutes_with(axis.raw_bits())) {
+				total_to_allocate++;
+			}
+		}
+
+		// pre-alloc is mandatory to not invalidate terms while allocating
+		paulis._batch_allocate(total_to_allocate);
+
+		std::size_t k_idx = 0; // allocated index
+		for (std::size_t i = 0; i < nb_terms; ++i) {
+			auto p = paulis[i];
+			if (!paulis[i].commutes_with(axis.raw_bits())) {
+				const auto tmp_pt_idx = nb_terms + k_idx;
+				auto new_path = paulis[tmp_pt_idx];
+				p.apply_rp(axis.raw_bits(), theta, new_path);
+				k_idx++;
 			}
 		}
 	}

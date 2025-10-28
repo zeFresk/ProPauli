@@ -175,10 +175,8 @@ TYPED_TEST(SymbolicObservableTest, apply_rz_constant) {
 		} else if (!pt2[i].commutes_with(p_z)) {
 			pts.push_back(pt2.apply_rz(i, theta));
 		}
-		auto expected_ev =
-			std::accumulate(pts.cbegin(), pts.cend(), coeff_t{ 0. }, [](auto acc, auto const& pt) {
-				return acc + pt.expectation_value().evaluate();
-			});
+		auto expected_ev = std::accumulate(pts.cbegin(), pts.cend(), coeff_t{ 0. },
+						   [](auto acc, auto const& pt) { return acc + pt.expectation_value().evaluate(); });
 
 		obs.apply_rz(i, theta, this->policy);
 
@@ -212,10 +210,8 @@ TYPED_TEST(SymbolicObservableTest, apply_rz_variable) {
 		} else if (!pt2[i].commutes_with(p_z)) {
 			pts.push_back(pt2.apply_rz(i, theta));
 		}
-		auto expected_ev =
-			std::accumulate(pts.cbegin(), pts.cend(), coeff_t{ 0. }, [](auto acc, auto const& pt) {
-				return acc + pt.expectation_value().evaluate();
-			});
+		auto expected_ev = std::accumulate(pts.cbegin(), pts.cend(), coeff_t{ 0. },
+						   [](auto acc, auto const& pt) { return acc + pt.expectation_value().evaluate(); });
 
 		obs.apply_rz(i, v_theta, this->policy);
 
@@ -229,12 +225,42 @@ TYPED_TEST(SymbolicObservableTest, apply_rz_variable) {
 	}
 }
 
+TYPED_TEST(SymbolicObservableTest, apply_rp_rzz_variable) {
+	So_t obs{ "IXYZZIXYYZXIZXIZI", "ZXYIXYZXZZZYYXXYY" };
+	So_t obs_cpy = obs;
+
+	const coeff_t theta = 1.41421356237;
+	Variable v_theta{ "theta" };
+
+	for (std::size_t i = 0; i < obs.size() - 1; ++i) {
+		auto obs = obs_cpy;
+		auto cpy = obs_cpy;
+
+		cpy.apply_cx(i, i + 1);
+		cpy.apply_rz(i + 1, theta);
+		cpy.apply_cx(i, i + 1);
+
+		std::vector<Pauli> axis(obs.nb_qubits(), p_i);
+		axis[i] = p_z;
+		axis[i + 1] = p_z;
+		obs.apply_rp(axis, v_theta, this->policy);
+
+		ASSERT_EQ(obs.size(), cpy.size());
+		for (std::size_t j = 0; j < obs.size(); ++j) { // find all terms inside observable
+			auto h = obs[j].phash();
+			auto it = std::find_if(cpy.begin(), cpy.end(), [=](auto const& p) { return p.phash() == h; });
+			ASSERT_NE(it, obs.end());
+		}
+		EXPECT_EQ(obs.expectation_value(this->policy).evaluate({ { "theta", theta } }),
+			  cpy.expectation_value(this->policy).evaluate());
+	}
+}
+
 TYPED_TEST(SymbolicObservableTest, expectation_value_is_simplified) {
 	EXPECT_EQ(to_string(So_t{ "ZI" }.expectation_value(this->policy).simplified()), "1");
 	EXPECT_EQ(to_string(So_t{ "IX" }.expectation_value(this->policy).simplified()), "0");
 	EXPECT_EQ(to_string(So_t{ "YZ" }.expectation_value(this->policy).simplified()), "0");
-	EXPECT_EQ(to_string(So_t{ { "ZI", Variable("theta") }, { "IX", 1 } }.expectation_value(this->policy).simplified()),
-		  "theta");
+	EXPECT_EQ(to_string(So_t{ { "ZI", Variable("theta") }, { "IX", 1 } }.expectation_value(this->policy).simplified()), "theta");
 }
 
 TYPED_TEST(SymbolicObservableTest, merge_works) {
@@ -265,8 +291,7 @@ TYPED_TEST(SymbolicObservableTest, truncate_never) {
 
 TYPED_TEST(SymbolicObservableTest, truncate_multi) {
 	So_t obs{ { "IXYZ", SymbolicCoefficient<coeff_t>{ -0.25 } }, { "IIII", 0.10 } };
-	auto mt = combine_truncators_raw(NeverTruncator<SymbolicCoefficient<coeff_t>>(),
-					 WeightTruncator<SymbolicCoefficient<coeff_t>>(3));
+	auto mt = combine_truncators_raw(NeverTruncator<SymbolicCoefficient<coeff_t>>(), WeightTruncator<SymbolicCoefficient<coeff_t>>(3));
 
 	auto nb_removed = obs.truncate(mt);
 	auto nb_elems_internal = std::distance(obs.cbegin(), obs.cend());

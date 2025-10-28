@@ -109,6 +109,7 @@ class Circuit {
 									 { "H", H },
 									 { "CX", Cx },
 									 { "RZ", Rz },
+									 { "RP", Rp },
 									 { "AMPLITUDEDAMPING", AmplitudeDamping },
 									 { "DEPOLARIZING", Depolarizing },
 									 { "DEPHASING", Dephasing } };
@@ -145,6 +146,10 @@ class Circuit {
 	void y(unsigned qubit) { add_operation(QGate::Y, qubit); }
 	void z(unsigned qubit) { add_operation(QGate::Z, qubit); }
 	void rz(unsigned qubit, Coefficient_t const& coeff) { add_operation(QGate::Rz, qubit, coeff); }
+	void rp(std::vector<Pauli> const& pauli_axis, Coefficient_t const& coeff) { add_operation(QGate::Rp, pauli_axis, coeff); }
+	void eiht(std::vector<Pauli> const& pauli_axis, Coefficient_t const& t) {
+		add_operation(QGate::Rp, pauli_axis, t * Coefficient_t{ 2 });
+	}
 
 	/**
 	 * @brief Runs the simulation on the circuit.
@@ -210,15 +215,16 @@ class Circuit {
 
 	template <typename ExecutionPolicy = DefaultExecutionPolicy>
 	auto expectation_value(std::vector<Observable<Coefficient_t>> const& target_observables,
-						     ExecutionPolicy&& policy = ExecutionPolicy{}) {
+			       ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		using Policy_t = std::remove_cvref_t<decltype(policy)>;
 		return Policy_t::circuit_batched_evs(*this, target_observables);
 	}
 
 	template <typename ExecutionPolicy = DefaultExecutionPolicy>
-	std::pair<Coefficient_t, Coefficient_t> expectation_value(Observable<Coefficient_t> const& target_observable, ExecutionPolicy&& policy = ExecutionPolicy{}) {
+	std::pair<Coefficient_t, Coefficient_t> expectation_value(Observable<Coefficient_t> const& target_observable,
+								  ExecutionPolicy&& policy = ExecutionPolicy{}) {
 		auto res = run(target_observable, std::forward<ExecutionPolicy>(policy));
-		return {res.expectation_value(), res.truncate_error()};
+		return { res.expectation_value(), res.truncate_error() };
 	}
 
 	template <typename Input, IsVariant DynamicPolicy>
@@ -312,6 +318,14 @@ class Circuit {
 	void check_args(unsigned qubit, [[maybe_unused]] Real&& arg)
 		requires(std::is_floating_point_v<std::remove_cvref_t<Real>> || Symbolic<std::remove_cvref_t<Real>>) {
 		check_args(qubit);
+	}
+
+	template <typename Real>
+	void check_args(std::vector<Pauli> const& axis, [[maybe_unused]] Real&& arg)
+		requires(std::is_floating_point_v<std::remove_cvref_t<Real>> || Symbolic<std::remove_cvref_t<Real>>) {
+		if (axis.size() != nb_qubits()) {
+			throw std::invalid_argument("Axis length for Rp gate should match circuit size.");
+		}
 	}
 
 	/**

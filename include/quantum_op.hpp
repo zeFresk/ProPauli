@@ -67,6 +67,7 @@ class QuantumOp {
 	QGate gate; /**< The specific gate or noise channel identifier. */
 	unsigned qubit0;
 	unsigned qubit1;
+	PauliAxis<> axis;
 	T parameter;
 
     public:
@@ -94,11 +95,18 @@ class QuantumOp {
 		}
 	}
 
+	template <typename Real>
+	QuantumOp(QGate qg, std::vector<Pauli> const& pauli_axis, Real&& v)
+		requires(std::is_floating_point_v<std::remove_cvref_t<Real>> || Symbolic<std::remove_cvref_t<Real>>)
+		: gate(qg), axis(pauli_axis.begin(), pauli_axis.end()), parameter(std::move(v)) {}
+
 	template <typename ExecutionPolicy = DefaultExecutionPolicy>
 	[[gnu::always_inline]] inline void operator()(ObservableType& obs, ExecutionPolicy&& policy = ExecutionPolicy{}) const {
 		switch (gate) {
 		case QGate::Rz:
 			return obs.apply_rz(qubit0, parameter, policy);
+		case QGate::Rp:
+			return obs.apply_rp(axis, parameter, policy);
 		case QGate::Cx:
 			return obs.apply_cx(qubit0, qubit1, policy);
 		case QGate::AmplitudeDamping:
@@ -129,10 +137,11 @@ class QuantumOp {
 	QGate get_gate() const { return gate; }
 
 	[[gnu::always_inline]] inline OperationType operation_type() const {
-		return (gate == QGate::Rz || gate == QGate::AmplitudeDamping) ? OperationType::SplittingGate : OperationType::BasicGate;
+		return (gate == QGate::Rz || gate == QGate::Rp || gate == QGate::AmplitudeDamping) ? OperationType::SplittingGate :
+												     OperationType::BasicGate;
 
-		//static constexpr std::array<OperationType, 2> arr_map{OperationType::BasicGate, OperationType::SplittingGate};
-		//return arr_map[gate == QGate::Rz || gate == QGate::AmplitudeDamping]; // branchless
+		// static constexpr std::array<OperationType, 2> arr_map{OperationType::BasicGate, OperationType::SplittingGate};
+		// return arr_map[gate == QGate::Rz || gate == QGate::AmplitudeDamping]; // branchless
 	}
 };
 

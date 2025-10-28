@@ -12,6 +12,7 @@
  */
 
 #include "pauli.hpp"
+#include "pauli_axis.hpp"
 #include "pauli_term.hpp"
 #include "pauli_term_container.hpp"
 #include "symbolic/coefficient.hpp"
@@ -190,6 +191,20 @@ class Observable {
 		return std::visit([&, this](auto const& pol) { return this->apply_rz(qubit, theta, pol); }, rpol);
 	}
 
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_rp(PauliAxis<> const& axis, T theta, ExecutionPolicy&& policy = ExecutionPolicy{}) {
+		if (axis.nb_qubits() != nb_qubits()) {
+			throw std::invalid_argument{ "Rotation axis length doesn't match observable size!" };
+		}
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
+		Policy_t::apply_rp(paulis_, axis, theta);
+	}
+
+	template <IsVariant DynamicPolicy>
+	void apply_rp(PauliAxis<> const& axis, T theta, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_rp(axis, theta, pol); }, rpol);
+	}
+
 	/**
 	 * @brief Applies an amplitude damping noise channel.
 	 * @param qubit The index of the qubit to apply the channel to.
@@ -317,13 +332,9 @@ class Observable {
 		return ret;
 	}
 
-	T const& truncate_error() const {
-		return error_truncate;
-	}
+	T const& truncate_error() const { return error_truncate; }
 
-	void set_truncate_error(T const& new_error) {
-		error_truncate = new_error;
-	}
+	void set_truncate_error(T const& new_error) { error_truncate = new_error; }
 
 	friend bool operator==(Observable const& lhs, Observable const& rhs) {
 		return lhs.size() == rhs.size() && lhs.paulis_ == rhs.paulis_;

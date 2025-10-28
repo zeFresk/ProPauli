@@ -76,6 +76,16 @@ class ReadOnlyNonOwningPauliTermPacked {
 	 */
 	std::size_t phash() const noexcept { return ptc.get().fast_phash(idx); }
 
+	bool commutes_with(std::vector<Underlying> const& axis_bytes) const {
+		const std::size_t start_idx = idx * ptc.get().nb_underlying_per_pt;
+		int total_anti_commuting = 0;
+		for (size_t i = 0; i < ptc.get().nb_underlying_per_pt; ++i) {
+			total_anti_commuting +=
+				PauliBitwise::count_anti_commuting_in_byte(axis_bytes[i], ptc.get().raw_bits[start_idx + i]);
+		}
+		return (total_anti_commuting % 2 == 0);
+	}
+
 	/** @name Comparison
 	 * @{
 	 */
@@ -230,6 +240,16 @@ class NonOwningPauliTermPacked {
 	 */
 	std::size_t phash() const noexcept { return ptc.get().fast_phash(idx); }
 
+	bool commutes_with(std::vector<Underlying> const& axis_bytes) const {
+		const std::size_t start_idx = idx * ptc.get().nb_underlying_per_pt;
+		int total_anti_commuting = 0;
+		for (size_t i = 0; i < ptc.get().nb_underlying_per_pt; ++i) {
+			total_anti_commuting +=
+				PauliBitwise::count_anti_commuting_in_byte(axis_bytes[i], ptc.get().raw_bits[start_idx + i]);
+		}
+		return (total_anti_commuting % 2 == 0);
+	}
+
 	/** @name Comparison
 	 * @{
 	 */
@@ -351,6 +371,28 @@ class NonOwningPauliTermPacked {
 			output.set_pauli(qubit, p_x);
 			output.set_coefficient(output.coefficient() * sin_theta);
 		}
+	}
+	void apply_rp(std::vector<Underlying> const& axis_bytes, T theta, NonOwningPauliTermPacked& output) {
+		assert(!commutes_with(axis_bytes));
+
+		const auto cos_teta = cos(theta);
+		const auto sin_theta = sin(theta);
+		const auto old_coeff = coefficient();
+
+		set_coefficient(old_coeff * cos_teta);
+
+		int i_pow = 1;
+		const auto nb_underlying = output.ptc.get().nb_underlying_per_pt;
+		std::size_t start_idx = idx * nb_underlying;
+		std::size_t output_idx = output.idx * nb_underlying;
+		for (std::size_t i = 0; i < nb_underlying; ++i) {
+			auto [result_byte, phase] = PauliBitwise::multiply_bytes(axis_bytes[i], ptc.get().raw_bits[start_idx + i]);
+			output.ptc.get().raw_bits[output_idx + i] = result_byte;
+			i_pow += phase;
+		}
+
+		T const sign = (((i_pow % 4) + 4) % 4 == 2) ? T{ -1 } : T{ 1 };
+		output.set_coefficient(old_coeff * sin_theta * sign);
 	}
 	void apply_amplitude_damping_xy([[maybe_unused]] unsigned qubit, T p) {
 		assert(qubit < size());

@@ -18,7 +18,9 @@
 #include "pauli.hpp"
 #include "pauli_term.hpp"
 #include "container/bit_operations.hpp"
+#include "container/pauli_bitwise.hpp"
 #include "adapter.hpp"
+#include "pauli_axis.hpp"
 #include "symbolic/coefficient.hpp"
 
 #include <algorithm>
@@ -140,6 +142,7 @@ class PauliTermContainer {
 	}
 
     public:
+	using Underlying_type = Underlying;
 	/** @name Constructors
 	 * @{
 	 */
