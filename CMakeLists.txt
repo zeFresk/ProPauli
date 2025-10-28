@@ -8,7 +8,7 @@ set(BENCHMARK OFF CACHE BOOL "Build benchmarks")
 set(TEST OFF CACHE BOOL "Build tests")
 
 project(ProPauli
-	VERSION 4.1.0
+	VERSION 5.0.0
 DESCRIPTION "Fast and efficient C++ library for Pauli Propagation"
 	LANGUAGES CXX)
 
@@ -85,6 +85,7 @@ if (TEST)
 	include(FetchContent)
 	FetchContent_Declare(
 		googletest
+		GIT_REPOSITORY https://github.com/google/googletest.git
 		GIT_TAG v1.17.0
 	)
 	# For Windows: Prevent overriding the parent project's compiler/linker settings
@@ -113,6 +114,7 @@ if (BENCHMARK)
 	include(FetchContent)
 	FetchContent_Declare(
 		googlebenchmark
+		GIT_REPOSITORY https://github.com/google/benchmark.git
 		GIT_TAG v1.9.4
 	)
 	set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable testing for Google Benchmark")
