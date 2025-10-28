@@ -176,8 +176,7 @@ struct SequentialPolicy {
 			if (!paulis[i].commutes_with(axis.raw_bits())) {
 				const auto tmp_pt_idx = nb_terms + k_idx;
 				auto new_path = paulis[tmp_pt_idx];
-				new_path.fast_copy_content(p);
-				p.apply_rp(axis, theta, new_path);
+				p.apply_rp(axis.raw_bits(), theta, new_path);
 				k_idx++;
 			}
 		}
