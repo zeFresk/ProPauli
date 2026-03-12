@@ -397,6 +397,7 @@ TYPED_TEST(CircuitRun, test_circuit1_batch_ev) {
 		EXPECT_NEAR(rev, exp, 1e-4f);
 	}
 }
+
 TYPED_TEST(CircuitRun, exp_iXXXXt) {
 	Circuit qc{ 4 };
 	Circuit qc_rp{ 4 };
@@ -450,6 +451,65 @@ TYPED_TEST(CircuitRun, exp_iXXXXt) {
 		auto [rev, err] = res_rp[i];
 		EXPECT_NEAR(rev, exp, 1e-4f);
 	}
+}
+
+TYPED_TEST(CircuitRun, apply_u3_hardcoded) {
+    Circuit qc_u3{ 1 };
+    Circuit qc_transpiled{ 1 };
+
+    constexpr coeff_t pi = 3.14159265358979323846;
+    const coeff_t theta = 1.0;
+    const coeff_t phi = 2.0;
+    const coeff_t lambda = 3.0;
+
+    // 1. Native U3 Circuit
+    qc_u3.add_operation("u3", 0, theta, phi, lambda);
+
+    // 2. Transpiled Circuit (Forward Execution Order)
+    // The forward application of Rz(phi) Ry(theta) Rz(lambda).
+    // Rz(lambda) -> (Rz(-pi/2) -> H -> Rz(theta) -> H -> Rz(pi/2)) -> Rz(phi)
+    // We seamlessly merge the adjacent Rz gates:
+    qc_transpiled.add_operation("rz", 0, lambda - pi / 2.0);
+    qc_transpiled.add_operation("h", 0);
+    qc_transpiled.add_operation("rz", 0, theta);
+    qc_transpiled.add_operation("h", 0);
+    qc_transpiled.add_operation("rz", 0, phi + pi / 2.0);
+
+    // 3. Analytical Expectation Values for U3(1.0, 2.0, 3.0) applied to |0>
+    // <X> = sin(theta) * cos(phi)
+    // <Y> = sin(theta) * sin(phi)
+    // <Z> = cos(theta)
+    std::array<std::tuple<std::string_view, coeff_t>, 3> truth_table = { {
+        { "X", -0.350175488f },
+        { "Y", 0.765147401f },
+        { "Z", 0.540302305f },
+    } };
+
+    std::vector<Observable<coeff_t>> obses;
+    for (auto const [ob, ev] : truth_table) {
+        // Assuming your Observable constructor takes the string
+        obses.push_back(Observable<coeff_t>{ ob });
+    }
+
+    // 4. Run the simulation
+    auto res_u3 = qc_u3.expectation_value(obses, this->policy);
+    auto res_transpiled = qc_transpiled.expectation_value(obses, this->policy);
+
+    // 5. Validate the results
+    for (std::size_t i = 0; i < res_u3.size(); ++i) {
+        auto exp = std::get<1>(truth_table[i]);
+        
+        // Destructure the [value, error] pairs returned by your API
+        auto [rev_u3, err_u3] = res_u3[i];
+        auto [rev_transpiled, err_transpiled] = res_transpiled[i];
+        
+        // Check both against the analytical truth table
+        EXPECT_NEAR(rev_u3, exp, 1e-4f);
+        EXPECT_NEAR(rev_transpiled, exp, 1e-4f);
+        
+        // Check that Native and Transpiled implementations match each other tightly
+        EXPECT_NEAR(rev_u3, rev_transpiled, 1e-5f);
+    }
 }
 
 TYPED_TEST(CircuitRun, bad_observable_throw) {

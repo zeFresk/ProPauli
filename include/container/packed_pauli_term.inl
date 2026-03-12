@@ -401,9 +401,9 @@ class NonOwningPauliTermPacked {
 
 		/*
 		* M_{total} = \begin{pmatrix}
-			\cos\lambda \cos\theta \cos\phi - \sin\lambda \sin\phi & -\cos\lambda \cos\theta \sin\phi - \sin\lambda \cos\phi & \cos\lambda \sin\theta \\
-			\sin\lambda \cos\theta \cos\phi + \cos\lambda \sin\phi & -\sin\lambda \cos\theta \sin\phi + \cos\lambda \cos\phi & \sin\lambda \sin\theta \\
-			-\sin\theta \cos\phi & \sin\theta \sin\phi & \cos\theta
+			\cos\lambda \cos\theta \cos\phi - \sin\lambda \sin\phi & \cos\lambda \cos\theta \sin\phi + \sin\lambda \cos\phi & -\cos\lambda \sin\theta \\
+			-\sin\lambda \cos\theta \cos\phi - \cos\lambda \sin\phi & -\sin\lambda \cos\theta \sin\phi + \cos\lambda \cos\phi & \sin\lambda \sin\theta \\
+			\sin\theta \cos\phi & \sin\theta \sin\phi & \cos\theta
 		\end{pmatrix} */
 
 		const auto cos_theta = cos(theta);
@@ -419,15 +419,15 @@ class NonOwningPauliTermPacked {
 			set_coefficient(old_coeff * (cos_lambda * cos_theta * cos_phi - sin_lambda * sin_phi));
 
 			branch_one.set_pauli(qubit, p_y);
-			branch_one.set_coefficient(old_coeff * (sin_lambda * cos_theta * cos_phi + cos_lambda * sin_phi));
+			branch_one.set_coefficient(old_coeff * (-sin_lambda * cos_theta * cos_phi - cos_lambda * sin_phi));
 
 			branch_two.set_pauli(qubit, p_z);
-			branch_two.set_coefficient(old_coeff * (-sin_theta * cos_phi));
+			branch_two.set_coefficient(old_coeff * (sin_theta * cos_phi));
 		} else if (get_pauli(qubit) == p_y) {
 			set_coefficient(old_coeff * (-sin_lambda * cos_theta * sin_phi + cos_lambda * cos_phi));
 
 			branch_one.set_pauli(qubit, p_x);
-			branch_one.set_coefficient(old_coeff * (-cos_lambda * cos_theta * sin_phi - sin_lambda * cos_phi));
+			branch_one.set_coefficient(old_coeff * (cos_lambda * cos_theta * sin_phi + sin_lambda * cos_phi));
 
 			branch_two.set_pauli(qubit, p_z);
 			branch_two.set_coefficient(old_coeff * (sin_theta * sin_phi));
@@ -435,7 +435,7 @@ class NonOwningPauliTermPacked {
 			set_coefficient(old_coeff * (cos_theta));
 
 			branch_one.set_pauli(qubit, p_x);
-			branch_one.set_coefficient(old_coeff * (cos_lambda * sin_theta));
+			branch_one.set_coefficient(old_coeff * (-cos_lambda * sin_theta));
 
 			branch_two.set_pauli(qubit, p_y);
 			branch_two.set_coefficient(old_coeff * (sin_lambda * sin_theta));

@@ -101,6 +101,16 @@ TEST(SymbolicCircuit, run_rp_var) {
 	EXPECT_NEAR(res.expectation_value().evaluate({ { "t", 1.f } }), -0.4161468365471419f, 1e-4f);
 }
 
+TEST(SymbolicCircuit, run_u3_var) {
+	Sc_t qc{ 1 };
+
+	qc.u3(0, Variable("theta"), Variable("phi"), Variable("lambda"));
+
+	auto res = qc.run(So_t{ "X" });
+	EXPECT_NEAR(res.expectation_value().evaluate({ { "theta", 1.f }, { "phi", 2.0f }, { "lambda", 3.0f } }), -0.35017548837401463f,
+		    1e-4f);
+}
+
 TEST(SymbolicCircuit, run_unital_noise_const) {
 	Sc_t qc{ 2 };
 

@@ -90,6 +90,7 @@ TYPED_TEST_P(QuantumOpTest, Properties_AreCorrectForAllGates) {
 		{ "Cx", QOp(QGate::Cx, 0, 1), OperationType::BasicGate },
 		{ "Depolarizing", QOp(QGate::Depolarizing, 0, Real(0.1)), OperationType::BasicGate },
 		{ "Rz", QOp(QGate::Rz, 0, Real(0.1)), OperationType::SplittingGate },
+		{ "U3", QOp(QGate::U3, 0, Real(0.1), Real(0.1), Real(0.1)), OperationType::SplittingGate },
 		{ "AmplitudeDamping", QOp(QGate::AmplitudeDamping, 0, Real(0.1)), OperationType::SplittingGate }
 	};
 
@@ -121,6 +122,8 @@ TYPED_TEST_P(QuantumOpTest, Application_AllGatesDispatchCorrectlyOnAllObservable
 		{ "H", [] { return QOp(QGate::H, 0); }, [](auto& obs, auto&) { obs.apply_clifford(Clifford_Gates_1Q::H, 0); } },
 		{ "Rz", [] { return QOp(QGate::Rz, 0, Real(0.785)); },
 		  [](auto& obs, auto& policy) { obs.apply_rz(0, Real(0.785), policy); } },
+		{ "U3", [] { return QOp(QGate::U3, 0, Real(0.785), Real(0.5), Real(0.5)); },
+		  [](auto& obs, auto& policy) { obs.apply_u3(0, Real(0.785), Real(0.5), Real(0.5), policy); } },
 		{ "Cx", [] { return QOp(QGate::Cx, 0, 1); }, [](auto& obs, auto& policy) { obs.apply_cx(0, 1, policy); } },
 		{ "Depolarizing", [] { return QOp(QGate::Depolarizing, 0, Real(0.2)); },
 		  [](auto& obs, auto& policy) { obs.apply_unital_noise(UnitalNoise::Depolarizing, 0, Real(0.2), policy); } },
