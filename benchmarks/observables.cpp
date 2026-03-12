@@ -396,6 +396,31 @@ static void Observable_apply_rp_12times(benchmark::State& state) {
 	}
 }
 
+static void Observable_apply_u3_6times(benchmark::State& state) {
+    constexpr coeff_t theta = 1.0;
+    constexpr coeff_t phi = 2.0;
+    constexpr coeff_t lambda = 3.0;
+    
+    // Generate 1024 random observables of length state.range(0)
+    std::vector<Observable<coeff_t>> obses;
+    std::generate_n(std::back_inserter(obses), 1024, [&]() { 
+        return Observable<coeff_t>{ random_pauli_string(state.range(0)) }; 
+    });
+
+    std::size_t i = 0;
+    for (auto _ : state) {
+        state.PauseTiming();
+        auto obs = obses[i];
+        i = (i + 1) % 1024;
+        state.ResumeTiming();
+
+        // Stress test the matrix multiplication and 3-way branching
+        for (std::size_t j = 0; j < 6; ++j) {
+            obs.apply_u3(0, theta, phi, lambda);
+        }
+    }
+}
+
 BENCHMARK(Observable_init_from_string)->Arg(1)->Arg(1024);
 BENCHMARK(Observable_apply_pauli)->Arg(1)->Arg(1024);
 BENCHMARK(Observable_apply_clifford)->Arg(1)->Arg(1024);
@@ -403,6 +428,7 @@ BENCHMARK(Observable_apply_unital_noise)->Arg(1)->Arg(1024);
 BENCHMARK(Observable_apply_rz_once)->Arg(1)->Arg(1024);
 BENCHMARK(Observable_apply_rp_12times)->Arg(8)->Arg(64)->Arg(1024);
 BENCHMARK(Observable_apply_rz_ntimes)->Args({ 1024, 16 });
+BENCHMARK(Observable_apply_u3_6times)->Arg(8)->Arg(64)->Arg(1024);
 BENCHMARK(Observable_ev_after_nrz)->Args({ 1024, 16 });
 BENCHMARK(Observable_merge_after_nrz)->Args({ 8, 16 })->Args({ 1024, 1 })->Args({ 1024, 8 });
 BENCHMARK(Observable_truncate_coeff_after_nrz)->Args({ 8, 16 })->Args({ 1024, 1 })->Args({ 1024, 8 });

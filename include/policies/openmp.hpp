@@ -225,6 +225,55 @@ struct OpenMPPolicy {
 	}
 
 	template <typename PTC, typename T>
+	inline static void apply_u3(PTC& paulis, unsigned qubit, T theta, T phi, T lambda) {
+		const auto nb_terms = paulis.nb_terms();
+
+		std::vector<std::size_t> allocated_per_thread(omp_get_max_threads(), 0);
+		std::size_t total_to_allocate = 0;
+
+		#pragma omp parallel shared(allocated_per_thread)
+		{
+			auto tid = omp_get_thread_num();
+
+			// compute number of required nb_term
+			#pragma omp for reduction(+ : total_to_allocate) schedule(static)
+			for (std::size_t i = 0; i < nb_terms; ++i) {
+				if (paulis[i].get_pauli(qubit) != p_i) {
+					allocated_per_thread[tid]++;
+					total_to_allocate++;
+				}
+			}
+
+			// pre-alloc is mandatory to not invalidate terms while allocating
+			#pragma omp single
+			paulis._batch_allocate(2*total_to_allocate);
+
+			// get start_idx by computing sum of previous elements
+			std::size_t start_idx = nb_terms;
+			for (int k = 0; k < tid; ++k) {
+				start_idx += 2 * allocated_per_thread[k];
+			}
+
+			std::size_t k_idx = 0; // allocated index
+
+			#pragma omp for schedule(static)
+			for (std::size_t i = 0; i < nb_terms; ++i) {
+				auto p = paulis[i];
+				if (paulis[i].get_pauli(qubit) != p_i) {
+					const auto tmp_pt_idx = start_idx + (2*k_idx);
+					auto new_path_one = paulis[tmp_pt_idx];
+					auto new_path_two = paulis[tmp_pt_idx+1];
+					new_path_one.fast_copy_content(p);
+					new_path_two.fast_copy_content(p);
+					p.apply_u3(qubit, theta, phi, lambda, new_path_one, new_path_two);
+					k_idx++;
+				}
+			}
+		}
+	}
+
+
+	template <typename PTC, typename T>
 	inline static void apply_amplitude_damping(PTC& paulis, unsigned qubit, T pn) {
 		const auto nb_terms = paulis.nb_terms();
 

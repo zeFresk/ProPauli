@@ -225,6 +225,58 @@ TYPED_TEST(SymbolicObservableTest, apply_rz_variable) {
 	}
 }
 
+TYPED_TEST(SymbolicObservableTest, apply_u3_variable) {
+	// Testing X, Y, and Z bases simultaneously
+	So_t obs{ "X", "Y", "Z" };
+	So_t obs_cpy = obs;
+
+	// Define our constants
+	constexpr coeff_t pi = 3.14159265358979323846;
+	const coeff_t t_val = 1.123456;
+	const coeff_t p_val = 0.456789;
+	const coeff_t l_val = 0.789123;
+
+	// Define symbolic variables
+	Variable v_theta{ "theta" };
+	Variable v_phi{ "phi" };
+	Variable v_lambda{ "lambda" };
+
+	auto cpy = obs_cpy;
+
+	// 1. Symbolic Application (U3)
+	obs.apply_u3(0, v_theta, v_phi, v_lambda, this->policy);
+	obs.merge(this->policy);
+
+	// 2. Numeric Transpiled Application (H + Rz)
+	// Applied in reverse circuit execution order: Rz(phi) -> Ry(theta) -> Rz(lambda)
+	cpy.apply_rz(0, p_val, this->policy);
+
+	// Ry transpilation
+	cpy.apply_rz(0, pi / 2.0, this->policy);
+	cpy.apply_clifford(Clifford_Gates_1Q::H, 0, this->policy);
+	cpy.apply_rz(0, t_val, this->policy);
+	cpy.apply_clifford(Clifford_Gates_1Q::H, 0, this->policy);
+	cpy.apply_rz(0, -pi / 2.0, this->policy);
+
+	cpy.apply_rz(0, l_val, this->policy);
+
+	cpy.merge(this->policy);
+
+	// 3. Validate terms match structurally
+	ASSERT_LE(obs.size(), cpy.size());
+	for (std::size_t j = 0; j < obs.size(); ++j) {
+		auto h = obs[j].phash();
+		auto it = std::find_if(cpy.begin(), cpy.end(), [=](auto const& p) { return p.phash() == h; });
+		ASSERT_NE(it, cpy.end()); // Note: fixed from obs.end() to cpy.end()
+	}
+
+	// 4. Validate symbolic evaluation against numeric sequence
+	// Note: Using EXPECT_NEAR instead of EXPECT_EQ to account for floating point drift
+	// between the trigonometric functions in evaluate() and sequential numeric matrices.
+	EXPECT_NEAR(obs.expectation_value(this->policy).evaluate({ { "theta", t_val }, { "phi", p_val }, { "lambda", l_val } }),
+		    cpy.expectation_value(this->policy).evaluate(), 1e-5f);
+}
+
 TYPED_TEST(SymbolicObservableTest, apply_rp_rzz_variable) {
 	So_t obs{ "IXYZZIXYYZXIZXIZI", "ZXYIXYZXZZZYYXXYY" };
 	So_t obs_cpy = obs;

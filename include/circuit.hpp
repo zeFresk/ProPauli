@@ -110,6 +110,7 @@ class Circuit {
 									 { "CX", Cx },
 									 { "RZ", Rz },
 									 { "RP", Rp },
+									 { "U3", U3 },
 									 { "AMPLITUDEDAMPING", AmplitudeDamping },
 									 { "DEPOLARIZING", Depolarizing },
 									 { "DEPHASING", Dephasing } };
@@ -149,6 +150,9 @@ class Circuit {
 	void rp(std::vector<Pauli> const& pauli_axis, Coefficient_t const& coeff) { add_operation(QGate::Rp, pauli_axis, coeff); }
 	void eiht(std::vector<Pauli> const& pauli_axis, Coefficient_t const& t) {
 		add_operation(QGate::Rp, pauli_axis, t * Coefficient_t{ 2 });
+	}
+	void u3(unsigned qubit, Coefficient_t const& theta, Coefficient_t const& phi, Coefficient_t const& lambda) {
+		add_operation(QGate::U3, qubit, theta, phi, lambda);
 	}
 
 	/**
@@ -326,6 +330,12 @@ class Circuit {
 		if (axis.size() != nb_qubits()) {
 			throw std::invalid_argument("Axis length for Rp gate should match circuit size.");
 		}
+	}
+
+	template <typename Real>
+	void check_args(unsigned qubit, [[maybe_unused]] Real&& theta, [[maybe_unused]] Real&& phi, [[maybe_unused]] Real&& lambda)
+		requires(std::is_floating_point_v<std::remove_cvref_t<Real>> || Symbolic<std::remove_cvref_t<Real>>) {
+		check_args(qubit);
 	}
 
 	/**

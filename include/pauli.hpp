@@ -173,9 +173,9 @@ static constexpr auto unital_noise_map_coeff = init_unital_noise_array_coeff<coe
 static constexpr auto pauli_product_map = init_pauli_product_map();
 static constexpr auto pauli_product_phase_map = init_pauli_product_phase_map();
 
-enum class QGate : array_underlying_type { I, X, Y, Z, H, Rz, Rp, Cx, AmplitudeDamping, Depolarizing, Dephasing, Count };
+enum class QGate : array_underlying_type { I, X, Y, Z, H, Rz, Rp, U3, Cx, AmplitudeDamping, Depolarizing, Dephasing, Count };
 static_assert(std::to_underlying(QGate::Count) == (std::to_underlying(Pauli_gates::Count) + std::to_underlying(Clifford_Gates_1Q::Count) +
-						   std::to_underlying(UnitalNoise::Count) + 1 + 1 + 1 + 1));
+						   std::to_underlying(UnitalNoise::Count) + 1 + 1 + 1 + 1 + 1));
 
 /**
  * @brief Represents a single Pauli operator (I, X, Y, or Z).

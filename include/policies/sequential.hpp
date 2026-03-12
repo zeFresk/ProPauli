@@ -126,6 +126,36 @@ struct SequentialPolicy {
 	}
 
 	template <typename PTC, typename T>
+	inline static void apply_u3(PTC& paulis, unsigned qubit, T theta, T phi, T lambda) {
+		const auto nb_terms = paulis.nb_terms();
+
+		// compute number of required nb_term
+		std::size_t total_to_allocate = 0;
+		for (std::size_t i = 0; i < nb_terms; ++i) {
+			if (paulis[i].get_pauli(qubit) != p_i) {
+				total_to_allocate++;
+			}
+		}
+
+		// pre-alloc is mandatory to not invalidate terms while allocating
+		paulis._batch_allocate(2 * total_to_allocate); // NOTE: two branches created per u3
+
+		std::size_t k_idx = 0; // allocated index
+		for (std::size_t i = 0; i < nb_terms; ++i) {
+			auto p = paulis[i];
+			if (paulis[i].get_pauli(qubit) != p_i) {
+				const auto tmp_pt_idx = nb_terms + (2 * k_idx);
+				auto new_path_one = paulis[tmp_pt_idx];
+				auto new_path_two = paulis[tmp_pt_idx + 1];
+				new_path_one.fast_copy_content(p);
+				new_path_two.fast_copy_content(p);
+				p.apply_u3(qubit, theta, phi, lambda, new_path_one, new_path_two);
+				k_idx++;
+			}
+		}
+	}
+
+	template <typename PTC, typename T>
 	inline static void apply_amplitude_damping(PTC& paulis, unsigned qubit, T pn) {
 		const auto nb_terms = paulis.nb_terms();
 

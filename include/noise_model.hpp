@@ -80,6 +80,12 @@ class NoiseModel {
 	}
 
 	template <typename C, typename Real>
+	void apply_noise_after(C& qc, QGate cg, unsigned qubit, [[maybe_unused]] Real theta, [[maybe_unused]] Real phi, [[maybe_unused]] Real lambda)
+		requires(std::is_floating_point_v<Real> || Symbolic<Real>) {
+		apply_noise_after(qc, cg, qubit);
+	}
+
+	template <typename C, typename Real>
 	void apply_noise_after(C& qc, QGate cg, [[maybe_unused]] std::vector<Pauli> const& axis, [[maybe_unused]] Real theta)
 		requires(std::is_floating_point_v<Real> || Symbolic<Real>) {
 		for (std::size_t i = 0; i < qc.nb_qubits(); ++i) {

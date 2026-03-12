@@ -285,6 +285,204 @@ TYPED_TEST(ObservableTest, apply_rz_inverse) {
 	EXPECT_EQ(before_ev, after_ev);
 }
 
+/* U3 test */
+
+// 1. Rx only (via U3(theta, -pi/2, pi/2))
+TYPED_TEST(ObservableTest, apply_u3_rx_only) {
+    constexpr coeff_t pi = 3.14159265358979323846;
+    constexpr coeff_t theta = 1.41421356237;
+    
+    Observable obs{ "X", "Y", "Z" };
+    Observable cpy = obs;
+
+    // U3(theta, -pi/2, pi/2) applies a pure Rx(theta)
+    obs.apply_u3(0, theta, -pi / 2.0, pi / 2.0, this->rpolicy);
+    obs.merge(this->rpolicy);
+
+    // Equivalent Rx(theta) = H Rz(theta) H
+    cpy.apply_clifford(Clifford_Gates_1Q::H, 0, this->rpolicy);
+    cpy.apply_rz(0, theta, this->rpolicy);
+    cpy.apply_clifford(Clifford_Gates_1Q::H, 0, this->rpolicy);
+    cpy.merge(this->rpolicy);
+
+    EXPECT_NEAR(obs.expectation_value(this->rpolicy), cpy.expectation_value(this->rpolicy), 1e-5f);
+    ASSERT_LE(obs.size(), cpy.size());
+    for (std::size_t j = 0; j < obs.size(); ++j) {
+        auto h = obs[j].phash();
+        auto it = std::find_if(cpy.begin(), cpy.end(), [=](auto const& p) { return p.phash() == h; });
+        ASSERT_NE(it, cpy.end());
+    }
+}
+
+// 2. Ry only (via decomposition)
+TYPED_TEST(ObservableTest, apply_u3_ry_only) {
+    constexpr coeff_t pi = 3.14159265358979323846;
+    constexpr coeff_t theta = 1.41421356237;
+    
+    Observable obs{ "X", "Y", "Z" };
+    Observable cpy = obs;
+
+    // Pure Ry(theta)
+    obs.apply_u3(0, theta, 0.0, 0.0, this->rpolicy);
+    obs.merge(this->rpolicy);
+
+    // Equivalent Ry(theta) = Rz(pi/2) H Rz(theta) H Rz(-pi/2)
+    cpy.apply_rz(0, pi / 2.0, this->rpolicy);
+    cpy.apply_clifford(Clifford_Gates_1Q::H, 0, this->rpolicy);
+    cpy.apply_rz(0, theta, this->rpolicy);
+    cpy.apply_clifford(Clifford_Gates_1Q::H, 0, this->rpolicy);
+    cpy.apply_rz(0, -pi / 2.0, this->rpolicy);
+    cpy.merge(this->rpolicy);
+
+    EXPECT_NEAR(obs.expectation_value(this->rpolicy), cpy.expectation_value(this->rpolicy), 1e-5f);
+    ASSERT_LE(obs.size(), cpy.size());
+    for (std::size_t j = 0; j < obs.size(); ++j) {
+        auto h = obs[j].phash();
+        auto it = std::find_if(cpy.begin(), cpy.end(), [=](auto const& p) { return p.phash() == h; });
+        ASSERT_NE(it, cpy.end());
+    }
+}
+
+// 3. Rz only
+TYPED_TEST(ObservableTest, apply_u3_rz_only) {
+    constexpr coeff_t alpha = 0.8414709848;
+    
+    Observable obs{ "X", "Y", "Z" };
+    Observable cpy = obs;
+
+    // Pure Rz(alpha)
+    obs.apply_u3(0, 0.0, 0.0, alpha, this->rpolicy);
+    obs.merge(this->rpolicy);
+
+    // Equivalent Rz(alpha)
+    cpy.apply_rz(0, alpha, this->rpolicy);
+    cpy.merge(this->rpolicy);
+
+    EXPECT_NEAR(obs.expectation_value(this->rpolicy), cpy.expectation_value(this->rpolicy), 1e-5f);
+    ASSERT_LE(obs.size(), cpy.size());
+    for (std::size_t j = 0; j < obs.size(); ++j) {
+        auto h = obs[j].phash();
+        auto it = std::find_if(cpy.begin(), cpy.end(), [=](auto const& p) { return p.phash() == h; });
+        ASSERT_NE(it, cpy.end());
+    }
+}
+
+// 4. Theta only (Functionally identical to Ry, but isolates the parameter)
+TYPED_TEST(ObservableTest, apply_u3_theta_only) {
+    constexpr coeff_t pi = 3.14159265358979323846;
+    constexpr coeff_t theta = 1.123456;
+    
+    Observable obs{ "X", "Y", "Z" };
+    Observable cpy = obs;
+
+    // U3(theta, 0, 0)
+    obs.apply_u3(0, theta, 0.0, 0.0, this->rpolicy);
+    obs.merge(this->rpolicy);
+
+    // Equivalent Ry(theta) sequence
+    cpy.apply_rz(0, pi / 2.0, this->rpolicy);
+    cpy.apply_clifford(Clifford_Gates_1Q::H, 0, this->rpolicy);
+    cpy.apply_rz(0, theta, this->rpolicy);
+    cpy.apply_clifford(Clifford_Gates_1Q::H, 0, this->rpolicy);
+    cpy.apply_rz(0, -pi / 2.0, this->rpolicy);
+    cpy.merge(this->rpolicy);
+
+    EXPECT_NEAR(obs.expectation_value(this->rpolicy), cpy.expectation_value(this->rpolicy), 1e-5f);
+    ASSERT_LE(obs.size(), cpy.size());
+    for (std::size_t j = 0; j < obs.size(); ++j) {
+        auto h = obs[j].phash();
+        auto it = std::find_if(cpy.begin(), cpy.end(), [=](auto const& p) { return p.phash() == h; });
+        ASSERT_NE(it, cpy.end());
+    }
+}
+
+// 5. Phi only (Isolates the Z phase before the Y rotation)
+TYPED_TEST(ObservableTest, apply_u3_phi_only) {
+    constexpr coeff_t phi = 0.456789;
+    
+    Observable obs{ "X", "Y", "Z" };
+    Observable cpy = obs;
+
+    // U3(0, phi, 0) simplifies to Rz(phi)
+    obs.apply_u3(0, 0.0, phi, 0.0, this->rpolicy);
+    obs.merge(this->rpolicy);
+
+    // Equivalent
+    cpy.apply_rz(0, phi, this->rpolicy);
+    cpy.merge(this->rpolicy);
+
+    EXPECT_NEAR(obs.expectation_value(this->rpolicy), cpy.expectation_value(this->rpolicy), 1e-5f);
+    ASSERT_LE(obs.size(), cpy.size());
+    for (std::size_t j = 0; j < obs.size(); ++j) {
+        auto h = obs[j].phash();
+        auto it = std::find_if(cpy.begin(), cpy.end(), [=](auto const& p) { return p.phash() == h; });
+        ASSERT_NE(it, cpy.end());
+    }
+}
+
+// 6. Lambda only (Isolates the Z phase after the Y rotation)
+TYPED_TEST(ObservableTest, apply_u3_lambda_only) {
+    constexpr coeff_t lambda = 0.789123;
+    
+    Observable obs{ "X", "Y", "Z" };
+    Observable cpy = obs;
+
+    // U3(0, 0, lambda) simplifies to Rz(lambda)
+    obs.apply_u3(0, 0.0, 0.0, lambda, this->rpolicy);
+    obs.merge(this->rpolicy);
+
+    // Equivalent
+    cpy.apply_rz(0, lambda, this->rpolicy);
+    cpy.merge(this->rpolicy);
+
+    EXPECT_NEAR(obs.expectation_value(this->rpolicy), cpy.expectation_value(this->rpolicy), 1e-5f);
+    ASSERT_LE(obs.size(), cpy.size());
+    for (std::size_t j = 0; j < obs.size(); ++j) {
+        auto h = obs[j].phash();
+        auto it = std::find_if(cpy.begin(), cpy.end(), [=](auto const& p) { return p.phash() == h; });
+        ASSERT_NE(it, cpy.end());
+    }
+}
+
+// 7. Full U3 (Combines all rotations)
+TYPED_TEST(ObservableTest, apply_u3_full) {
+    constexpr coeff_t pi = 3.14159265358979323846;
+    constexpr coeff_t theta = 1.123456;
+    constexpr coeff_t phi = 0.456789;
+    constexpr coeff_t lambda = 0.789123;
+    
+    Observable obs{ "X", "Y", "Z" };
+    Observable cpy = obs;
+
+    // Full U3
+    obs.apply_u3(0, theta, phi, lambda, this->rpolicy);
+    obs.merge(this->rpolicy);
+
+    // Equivalent sequence: Rz(phi) -> Ry(theta) -> Rz(lambda)
+    // 1. Rz(phi)
+    cpy.apply_rz(0, phi, this->rpolicy);
+    
+    // 2. Ry(theta)
+    cpy.apply_rz(0, pi / 2.0, this->rpolicy);
+    cpy.apply_clifford(Clifford_Gates_1Q::H, 0, this->rpolicy);
+    cpy.apply_rz(0, theta, this->rpolicy);
+    cpy.apply_clifford(Clifford_Gates_1Q::H, 0, this->rpolicy);
+    cpy.apply_rz(0, -pi / 2.0, this->rpolicy);
+    
+    // 3. Rz(lambda)
+    cpy.apply_rz(0, lambda, this->rpolicy);
+    
+    cpy.merge(this->rpolicy);
+
+    EXPECT_NEAR(obs.expectation_value(this->rpolicy), cpy.expectation_value(this->rpolicy), 1e-5f);
+    ASSERT_LE(obs.size(), cpy.size());
+    for (std::size_t j = 0; j < obs.size(); ++j) {
+        auto h = obs[j].phash();
+        auto it = std::find_if(cpy.begin(), cpy.end(), [=](auto const& p) { return p.phash() == h; });
+        ASSERT_NE(it, cpy.end());
+    }
+}
+
 TYPED_TEST(ObservableTest, expectation_value) {
 	EXPECT_EQ(Observable{ "ZI" }.expectation_value(this->rpolicy), 1);
 	EXPECT_EQ(Observable{ "IX" }.expectation_value(this->rpolicy), 0);

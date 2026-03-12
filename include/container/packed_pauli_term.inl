@@ -394,6 +394,53 @@ class NonOwningPauliTermPacked {
 		T const sign = (((i_pow % 4) + 4) % 4 == 2) ? T{ -1 } : T{ 1 };
 		output.set_coefficient(old_coeff * sin_theta * sign);
 	}
+	void apply_u3(unsigned qubit, T theta, T phi, T lambda, NonOwningPauliTermPacked& branch_one,
+		      NonOwningPauliTermPacked& branch_two) {
+		assert(qubit < size());
+		assert(get_pauli(qubit) != p_i && "Should not happen");
+
+		/*
+		* M_{total} = \begin{pmatrix}
+			\cos\lambda \cos\theta \cos\phi - \sin\lambda \sin\phi & \cos\lambda \cos\theta \sin\phi + \sin\lambda \cos\phi & -\cos\lambda \sin\theta \\
+			-\sin\lambda \cos\theta \cos\phi - \cos\lambda \sin\phi & -\sin\lambda \cos\theta \sin\phi + \cos\lambda \cos\phi & \sin\lambda \sin\theta \\
+			\sin\theta \cos\phi & \sin\theta \sin\phi & \cos\theta
+		\end{pmatrix} */
+
+		const auto cos_theta = cos(theta);
+		const auto sin_theta = sin(theta);
+		const auto cos_phi = cos(phi);
+		const auto sin_phi = sin(phi);
+		const auto cos_lambda = cos(lambda);
+		const auto sin_lambda = sin(lambda);
+
+		const auto old_coeff = coefficient();
+
+		if (get_pauli(qubit) == p_x) {
+			set_coefficient(old_coeff * (cos_lambda * cos_theta * cos_phi - sin_lambda * sin_phi));
+
+			branch_one.set_pauli(qubit, p_y);
+			branch_one.set_coefficient(old_coeff * (-sin_lambda * cos_theta * cos_phi - cos_lambda * sin_phi));
+
+			branch_two.set_pauli(qubit, p_z);
+			branch_two.set_coefficient(old_coeff * (sin_theta * cos_phi));
+		} else if (get_pauli(qubit) == p_y) {
+			set_coefficient(old_coeff * (-sin_lambda * cos_theta * sin_phi + cos_lambda * cos_phi));
+
+			branch_one.set_pauli(qubit, p_x);
+			branch_one.set_coefficient(old_coeff * (cos_lambda * cos_theta * sin_phi + sin_lambda * cos_phi));
+
+			branch_two.set_pauli(qubit, p_z);
+			branch_two.set_coefficient(old_coeff * (sin_theta * sin_phi));
+		} else { // Z
+			set_coefficient(old_coeff * (cos_theta));
+
+			branch_one.set_pauli(qubit, p_x);
+			branch_one.set_coefficient(old_coeff * (-cos_lambda * sin_theta));
+
+			branch_two.set_pauli(qubit, p_y);
+			branch_two.set_coefficient(old_coeff * (sin_lambda * sin_theta));
+		}
+	}
 	void apply_amplitude_damping_xy([[maybe_unused]] unsigned qubit, T p) {
 		assert(qubit < size());
 		assert(get_pauli(qubit) != p_z && get_pauli(qubit) != p_i && "Should not happen");
