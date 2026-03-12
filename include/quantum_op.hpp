@@ -69,6 +69,8 @@ class QuantumOp {
 	unsigned qubit1;
 	PauliAxis<> axis;
 	T parameter;
+	T parameter2;
+	T parameter3;
 
     public:
 	using ObservableType = Observable<T>;
@@ -85,6 +87,15 @@ class QuantumOp {
 		: gate(qg), qubit0(qubit), parameter(std::move(v)) {
 		if (qg != QGate::Rz && !in_array(qg, unoise_map) && qg != QGate::AmplitudeDamping) {
 			throw std::invalid_argument("bad parameters for non parametric gate.");
+		}
+	}
+
+	template <typename Real>
+	QuantumOp(QGate qg, unsigned qubit, Real&& theta, Real&& phi, Real&& lambda)
+		requires(std::is_floating_point_v<std::remove_cvref_t<Real>> || Symbolic<std::remove_cvref_t<Real>>)
+		: gate(qg), qubit0(qubit), parameter(std::move(theta)), parameter2(std::move(phi)), parameter3(std::move(lambda)) {
+		if (qg != QGate::U3) {
+			throw std::invalid_argument("bad parameters for U3 gate.");
 		}
 	}
 
@@ -107,6 +118,8 @@ class QuantumOp {
 			return obs.apply_rz(qubit0, parameter, policy);
 		case QGate::Rp:
 			return obs.apply_rp(axis, parameter, policy);
+		case QGate::U3:
+			return obs.apply_u3(qubit0, parameter, parameter2, parameter3, policy);
 		case QGate::Cx:
 			return obs.apply_cx(qubit0, qubit1, policy);
 		case QGate::AmplitudeDamping:
@@ -137,8 +150,9 @@ class QuantumOp {
 	QGate get_gate() const { return gate; }
 
 	[[gnu::always_inline]] inline OperationType operation_type() const {
-		return (gate == QGate::Rz || gate == QGate::Rp || gate == QGate::AmplitudeDamping) ? OperationType::SplittingGate :
-												     OperationType::BasicGate;
+		return (gate == QGate::Rz || gate == QGate::Rp || gate == QGate::U3 || gate == QGate::AmplitudeDamping) ?
+			       OperationType::SplittingGate :
+			       OperationType::BasicGate;
 
 		// static constexpr std::array<OperationType, 2> arr_map{OperationType::BasicGate, OperationType::SplittingGate};
 		// return arr_map[gate == QGate::Rz || gate == QGate::AmplitudeDamping]; // branchless

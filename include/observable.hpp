@@ -205,6 +205,18 @@ class Observable {
 		return std::visit([&, this](auto const& pol) { return this->apply_rp(axis, theta, pol); }, rpol);
 	}
 
+	template <IsNotVariant ExecutionPolicy = DefaultExecutionPolicy>
+	void apply_u3(unsigned qubit, T theta, T phi, T lambda, ExecutionPolicy&& policy = ExecutionPolicy{}) {
+		check_qubit(qubit);
+		using Policy_t = std::remove_cvref_t<decltype(policy)>;
+		Policy_t::apply_u3(paulis_, qubit, theta, phi, lambda);
+	}
+
+	template <IsVariant DynamicPolicy>
+	void apply_u3(unsigned qubit, T theta, T phi, T lambda, DynamicPolicy&& rpol) {
+		return std::visit([&, this](auto const& pol) { return this->apply_u3(qubit, theta, phi, lambda, pol); }, rpol);
+	}
+
 	/**
 	 * @brief Applies an amplitude damping noise channel.
 	 * @param qubit The index of the qubit to apply the channel to.
